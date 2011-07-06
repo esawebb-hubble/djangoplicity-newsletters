@@ -35,22 +35,26 @@ from django.template import RequestContext
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 
-from djangoplicity.newsletters.models import MailChimpListToken, MailChimpList
+from djangoplicity.newsletters.models import MailChimpListToken, MailChimpList, Subscriber
+from djangoplicity.newsletters.tasks import mailchimp_subscribe, mailchimp_unsubscribe, mailchimp_upemail, mailchimp_cleaned
 from django.http import Http404, HttpResponse
 
 
 def newsletters_detail ( request ):
 
+	tplname = request.GET.get('template','main')
 	
-	
-	resp =  render_to_response( 'newsletterss/main.html', {}, RequestContext( request, {} ) )
+	ctx = {}
+	resp =  render_to_response( 'newsletters/%s.html' % tplname, ctx, RequestContext( request, {} ) )
 
-	subject, from_email, to = 'News from ESO - Week of 15 May 2011', 'lcgomes@eso.org', 'lcgomes@eso.org'
+	subject, from_email = '[NEWSLETTER TEST] ESO Outreach & Education Newsletter - July 2011', 'lnielsen@eso.org'
 	text_content = 'text content only'
-	html_content = resp
-	msg = EmailMultiAlternatives(subject, text_content, from_email, [to])
-	msg.attach_alternative(html_content, "text/html")
-	msg.send()
+	html_content = resp.content
+	#to = ['lnielsen@eso.org','osandu@eso.org','lars@eso.org','andreroquette.eso@googlemail.com']
+	to = ['lnielsen@eso.org', ]
+	msg = EmailMultiAlternatives( subject, text_content, from_email, to )
+	msg.attach_alternative( html_content, "text/html" )
+	#msg.send()
 	
 	return resp
 
@@ -81,16 +85,13 @@ def subscribe_event( request, list, fired_at ):
 	does not exists on mailman list:
 	- subscribe to default mailman list
 	"""
-	request.POST['data[id]']
-	request.POST['data[email]']
-	request.POST['data[email_type]']
-	request.POST['data[ip_opt]']
-	request.POST['data[ip_signup]']
-	request.POST['data[merges][FNAME]']
-	request.POST['data[merges][LNAME]']
-	request.POST['data[merges][INTERESTS]']
+	mailchimp_subscribe.delay( 
+		list=list.pk,
+		fired_at=fired_at,
+		email=request.POST['data[email]'],
+	)
 	return HttpResponse( "" )
-	
+
 	
 def unsubscribe_event( request, list, fired_at ):
 	"""
@@ -117,14 +118,11 @@ def unsubscribe_event( request, list, fired_at ):
 	does not exists on mailman list:
 	- subscribe to default mailman list
 	"""
-	request.POST['data[id]']
-	request.POST['data[email]']
-	request.POST['data[email_type]']
-	request.POST['data[ip_opt]']
-	request.POST['data[ip_signup]']
-	request.POST['data[merges][FNAME]']
-	request.POST['data[merges][LNAME]']
-	request.POST['data[merges][INTERESTS]']
+	mailchimp_unsubscribe.delay( 
+		list=list.pk,
+		fired_at=fired_at,
+		email=request.POST['data[email]'],
+	)
 	return HttpResponse( "" )
 	
 def profile_event( request, list, fired_at ):
@@ -152,8 +150,13 @@ def upemail_event( request, list, fired_at ):
 	"data[new_email]": "api+new@mailchimp.com", 
 	"data[old_email]": "api+old@mailchimp.com"
 	"""
+	mailchimp_upemail.delay( 
+		list=list.pk,
+		fired_at=fired_at,
+		new_email=request.POST['data[new_email]'],
+		old_email=request.POST['data[old_email]'],
+	)
 	return HttpResponse( "" )
-	
 
 def cleaned_event( request, list, fired_at ):
 	"""
@@ -164,6 +167,11 @@ def cleaned_event( request, list, fired_at ):
 	"data[reason]": "hard",
 	"data[email]": "api+cleaned@mailchimp.com"
 	"""
+	mailchimp_cleaned.delay( 
+		list=list.pk,
+		fired_at=fired_at,
+		email=request.POST['data[email]'],
+	)
 	return HttpResponse( "" )
 
 

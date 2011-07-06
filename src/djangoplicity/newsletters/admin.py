@@ -32,20 +32,17 @@
 
 from django.contrib import admin
 from django.utils.translation import ugettext as _
-from djangoplicity.newsletters.models import Subscriber, Subscription, List, MailChimpList, MailChimpListSource, ListSynchronization
+from djangoplicity.newsletters.models import BadEmailAddress, Subscriber, Subscription, List, MailChimpList, MailChimpSourceList, MailChimpListToken, MailChimpSubscriberExclude
+from djangoplicity.newsletters.tasks import synchronize_mailman
 
-class ListSynchronizationInlinAdmin( admin.TabularInline ):
-	model = ListSynchronization
-	extra = 1
-	fk_name = 'destination'
-	
-class ListSynchronizationAdmin( admin.ModelAdmin ):
-	list_display = ['destination','source']
-	list_filter = ['destination','source']
+class SubscriptionInlineAdmin( admin.TabularInline ):
+	model = Subscription
+	extra = 0
 	
 class SubscriberAdmin( admin.ModelAdmin ):
 	list_display = ['email',]
 	search_fields = ['email',]
+	inlines = [SubscriptionInlineAdmin]
 
 class SubscriptionAdmin( admin.ModelAdmin ):
 	list_display = ['subscriber','list']
@@ -53,19 +50,32 @@ class SubscriptionAdmin( admin.ModelAdmin ):
 	search_fields = ['subscriber__email','list__name']
 
 class ListAdmin( admin.ModelAdmin ):
-	list_display = ['name','password']
-	search_fields = ['name','password']
-	inlines = [ListSynchronizationInlinAdmin]
+	list_display = ['name', 'password', 'admin_url']
+	search_fields = ['name', 'password']
+	actions = ['action_sync']
 	
-class MailChimpListSourceInlinAdmin( admin.TabularInline ):
-	model = MailChimpListSource
+	def admin_url( self, obj ):
+		url = obj.mailman.get_admin_url()
+		return """<a href="%s">Mailman</a>""" % url if url else ""
+	admin_url.short_description = "Admin URL"
+	admin_url.allow_tags = True
+	
+	def action_sync( self, request, queryset ):
+		for obj in queryset:
+			synchronize_mailman.delay( obj.name )
+		self.message_user( request, "Started synchronization of mailman lists %s." % ", ".join( [l.name for l in queryset] ) )
+	action_sync.short_description = "Synchronize lists"
+
+
+class MailChimpSourceListInlineAdmin( admin.TabularInline ):
+	model = MailChimpSourceList
 	extra = 0
 	
 class MailChimpListAdmin( admin.ModelAdmin ):
 	list_display = ['list_id', 'admin_url', 'name','default_from_name', 'default_from_email', 'email_type_option', 'member_count', 'open_rate', 'click_rate', 'connected','last_sync',]
 	list_filter = ['use_awesomebar','email_type_option','last_sync','connected',]
 	search_fields = ['api_key','list_id','name','web_id','default_from_name', 'default_from_email', 'email_type_option','default_subject']
-	inlines = [ MailChimpListSourceInlinAdmin, ]
+	inlines = [MailChimpSourceListInlineAdmin]
 	fieldsets = (
 		( 
 			None, 
@@ -153,20 +163,48 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 		return """<a href="%s">MailChimp</a>""" % url if url else ""
 	admin_url.short_description = "Admin URL"
 	admin_url.allow_tags = True
-	
 
-class MailChimpListSourceAdmin( admin.ModelAdmin ):
-	list_display = ['list','mailchimplist']
-	list_filter = ['list','mailchimplist']
+class MailChimpSourceListAdmin( admin.ModelAdmin ):
+	list_display = ['list', 'default']
+	list_editable = ['default',]
+	list_filter = ['list', 'mailchimplist', 'default']
+	search_fields = ['list__name', 'mailchimplist__name']
+	
+class MailChimpSubscriberExcludeAdmin( admin.ModelAdmin ):
+	list_display = ['subscriber', 'mailchimplist', ]
+	list_filter = ['mailchimplist', ]
+	raw_id_fields = ['subscriber']
+	search_fields = ['subscriber__email', 'mailchimplist__name']
+
+class BadEmailAddressAdmin( admin.ModelAdmin ):
+	list_display = ['email', 'timestamp', ]
+	list_filter = ['timestamp', ]
+	search_fields = ['email']
+	
+class MailChimpListTokenAdmin( admin.ModelAdmin ):
+	list_display = ['list', 'uuid', 'token', 'expired' ]
+	list_filter = ['expired', 'list']
+	search_fields = ['uuid', 'token']
+	readonly_fields = ['list', 'uuid', 'token', 'expired' ]
+	ordering = ['-expired']
+
+	def has_add_permissions( self, request ):
+		return False
+	
+	def has_change_permissions( self, request ):
+		return False
 	
 
 def register_with_admin( admin_site ):
 	admin_site.register( Subscriber, SubscriberAdmin )
 	admin_site.register( Subscription, SubscriptionAdmin )
 	admin_site.register( List, ListAdmin )
-	admin_site.register( ListSynchronization, ListSynchronizationAdmin )
 	admin_site.register( MailChimpList, MailChimpListAdmin )
-	admin_site.register( MailChimpListSource, MailChimpListSourceAdmin )
+	admin_site.register( MailChimpSourceList, MailChimpSourceListAdmin )
+	admin_site.register( MailChimpSubscriberExclude, MailChimpSubscriberExcludeAdmin )
+	admin_site.register( BadEmailAddress, BadEmailAddressAdmin )
+	admin_site.register( MailChimpListToken, MailChimpListTokenAdmin )
+	
 	
 		
 # Register with default admin site	
