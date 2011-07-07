@@ -116,10 +116,10 @@ class List( models.Model ):
 		"""
 		sub = Subscription( list=self, subscriber=subscriber )
 		sub.save()
-		
+
 		# Send signal to allow mailman and mailchimp to be updated
 		subscription_added.send_robust( sender=self, subscription=sub, source=source )
-		
+
 
 	def unsubscribe( self, subscriber, source=None ):
 		"""
@@ -128,13 +128,13 @@ class List( models.Model ):
 		try:
 			sub = Subscription.objects.get( list=self, subscriber=subscriber )
 			sub.delete()
-			
+
 			# Send signal to allow mailman and mailchimp to be updated
 			subscription_deleted.send_robust( sender=self, list=self, subscriber=subscriber, source=source )
 		except Subscription.DoesNotExist:
 			pass
-	
-	
+
+
 	def incoming_changes( self ):
 		"""
 		Get differences between mailman and djangoplicity list.
@@ -154,8 +154,8 @@ class List( models.Model ):
 		unsubscribe_emails = current_emails - mailman_emails
 
 		return ( subscribe_emails, unsubscribe_emails, current_list_subscribers )
-	
-	
+
+
 	@classmethod
 	def subscription_added_handler( cls, sender=None, subscription=None, source=None, **kwargs ):
 		"""
@@ -166,8 +166,8 @@ class List( models.Model ):
 			# it must be passed on to mailman
 			from djangoplicity.newsletters.tasks import mailman_send_subscribe
 			mailman_send_subscribe.delay( subscription.list.name, subscription.subscriber.email )
-	
-	
+
+
 	@classmethod
 	def subscription_deleted_handler( cls, sender, list=None, subscriber=None, source=None, **kwargs ):
 		"""
@@ -178,14 +178,14 @@ class List( models.Model ):
 			# it must be passed on to mailman
 			from djangoplicity.newsletters.tasks import mailman_send_unsubscribe
 			mailman_send_unsubscribe.delay( list.name, subscriber.email )
-			
+
 	@classmethod
 	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
 		"""
 		Start task to setup get subscribers from mailman
 		"""
 		from djangoplicity.newsletters.tasks import synchronize_mailman
-		
+
 		if created and not raw:
 			synchronize_mailman.delay( list_name=instance.name )
 
@@ -287,13 +287,13 @@ class MailChimpList( models.Model ):
 		"""
 		return MailSnake( self.api_key )
 	connection = property( _get_connection )
-	
+
 	def default_lists( self ):
 		"""
 		Get the default lists associated with this mailchimp list. 
 		"""
 		return self.sources.filter( mailchimpsourcelist__default=True )
-	
+
 	def save( self, *args, **kwargs ):
 		"""
 		Save instance (and sync info from MailChimp if it hasn't been done before).
@@ -306,7 +306,7 @@ class MailChimpList( models.Model ):
 				self.last_sync = datetime.now()
 				self.error = unicode( e )
 		super( MailChimpList, self ).save( *args, **kwargs )
-		
+
 	def get_subscribers( self ):
 		""" Get source lists subscribers  """
 		return Subscriber.objects.exclude( pk__in=self.subscriber_excludes.all() ).filter( subscription__list__in=self.sources.all() ).distinct()
@@ -356,7 +356,52 @@ class MailChimpList( models.Model ):
 			raise MailChimpError( http_error=e )
 		except KeyError, e:
 			raise MailChimpError( response=res )
+
+
+
+	def _list_all_members( self, status ):
+		"""
+		Helper function to paginate through all members 
+		"""
+		grand_total = 0
+		data = []
 		
+		total = self.member_count
+		limit = 1000
+		start = 0
+		
+		while total > 0:
+			try:
+				res = self.connection.listMembers( id=self.list_id, status=status, start=start, limit=1000 )
+				grand_total += res['total']
+				data += res['data']
+				
+				total -= limit
+				start += 1
+			except ( HTTPError, URLError ), e:
+				raise MailChimpError( http_error=e )
+			except KeyError, e:
+				raise MailChimpError( response=res )
+			
+		return { 'total' : grand_total, 'data' : data }
+	
+	
+	def outgoing_changes( self ):
+		"""
+		"""
+		self.fetch_info()
+		res = self._list_all_members( 'subscribed' )
+		
+		mailchimp_subscribers = set( [x['email'] for x in res['data']] )
+		current_subscribers = set( [x.email for x in self.get_subscribers()] )
+		
+		subscribe_emails = current_subscribers - mailchimp_subscribers
+		unsubscribe_emails = mailchimp_subscribers - current_subscribers
+		
+		return ( subscribe_emails, unsubscribe_emails )
+
+
+
 	@classmethod
 	def subscription_added_handler( cls, sender=None, subscription=None, source=None, **kwargs ):
 		"""
@@ -367,7 +412,7 @@ class MailChimpList( models.Model ):
 			# it must be passed on to MailChimp
 			from djangoplicity.newsletters.tasks import mailchimp_send_subscribe
 			mailchimp_send_subscribe.delay( subscription.list.name, subscription.subscriber )
-	
+
 	@classmethod
 	def subscription_deleted_handler( cls, sender=None, list=None, subscriber=None, source=None, **kwargs ):
 		"""
@@ -378,17 +423,17 @@ class MailChimpList( models.Model ):
 			# it must be passed on to MailChimp
 			from djangoplicity.newsletters.tasks import mailchimp_send_unsubscribe
 			mailchimp_send_unsubscribe.delay( list.name, subscriber )
-			
+
 	@classmethod
 	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
 		"""
 		Start task to setup list in MailChimp (e.g. add webhooks).
 		"""
 		from djangoplicity.newsletters.tasks import webhooks
-		
+
 		if created and not raw:
 			webhooks.delay( list_id=instance.list_id )
-	
+
 	@classmethod
 	def pre_delete_handler( cls, sender=None, instance=None, **kwargs ):
 		"""
@@ -434,26 +479,26 @@ class MailChimpSourceList( models.Model ):
 	mailchimplist = models.ForeignKey( MailChimpList )
 	list = models.ForeignKey( List )
 	default = models.BooleanField( default=False )
-	
+
 	@classmethod
-	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False ):
+	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
 		"""
 		A relation was created between mailman and mailchimp list 
 		"""
+		print "MailChimpSourceList.post_save_handler"
 		if created and not raw:
-			pass
-			# TODO
-			#synchronize_mailchimplist.delay()
+			from djangoplicity.newsletters.tasks import synchronize_mailchimplist
+			synchronize_mailchimplist( instance.mailchimplist.list_id )
 
-	
+
 	@classmethod
-	def post_delete_handler( cls, sender=None, instance=None ):
+	def post_delete_handler( cls, sender=None, instance=None, **kwargs ):
 		"""
 		A relation between mailman and mailchimp list was removed. 
 		"""
-		pass
-		# TODO
-		#synchronize_mailchimp.delay()
+		from djangoplicity.newsletters.tasks import synchronize_mailchimplist
+		synchronize_mailchimplist( instance.mailchimplist.list_id )
+		# TODO: call .delay instead
 
 
 	class Meta:

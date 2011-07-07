@@ -158,11 +158,25 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 		'last_sync',
 	]
 	
+	actions = ['action_update_info']
+	
 	def admin_url( self, obj ):
 		url = obj.get_admin_url()
 		return """<a href="%s">MailChimp</a>""" % url if url else ""
 	admin_url.short_description = "Admin URL"
 	admin_url.allow_tags = True
+	
+	def action_update_info( self, request, queryset ):
+		"""
+		Action to request statistics to be updated.
+		"""
+		from djangoplicity.newsletters.tasks import mailchimplist_fetch_info
+		for obj in queryset:
+			mailchimplist_fetch_info.delay( obj.list_id )
+		self.message_user( request, "Updating statistics from lists %s." % ", ".join( [l.name for l in queryset] ) )
+	action_update_info.short_description = "Update statistics from MailChimp"
+	
+
 
 class MailChimpSourceListAdmin( admin.ModelAdmin ):
 	list_display = ['list', 'default']
