@@ -31,8 +31,7 @@
 #
 
 from BeautifulSoup import BeautifulSoup
-from urllib import urlencode
-from urlparse import urlparse, parse_qs
+	
 from django_mailman.models import List as OriginalMailmanList
 
 class MailmanList( object ):
