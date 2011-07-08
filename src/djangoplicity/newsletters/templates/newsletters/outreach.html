@@ -1,167 +1,153 @@
 {% extends "newsletters/base.html" %}
 
-{% block text_only %}Generated {% now "c" %}{% endblock %}
-{% block header_title %}Outreach &amp; Education Newsletter{% endblock %}
+{% block text_only %}{{editorial|striptags|truncatewords:40|safe}}<br /><br />{% endblock %}
+{% block html_title %}ESO Outreach Community Newsletter July 2011{% endblock %}
+{% block header_title %}ESO Outreach Community Newsletter{% endblock %}
 {% block header_subtitle %}July 2011{% endblock %}
-{% block feature_image_url %}http://www.eso.org/public/archives/images/newsfeature/potw1125a.jpg{% endblock %}
-{% block feature_image_text %}A Blood Moon over ESO's Headquarters{% endblock %}
-{% block feature_image_date %}ESO Picture of the Week{% endblock %}
-
 
 {% block reason %} you subscribed to the ESO Outreach &amp; Education Newsletter{% endblock %}
 
 {% block content %}
-<p>Dear ESO friends,</p>
-<ul>
-<li>Why this newsletter/ unsubscribe/provide more information in the Google form
-<li>Apology - for opt-out. why For receiving twice on different mailing addresses
-<li>CAP2011
-<li>Join us on: ESO Facebook, ESO Twitter
-</ul>
-<ul>
-<li>First editorial:
-<li>Remain on this list
-<li>Unsubscribe from the list
-<li>Subscribe to epodpress if they are journalists or bloggers and are not on epodpress yet
-<li>Subscribe to esonews/hubblenews      	
-<li>To potentially receive products from us, fill in a form with more data to be included in FileMaker.
-<li>Free order form
-<li>Use images/videos for free
-<li>Other benefits
-<li>Bulk order offers
-</ul>
 
 
-{% block announcements %}
+{{ editorial|safe }}
+
+{% with a_style="color: #285A97;font-size: 12px;font-family: Helvetica, Arial;" hr_style="height:1px;border:0;border-bottom:1px solid #DEDEDE;" h2_style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 15px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;" %}
+<br/> 
+<hr style="{{hr_style}}"/> 
+<br/> 
 
 
-<br/>
-<hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/>
-<br/>
-<h2 class="h2" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 16px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;"><img src="http://www.eso.org/public/archives/djangoplicity/images/rssicon.png">&nbsp;Latest ESO Announcements</h2>
-<table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
-<tr>
-<td valign="top" width="122">
-<img src="http://www.eso.org/public/archives/images/thumbs/ann11018.jpg"></img>
-</td>
-<td valign="top" style="padding-left:20px" width="379">
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 13px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">Space Scoop: Astronomy News for Children &mdash; ESO's press releases now available in child-friendly versions</h3>
-<p><strong>13 April 2011:</strong> Life has just become much easier for parents and educators dealing with enthusiastic children curious about astronomy! ESO has teamed up with the educational project Universe Awareness (UNAWE) to produce Space Scoop &mdahs; versions of its latest Science and Photo Releases that are written specifically for children aged between ... </p>
-</td>
-</tr>
-<tr><td colspan="2" align="right"><a href="http://www.eso.org/public/announcements/ann11018/">Read more</a></td></tr>
+
+{# ############### ANNOUNCEMENTS ############### #}
+
+<h2 class="h2" style="{{h2_style}}">
+<a href="http://feeds.feedburner.com/EsoAnnouncements"><img border="0" src="http://www.eso.org/public/archives/djangoplicity/images/rssicon.png"></a>&nbsp;
+<a style="color: #285A97;font-size: 15px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/announcements/">ESO Announcements</a>
+</h2> 
+
+{% for obj in announcements %}
+<br />
+<table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;"> 
+<tr> 
+<td valign="top" width="220"> 
+<a href="http://www.eso.org{{ obj.get_absolute_url }}"><img border="0" src="http://www.eso.org/public/archives/images/potwmedium/{{obj.main_visual.id}}.jpg"></img></a>
+</td> 
+<td valign="top" style="padding-left:20px;font-family: Helvetica, Arial;font-size: 12px;" width="281"> 
+<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
+<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="{{ obj.get_absolute_url }}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a>
+</h3>
+<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
+<p><strong>{{ obj.release_date|date }}:</strong> {{ obj.description|striptags|truncatewords:30|safe }}</p> 
+</div>
+</td> 
+</tr> 
+<tr><td colspan="2" align="right"><a style="{{a_style}}" href="{{ obj.get_absolute_url }}">Read more</a></td></tr> 
+</table> 
+{% endfor %}
+
+
+
+<br/> 
+<hr style="{{hr_style}}"/> 
+<br/> 
+
+
+<h2 class="h2" style="{{h2_style}}">
+<a href="http://feeds2.feedburner.com/ESOcast"><img border="0" src="http://www.eso.org/public/archives/djangoplicity/images/rssicon.png"></a>&nbsp;
+<a style="color: #285A97;font-size: 15px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/videos/archive/category/esocast/">ESOcast</a>
+</h2> 
+
+{# ############### ESOCASTS ############### #}
+
+{% for obj in esocasts %}
+<table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;"> 
+<tr> 
+<td valign="top" width="122"> 
+<a href="http://www.eso.org{{ obj.get_absolute_url }}"><img border="0" src="http://www.eso.org/public/archives/videos/thumb/{{obj.id}}.jpg"></img></a>
+</td> 
+<td valign="top" style="padding-left:20px;font-family: Helvetica, Arial;font-size: 12px;" width="379"> 
+<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
+<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="{{ obj.get_absolute_url }}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a>
+</h3>
+<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
+<p><strong>{{ obj.release_date|date }}:</strong> {{ obj.headline|striptags|truncatewords:30|safe }}</p> 
+</div>
+</td> 
+</tr> 
+<tr><td colspan="2" align="right"><a style="{{a_style}}" href="http://www.eso.org{{ obj.get_absolute_url }}">View and/or download</a></td></tr> 
 </table>
+{% endfor %}
 
 
-
-<table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
-<tr>
-<td valign="top" width="122">
-<img src="http://www.eso.org/public/archives/images/thumbs/ann11012a.jpg"></img>
-</td>
-<td valign="top" style="padding-left:20px" width="379">
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 13px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">Feel the Universe at Your Fingertips &mdash; Top Astronomy Apps for the iPad</h2>
-<p><strong>28 March 2011:</strong> Access a universe of knowledge about the Universe with three new free iPad apps from ESO''s education and Public Outreach Department (ePOD), available just in time for the iPad 2. The free ESO Top 100 Images app brings users a selection of the best astronomical images taken by a suite ... </p>
-</td>
-</tr>
-<tr><td colspan="2" align="right"><a href="http://www.eso.org/public/announcements/ann11012/">Read more</a></td></tr>
-</table>
-
-
-
-
-<table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
-<tr>
-<td valign="top" width="122">
-<img src="http://www.eso.org/public/archives/images/thumbs/eso0402d.jpg"></img>
-</td>
-<td valign="top" style="padding-left:20px" width="379">
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 13px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">Live Webcams at ESO &mdash; Round-the-clock streams available from four ESO sites in Chile</h2>
-<p><strong>13 December 2011:</strong> Four web cameras have been placed at the ESO sites, allowing anyone to see ESO's advanced telescopes in action and admire the fascinating Milky Way over one of the driest deserts in the world at any time. The 24/7 live transmission from the webcams offers multiple streams that are not ...</p>
-</td>
-</tr>
-<tr><td colspan="2" align="right"><a href="http://www.eso.org/public/announcements/">Read more</a></td></tr>
-</table>
-
-
-
-<br/>
-<hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/>
-<br/>
-
-<h2 class="h2" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 16px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;"><img src="http://icons.iconarchive.com/icons/yellowicon/flat/24/iCal-icon.png">&nbsp;Upcoming ESO events &amp; exhibitions</h2>
-<table border="0" cellpadding="0" cellspacing="0">
-<tr>
-<td valign="top" width="122">
-<img src="http://www.eso.org/public/archives/images/thumbs/ar-iauga2009-esohr.jpg"></img>
-</td>
-<td valign="top" style="padding-left:20px" width="400">
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 13px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">Events</h3>
-<p><strong>Ongoing</strong><br>
-<ul>
-<li>The Eye 3D School Screenings, from 1 June 2010</li>
-<li>Cafe &amp; Kosmos in Munich, from 5 July 2010</li>
-</ul>
-</p>
-<p><strong>07 June 2011: Cafe &amp; Kosmos in Munich</strong><br />"Quantum mechanics, on Earth and in space", Dr. Stefan Kluth (Max-Planck Institute for Physics).</p>
-<p><strong>10&mdash;14 October 2011: Communicating Astronomy with the Public 2011 (CAP 2011)</strong><br />The 4th conference in the series, 'Communicating Astronomy with the Public' will take place in Beijing, China</p>
-<p><strong>15 October 2011: Open House Day</strong><br />The ESO Headquarters in Garching near Munich will open its doors for the public. More information soon.</p>
-
-
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 13px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">Exhibitions</h3>
-<p><strong>15 June &mdash; 31 July 2011:</strong> Exposition "The World At Night", Planetario Galileo Galilei. <a href="http://maps.google.com/maps?q=Buenos+Aires,+Argentina">Buenos Aires, Argentina.</a></p>
-<p><strong>4 &mdash; 8 July:</strong> Joint European National Astronomy Meeting (JENAM 2011). <a href="http://maps.google.com/maps?q=St.Petersburg,+Russia">St.Petersburg, Russia</a></p>
-<p><strong>15 October:</strong> Open House Day (Tag der offenen Tur). <a href="http://maps.google.com/maps?q=Campus+Garching,+Germany">Campus Garching, Germany.</a></p>
-<p><strong>17 &mdash; 19 November 2011:</strong> XIV International Conference of Amateur astronomers (CIAA 2011). <a href="http://maps.google.com/maps?q=Antofagasta,+Chile">Antofagasta, Chile</a>.</p>
-</td>
-</tr>
-</table>
-
-
-
-
-
-<br/>
-<hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/>
-<br/>
-<table border="0" cellpadding="0" cellspacing="0">
-<tr>
-<td valign="top" width="122">
-<img src="http://www.eso.org/public/archives/videos/thumb/eso1119a.jpg"></img>
-</td>
-<td valign="top" style="padding-left:20px" width="400">
-<h2 class="h2" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 16px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;"><img src="http://www.eso.org/public/archives/djangoplicity/images/rssicon.png">&nbsp;ESOcast 30: First Images from the VLT Survey Telescope &mdash; VST and 268 megapixel OmegaCAM start work</h2>
-<p><strong>8 June 2011:</strong> This ESOcast introduces the VLT Survey Telescope (VST), the latest addition to ESO's Paranal Observatory. This new telescope has just made its first release of impressive images of the southern sky. The VST is a state-of-the-art 2.6-metre telescope, with the huge 268-megapixel camera OmegaCAM at its heart. It is designed to map the sky both quickly and with very fine image quality. It is a visible-light telescope that perfectly complements ESO's VISTA infrared survey telescope. New images of the Omega Nebula and the globular cluster Omega Centauri demonstrate the VST's power.</p>
-</td>
-</tr>
-</table>
-
+{% endwith %}
 {% endblock %}
 
-
-
-{% endblock %}
 
 
 {% block sidebar %}
-<br />
-<hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/>
-<br />
-<a href="http://www.eso.org/public/shop/"><img src="http://www.eso.org/public/archives/esoshop.jpg" width="170" style="border:0px;"></img></a>
-<br />
-<hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/>
-<br />
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 13px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;"><img src="http://www.eso.org/public/archives/djangoplicity/images/rssicon.png">&nbsp;ESO Press Releases</h3>
-<p style="margin-bottom: 20px;"><img src="http://www.eso.org/public/archives/images/frontpagethumbs/eso1119a.jpg" style="margin-bottom: 5px;"></img><br><strong>8 June 2011:</strong> First Images from the VLT Survey Telescope &mdash; VST and 268 megapixel OmegaCAM start work</p>
-<p style="margin-bottom: 20px;"><img src="http://www.eso.org/public/archives/images/frontpagethumbs/eso1118a.jpg" style="margin-bottom: 5px;"></img><br><strong>1 June 2011:</strong> A Postcard from Extragalactic Space? &mdash; A spiral galaxy that resembles our Milky Way</p>
-<p style="margin-bottom: 20px;"><img src="http://www.eso.org/public/archives/images/frontpagethumbs/eso1117a.jpg" style="margin-bottom: 5px;"></img><br><strong>25 May 2011:</strong> ESO''s VLT Finds a Brilliant but Solitary Superstar</p>
-<hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/>
-<br />
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 13px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;"><img src="http://www.eso.org/public/archives/djangoplicity/images/rssicon.png">&nbsp;New on eso.org</h3>
-<p>New images and web pages for VST published</p>
-<p>ESO new web page on Astronomy Communication resources</p> 
-<p>ESO Annual Report 2010 now available</p>
-<p>Science in School Issue 19 Out Now!</p> 
-<p>New Presentation on ESO's Top 10 Science Discoveries Available</p>
+{% with a_style="color: #285A97;font-size: 12px;" hr_style="height:1px;border:0;border-bottom:1px solid #DEDEDE;" h2_style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 15px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;" %}
 
+{# ############### PRESS RELEASES ############### #}
+<hr style="{{hr_style}}"/> 
+
+<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
+<a href="http://feeds.feedburner.com/EsoTopNews"><img border="0"  src="http://www.eso.org/public/archives/djangoplicity/images/rssicon.png"></a>&nbsp;<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/news/">ESO Press Releases</a>
+</h3> 
+
+<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
+{% for obj in releases %}<p style="margin-bottom: 20px;"><a href="http://www.eso.org{{obj.get_absolute_url}}"><img border="0" src="http://www.eso.org/public/archives/images/frontpagethumbs/{{obj.main_image.id}}.jpg" style="margin-bottom: 5px;"></img></a><br><strong>{{obj.release_date|date}}:</strong> <a href="http://www.eso.org{{obj.get_absolute_url}}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a></p>
+{% endfor %}
+</div>
+
+
+{# ############### NEW ON ESO.ORG ############### #}
+<hr style="{{hr_style}}"/> 
+
+<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">New on eso.org</h3> 
+<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
+
+{% for obj in newoneso %}
+<p><a href="{{obj.link}}">{{obj.title}}</a></p>
+{% endfor %}
+</div>
+
+
+{# ############### EVENTS ############### #}
+<hr style="{{hr_style}}"/> 
+
+<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
+<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/events/special-evt.html">Upcoming Events</a>
+</h3> 
+<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
+
+<p><strong>Ongoing</strong><br> 
+<ul> 
+{% for obj in ongoing_events %}
+<li><a href="{{obj.link}}">{{obj.title}}</a></li>
+{% endfor %}
+</ul> 
+</p> 
+{% for obj in events %}
+<p><strong>{{ obj.dates|safe }}</strong>: {{obj.title|safe}}</p>
+{% endfor %}
+</div>
+
+{# ############### EXHIBITIONS ############### #}
+<hr style="{{hr_style}}"/> 
+
+
+<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
+<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/events/exhibitions.html">Upcoming Exhibitions</a>
+</h3> 
+
+
+<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
+{% for obj in exhibitions %}
+<p><strong>{{ obj.dates|safe }}</strong>: {{obj.title|safe}}</p>
+{% endfor %}
+
+</div>
+
+{% endwith %}
 {% endblock %}

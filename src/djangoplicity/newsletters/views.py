@@ -44,7 +44,74 @@ def newsletters_detail ( request ):
 
 	tplname = request.GET.get('template','main')
 	
-	ctx = {}
+	from djangoplicity.announcements.models import Announcement
+	from djangoplicity.releases.models import Release
+	from djangoplicity.media.models import Video, Image, PictureOfTheWeek
+	
+	ctx = {
+		'announcements' : Announcement.objects.filter( id__in=['ann11043','ann11045','ann1067','ann11018','ann11043','ann11012','ann11043','ann1097','ann1086','ann1007',]).order_by('-release_date'),
+		'esocasts' :  Video.objects.filter( id__in=['eso1122a', 'eso1120a', 'eso1119a', ] ).order_by('-release_date'),
+		'mainimage' : PictureOfTheWeek.objects.get( id='potw1127').image,
+		'potws' : PictureOfTheWeek.objects.filter( id__in=['potw1126', 'potw1125', 'potw1124', 'potw1123', ] ).order_by('-release_date'),
+		'releases' : Release.objects.filter( id__in=['eso1123','eso1122','eso1121','eso1120','eso1119','eso1118',]).order_by('-release_date'),
+		'newoneso' : [
+			{'title' : 'List of ESO Exhibitions updated', 'link' : 'http://www.eso.org/public/events/exhibitions.html'},
+			{'title' : 'New page: ESO Outreach Partner Organisations', 'link' : 'http://www.eso.org/public/outreach/partnerships/organisations.html'},
+			{'title' : 'New APOD: Alpha Centauri: The Closest Star System', 'link' : 'http://apod.nasa.gov/apod/ap110703.html'},
+			{'title' : 'New APOD: Star Factory Messier 17', 'link' : 'http://apod.nasa.gov/apod/ap110630.html'},
+			{'title' : 'New  APOD: Stardust and Betelgeuse', 'link' : 'http://apod.nasa.gov/apod/ap110628.html'},
+			{'title' : 'New APOD: The Great Carina Nebula', 'link' : 'http://apod.nasa.gov/apod/ap110609.html'},
+			{'title' : 'VST new pages', 'link' : 'http://www.eso.org/public/teles-instr/surveytelescopes/vst.html'},
+			{'title' : 'New APOD: Earth Rotating Under Very Large Telescopes', 'link' : 'http://apod.nasa.gov/apod/ap110601.html'},
+			{'title' : 'Astronomy Communication Resource', 'link' : 'http://www.eso.org/public/outreach/communication-resources.html'},
+		],
+		'ongoing_events' : [
+			{'title' : 'The Eye 3D School Screenings', 'link' : 'http://www.eso.org/public/events/special-evt/theeye/theeye3dschool.html' },
+			{'title' : 'Café & Kosmos in Munich', 'link' : 'http://www.eso.org/public/events/special-evt/cafe-and-kosmos.html' },
+		],
+		'events' : [
+			{'dates' : '10 &mdash; 14 October 2011', 'title' : 'Communicating Astronomy with the Public 2011 (CAP 2011), Beijing, China'},
+			{'dates' : '15 October 2011', 'title' : 'Open House Day (Tag der offenen Tur). Campus Garching, Germany.'},
+		],
+		'exhibitions' : [
+			{ 'dates' : '4 &mdash; 8 July 2011', 'title' : 'Joint European National Astronomy Meeting (<a href="http://jenam2011.org/conf/" target="_blank">JENAM 2011</a>), St.Petersburg, Russia.' },
+			{ 'dates' : '10 &mdash; 15 July 2011', 'title' : '63rd Annual Meeting of the&nbsp;Brazilian Society for the Progress of Science (<a href="http://www.sbpcnet.org.br/site/home/">Sociedade Brasileira para o Progresso da Ci&ecirc;ncia, SBPC</a>), Goiania, Brazil.' },
+			{ 'dates' : '16 July 2011', 'title' : '&quot;<a href="http://www.gemini.edu/node/11609">Astroday</a>&quot;, Universidad de La Serena, La Serena, Chile.' },
+			{ 'dates' : '18 July &mdash; 30 August 2011', 'title' : 'Exhibition at the National Congress, Bras&iacute;lia, Brazil.' },
+			{ 'dates' : '20 July &mdash; 20 September 2011', 'title' : 'Exposition &quot;The World At Night&quot;, Planetario Galileo Galilei, Buenos Aires, Argentina.' },
+		],
+		'editorial' : """
+<p>Dear Friends,</p>
+
+<p>The ESO education and Public Outreach Department (ePOD) are proud to present the very first edition of the ESO Newsletter for the Outreach Community! It is our pleasure to share with you, as colleagues, our endeavours to bring astronomy closer to people.</p>
+
+<p>We hope that you will find useful tools, products and opportunities in this monthly electronic newsletter to help you in your outreach work and also that our outreach efforts will inspire new ideas for your own activities.</p>
+
+<p>We have merged several of the contacts that were already in our database from previous collaborations, including the IYA2009 network, as the IYA2009 Secretariat was hosted at ePOD. Therefore our apologies if you receive this newsletter on more than one e-mail account. You can unsubscribe at any time here, but we hope that you will remain part of our outreach community. We promise to not let you down!</p>
+
+<p>If the ESO Newsletter for the Outreach Community is not directly relevant to you, we have several other options that might be of interest:
+<ul>
+<li><strong>ESO Media Newsletter</strong> for members of the press only (weekly);</li>
+<li><strong>ESO News</strong> for anyone interested in astronomy news and pictures from ESO (weekly);</li>
+<li><strong>ESOshop Newsletter</strong> for those interested in our merchandise (monthly);</li>
+<li><strong>ESO Broadcasters Newsletter</strong> (occasionally).</li>
+</ul>
+<p>
+<img src="http://www.eso.org/public/outreach/department/images/lars_christensen.jpg" width="122" style="float: left; margin: 10px;"/>
+</p>
+
+<p>You can subscribe to them <a href="">here</a>.</p>
+<p>If you are interested in occasionally receiving outreach products via snail mail and collaborating closely with ePOD, do please consider <a href="">filling in this form</a> as well.</p>
+
+<p>Let’s together reach new heights in astronomy,</p>
+
+<p>Lars Lindberg Christensen<br />
+Head ESO education and Public Outreach Department<br /><br /><br /><br /></p>		
+""",
+
+	}
+	
+	
 	resp =  render_to_response( 'newsletters/%s.html' % tplname, ctx, RequestContext( request, {} ) )
 
 	subject, from_email = '[NEWSLETTER TEST] ESO Outreach & Education Newsletter - July 2011', 'lnielsen@eso.org'
