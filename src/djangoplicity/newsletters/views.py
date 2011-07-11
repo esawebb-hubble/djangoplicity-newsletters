@@ -49,14 +49,13 @@ def newsletters_detail ( request ):
 	from djangoplicity.media.models import Video, Image, PictureOfTheWeek
 	
 	ctx = {
-		'announcements' : Announcement.objects.filter( id__in=['ann11043','ann11045','ann1067','ann11018','ann11043','ann11012','ann11043','ann1097','ann1086','ann1007',]).order_by('-release_date'),
+		'announcements' : Announcement.objects.filter( id__in=['ann11048','ann11047','ann11043','ann11045','ann1067','ann11018','ann11043','ann11012','ann11043','ann1097','ann1086','ann1007',]).order_by('-release_date'),
 		'esocasts' :  Video.objects.filter( id__in=['eso1122a', 'eso1120a', 'eso1119a', ] ).order_by('-release_date'),
 		'mainimage' : PictureOfTheWeek.objects.get( id='potw1128').image,
 		'potws' : PictureOfTheWeek.objects.filter( id__in=['potw1127','potw1126', 'potw1125', 'potw1124', 'potw1123', ] ).order_by('-release_date'),
 		'releases' : Release.objects.filter( id__in=['eso1123','eso1122','eso1121','eso1120','eso1119','eso1118',]).order_by('-release_date'),
 		'newoneso' : [
 			{'title' : 'List of ESO Exhibitions updated', 'link' : 'http://www.eso.org/public/events/exhibitions.html'},
-			{'title' : 'New page: ESO Outreach Partner Organisations', 'link' : 'http://www.eso.org/public/outreach/partnerships/organisations.html'},
 			{'title' : 'New APOD: Alpha Centauri: The Closest Star System', 'link' : 'http://apod.nasa.gov/apod/ap110703.html'},
 			{'title' : 'New APOD: Star Factory Messier 17', 'link' : 'http://apod.nasa.gov/apod/ap110630.html'},
 			{'title' : 'New  APOD: Stardust and Betelgeuse', 'link' : 'http://apod.nasa.gov/apod/ap110628.html'},
@@ -70,12 +69,12 @@ def newsletters_detail ( request ):
 			{'title' : 'Café & Kosmos in Munich', 'link' : 'http://www.eso.org/public/events/special-evt/cafe-and-kosmos.html' },
 		],
 		'events' : [
-			{'dates' : '10 &mdash; 14 October 2011', 'title' : 'Communicating Astronomy with the Public 2011 (CAP 2011), Beijing, China'},
-			{'dates' : '15 October 2011', 'title' : 'Open House Day (Tag der offenen Tur). Campus Garching, Germany.'},
+			{'dates' : '10 &mdash; 14 October 2011', 'title' : '<a href="http://www.communicatingastronomy.org/cap2011/index.html" target="_blank">Communicating Astronomy with the Public 2011 (CAP 2011), Beijing, China</a>'},
+			{'dates' : '15 October 2011', 'title' : '<a href="http://www.forschung-garching.de/">Open House Day (Tag der offenen Tur). Campus Garching, Germany.</a>'},
 		],
 		'exhibitions' : [
 			{ 'dates' : '4 &mdash; 8 July 2011', 'title' : 'Joint European National Astronomy Meeting (<a href="http://jenam2011.org/conf/" target="_blank">JENAM 2011</a>), St.Petersburg, Russia.' },
-			{ 'dates' : '10 &mdash; 15 July 2011', 'title' : '63rd Annual Meeting of the&nbsp;Brazilian Society for the Progress of Science (<a href="http://www.sbpcnet.org.br/site/home/">Sociedade Brasileira para o Progresso da Ci&ecirc;ncia, SBPC</a>), Goiania, Brazil.' },
+			{ 'dates' : '10 &mdash; 15 July 2011', 'title' : '63rd Annual Meeting of the&nbsp;Brazilian Society for the Progress of Science (<a href="http://www.sbpcnet.org.br/site/home/" target="_blank">Sociedade Brasileira para o Progresso da Ci&ecirc;ncia, SBPC</a>), Goiania, Brazil.' },
 			{ 'dates' : '16 July 2011', 'title' : '&quot;<a href="http://www.gemini.edu/node/11609">Astroday</a>&quot;, Universidad de La Serena, La Serena, Chile.' },
 			{ 'dates' : '18 July &mdash; 30 August 2011', 'title' : 'Exhibition at the National Congress, Bras&iacute;lia, Brazil.' },
 			{ 'dates' : '20 July &mdash; 20 September 2011', 'title' : 'Exposition &quot;The World At Night&quot;, Planetario Galileo Galilei, Buenos Aires, Argentina.' },
@@ -102,7 +101,7 @@ def newsletters_detail ( request ):
 
 <p>You can subscribe to them <a href="http://www.eso.org/public/outreach/newsletters.html">here</a>.</p>
 
-<p>If you are interested in occasionally receiving outreach products via snail mail and collaborating closely with ePOD, do please consider <a href="*|UPDATE_PROFILE|*">filling in this form</a> as well.</p>
+<p>If you are interested in occasionally receiving outreach products via snail mail and collaborating closely with ePOD, do please consider providing a complete postal address and choosing the category you qualify for in <a href="*|UPDATE_PROFILE|*">this form</a>.</p>
 
 <p>Let’s together reach new heights in astronomy,</p>
 

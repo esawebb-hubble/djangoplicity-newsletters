@@ -35,14 +35,14 @@
 </td> 
 <td valign="top" style="padding-left:20px;font-family: Helvetica, Arial;font-size: 12px;" width="281"> 
 <h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
-<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="{{ obj.get_absolute_url }}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a>
+<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org{{ obj.get_absolute_url }}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a>
 </h3>
 <div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
 <p><strong>{{ obj.release_date|date }}:</strong> {{ obj.description|striptags|truncatewords:30|safe }}</p> 
 </div>
 </td> 
 </tr> 
-<tr><td colspan="2" align="right"><a style="{{a_style}}" href="{{ obj.get_absolute_url }}">Read more</a></td></tr> 
+<tr><td colspan="2" align="right"><a style="{{a_style}}" href="http://www.eso.org{{ obj.get_absolute_url }}">Read more</a></td></tr> 
 </table> 
 {% endfor %}
 
@@ -68,7 +68,7 @@
 </td> 
 <td valign="top" style="padding-left:20px;font-family: Helvetica, Arial;font-size: 12px;" width="379"> 
 <h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
-<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="{{ obj.get_absolute_url }}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a>
+<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org{{ obj.get_absolute_url }}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a>
 </h3>
 <div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
 <p><strong>{{ obj.release_date|date }}:</strong> {{ obj.headline|striptags|truncatewords:30|safe }}</p> 
