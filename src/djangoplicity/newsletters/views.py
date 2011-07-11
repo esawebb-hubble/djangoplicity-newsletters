@@ -51,8 +51,8 @@ def newsletters_detail ( request ):
 	ctx = {
 		'announcements' : Announcement.objects.filter( id__in=['ann11043','ann11045','ann1067','ann11018','ann11043','ann11012','ann11043','ann1097','ann1086','ann1007',]).order_by('-release_date'),
 		'esocasts' :  Video.objects.filter( id__in=['eso1122a', 'eso1120a', 'eso1119a', ] ).order_by('-release_date'),
-		'mainimage' : PictureOfTheWeek.objects.get( id='potw1127').image,
-		'potws' : PictureOfTheWeek.objects.filter( id__in=['potw1126', 'potw1125', 'potw1124', 'potw1123', ] ).order_by('-release_date'),
+		'mainimage' : PictureOfTheWeek.objects.get( id='potw1128').image,
+		'potws' : PictureOfTheWeek.objects.filter( id__in=['potw1127','potw1126', 'potw1125', 'potw1124', 'potw1123', ] ).order_by('-release_date'),
 		'releases' : Release.objects.filter( id__in=['eso1123','eso1122','eso1121','eso1120','eso1119','eso1118',]).order_by('-release_date'),
 		'newoneso' : [
 			{'title' : 'List of ESO Exhibitions updated', 'link' : 'http://www.eso.org/public/events/exhibitions.html'},
@@ -63,7 +63,7 @@ def newsletters_detail ( request ):
 			{'title' : 'New APOD: The Great Carina Nebula', 'link' : 'http://apod.nasa.gov/apod/ap110609.html'},
 			{'title' : 'VST new pages', 'link' : 'http://www.eso.org/public/teles-instr/surveytelescopes/vst.html'},
 			{'title' : 'New APOD: Earth Rotating Under Very Large Telescopes', 'link' : 'http://apod.nasa.gov/apod/ap110601.html'},
-			{'title' : 'Astronomy Communication Resource', 'link' : 'http://www.eso.org/public/outreach/communication-resources.html'},
+			{'title' : 'New Page: Astronomy Communication Resources', 'link' : 'http://www.eso.org/public/outreach/communication-resources.html'},
 		],
 		'ongoing_events' : [
 			{'title' : 'The Eye 3D School Screenings', 'link' : 'http://www.eso.org/public/events/special-evt/theeye/theeye3dschool.html' },
@@ -83,29 +83,30 @@ def newsletters_detail ( request ):
 		'editorial' : """
 <p>Dear Friends,</p>
 
-<p>The ESO education and Public Outreach Department (ePOD) are proud to present the very first edition of the ESO Newsletter for the Outreach Community! It is our pleasure to share with you, as colleagues, our endeavours to bring astronomy closer to people.</p>
+<p>The ESO education and Public Outreach Department (ePOD) are proud to present the very first edition of the ESO Outreach Community Newsletter! It is our pleasure to share with you, as colleagues, our endeavours to bring astronomy closer to people.</p>
 
-<p>We hope that you will find useful tools, products and opportunities in this monthly electronic newsletter to help you in your outreach work and also that our outreach efforts will inspire new ideas for your own activities.</p>
+<p>We hope that you will find useful tools, products and opportunities in this monthly electronic newsletter to help you in your outreach work and also that our outreach efforts will inspire new ideas for your own activities. Among the highlights of this issue are CAP 2011 in China and the latest issue of CAPjournal.</p>
 
-<p>We have merged several of the contacts that were already in our database from previous collaborations, including the IYA2009 network, as the IYA2009 Secretariat was hosted at ePOD. Therefore our apologies if you receive this newsletter on more than one e-mail account. You can unsubscribe at any time here, but we hope that you will remain part of our outreach community. We promise to not let you down!</p>
+<p>We have merged several of the contacts that were already in our database of mailing lists from previous collaborations. Therefore our apologies if you receive this newsletter on more than one e-mail account. You can unsubscribe at any time <a href="*|UNSUB|*">here</a>, but we hope that you will remain part of our outreach community. We promise to not let you down!</p>
 
-<p>If the ESO Newsletter for the Outreach Community is not directly relevant to you, we have several other options that might be of interest:
+<p>If the ESO Outreach Community Newsletter is not directly relevant to you, we have several other options that might be of interest:
 <ul>
 <li><strong>ESO Media Newsletter</strong> for members of the press only (weekly);</li>
 <li><strong>ESO News</strong> for anyone interested in astronomy news and pictures from ESO (weekly);</li>
 <li><strong>ESOshop Newsletter</strong> for those interested in our merchandise (monthly);</li>
-<li><strong>ESO Broadcasters Newsletter</strong> (occasionally).</li>
+<li><strong>ESO Broadcasters Newsletter</strong> for professionals interested in ESO video material and footage (occasionally).</li>
 </ul>
 <p>
 <img src="http://www.eso.org/public/outreach/department/images/lars_christensen.jpg" width="122" style="float: left; margin: 10px;"/>
 </p>
 
-<p>You can subscribe to them <a href="">here</a>.</p>
-<p>If you are interested in occasionally receiving outreach products via snail mail and collaborating closely with ePOD, do please consider <a href="">filling in this form</a> as well.</p>
+<p>You can subscribe to them <a href="http://www.eso.org/public/outreach/newsletters.html">here</a>.</p>
+
+<p>If you are interested in occasionally receiving outreach products via snail mail and collaborating closely with ePOD, do please consider <a href="*|UPDATE_PROFILE|*">filling in this form</a> as well.</p>
 
 <p>Let’s together reach new heights in astronomy,</p>
 
-<p>Lars Lindberg Christensen<br />
+<p>Lars Lindberg Christensen (lars@eso.org)<br />
 Head ESO education and Public Outreach Department<br /><br /><br /><br /></p>		
 """,
 
