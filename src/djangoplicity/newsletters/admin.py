@@ -80,7 +80,7 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 		( 
 			None, 
 			{
-				'fields' : ( 'api_key', 'list_id' ),
+				'fields' : ( 'api_key', 'list_id', 'synchronize' ),
 			}
 		),
 		( 

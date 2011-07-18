@@ -230,6 +230,7 @@ class MailChimpList( models.Model ):
 	api_key = models.CharField( max_length=255, default=NEWSLETTERS_MAILCHIMP_APIKEY, verbose_name="API key" )
 	list_id = models.CharField( unique=True, max_length=50 )
 
+	synchronize = models.BooleanField( default=False )
 	sources = models.ManyToManyField( List, through='MailChimpSourceList' )
 	subscriber_excludes = models.ManyToManyField( Subscriber, through='MailChimpSubscriberExclude' )
 
@@ -358,7 +359,6 @@ class MailChimpList( models.Model ):
 			raise MailChimpError( response=res )
 
 
-
 	def _list_all_members( self, status ):
 		"""
 		Helper function to paginate through all members 
@@ -399,7 +399,6 @@ class MailChimpList( models.Model ):
 		unsubscribe_emails = mailchimp_subscribers - current_subscribers
 		
 		return ( subscribe_emails, unsubscribe_emails )
-
 
 
 	@classmethod

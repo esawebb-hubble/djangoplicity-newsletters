@@ -126,7 +126,7 @@ Head ESO education and Public Outreach Department<br /><br /><br /><br /></p>
 	return resp
 
 
-def subscribe_event( request, list, fired_at ):
+def subscribe_event( request, list, fired_at, **kwargs ):
 	"""
 	"type": "subscribe", 
 	"fired_at": "2009-03-26 21:35:57", 
@@ -156,11 +156,12 @@ def subscribe_event( request, list, fired_at ):
 		list=list.pk,
 		fired_at=fired_at,
 		email=request.POST['data[email]'],
+		**kwargs
 	)
 	return HttpResponse( "" )
 
 	
-def unsubscribe_event( request, list, fired_at ):
+def unsubscribe_event( request, list, fired_at, **kwargs ):
 	"""
 	"type": "unsubscribe", 
 	"fired_at": "2009-03-26 21:40:57",  
@@ -189,10 +190,11 @@ def unsubscribe_event( request, list, fired_at ):
 		list=list.pk,
 		fired_at=fired_at,
 		email=request.POST['data[email]'],
+		**kwargs
 	)
 	return HttpResponse( "" )
 	
-def profile_event( request, list, fired_at ):
+def profile_event( request, list, fired_at, **kwargs ):
 	"""
 	"type": "profile", 
 	"fired_at": "2009-03-26 21:31:21", 
@@ -208,7 +210,7 @@ def profile_event( request, list, fired_at ):
 	"""
 	return HttpResponse( "" )
 	
-def upemail_event( request, list, fired_at ):
+def upemail_event( request, list, fired_at, **kwargs ):
 	"""
 	"type": "upemail", 
 	"fired_at": "2009-03-26\ 22:15:09", 
@@ -222,10 +224,11 @@ def upemail_event( request, list, fired_at ):
 		fired_at=fired_at,
 		new_email=request.POST['data[new_email]'],
 		old_email=request.POST['data[old_email]'],
+		**kwargs
 	)
 	return HttpResponse( "" )
 
-def cleaned_event( request, list, fired_at ):
+def cleaned_event( request, list, fired_at, **kwargs ):
 	"""
 	"type": "cleaned", 
 	"fired_at": "2009-03-26 22:01:00", 
@@ -238,6 +241,7 @@ def cleaned_event( request, list, fired_at ):
 		list=list.pk,
 		fired_at=fired_at,
 		email=request.POST['data[email]'],
+		**kwargs
 	)
 	return HttpResponse( "" )
 
@@ -306,4 +310,4 @@ def mailchimp_webhook( request, require_secure=True ):
 		raise Http404
 	
 	# Pass to event handler for processing.
-	return view( request, list, fired_at )
+	return view( request, list, fired_at, ip=request.META['REMOTE_ADDR'], user_agent=request.META.get('HTTP_USER_AGENT',''), )
