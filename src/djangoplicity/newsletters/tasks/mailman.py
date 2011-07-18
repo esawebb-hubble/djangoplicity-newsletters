@@ -58,7 +58,8 @@ def synchronize_mailman( list_name ):
 	"""
 	Task to synchronise a mailman list into djangoplicity.
 	"""
-	from djangoplicity.newsletters.models import List, Subscriber
+	from djangoplicity.newsletters.models import List, Subscriber, BadEmailAddress
+	
 	
 	logger = synchronize_mailman.get_logger()
 
@@ -69,12 +70,12 @@ def synchronize_mailman( list_name ):
 
 	logger.debug( "Found list %s" % list_name )
 	
-	( subscribe_emails, unsubscribe_emails, current_list_subscribers ) = list.incoming_changes()
-
+	( subscribe_emails, unsubscribe_emails, current_list_subscribers, mailman_unsubscribe_emails ) = list.incoming_changes()
+	
 	existing_subscribers = dict( [( s.email, s ) for s in Subscriber.objects.filter( email__in=subscribe_emails )] )
 	current_list_subscribers = dict( [( s.email, s ) for s in current_list_subscribers] )
 	
-	# Subscribe 
+	# Subscribe to django
 	for e in subscribe_emails:
 		if e in existing_subscribers:
 			subscriber = existing_subscribers[e]
@@ -85,13 +86,17 @@ def synchronize_mailman( list_name ):
 		logger.info( "Subscribe %s to %s" % ( subscriber.email, list.name ) )
 		list.subscribe( subscriber, source=list )
 
-	# Unsubscribe
+	# Unsubscribe from django
 	for e in unsubscribe_emails:
 		if e in current_list_subscribers:
 			subscriber = current_list_subscribers[e]
 			
 			logger.info( "Unsubscribe %s from %s" % ( subscriber.email, list.name ) )
 			list.unsubscribe( subscriber, source=list )
+	
+	# Unsubscribe from mailman
+	for e in mailman_unsubscribe_emails:
+		mailman_send_unsubscribe.delay( list_name, e )
 			
 
 @task( name="newsletters.mailman_send_subscribe", ignore_result=True )

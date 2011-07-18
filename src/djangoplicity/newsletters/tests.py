@@ -50,7 +50,7 @@ class ListTest( TestCase ):
 		list = List( name=self.LIST_NAME, password=self.LIST_PASSWORD )
 		list.save()
 		
-		subscribers, unsubscribers, current_subscribers = list.incoming_changes()
+		subscribers, unsubscribers, current_subscribers, mailman_unsubscribe_emails = list.incoming_changes()
 		
 		self.assertIn( "lnielsen@eso.org", subscribers )
 		self.assertFalse( unsubscribers )
@@ -76,20 +76,20 @@ class ListTest( TestCase ):
 		s = Subscriber( email=email )
 		s.save()
 		
-		subscribers, unsubscribers, current_subscribers = list.incoming_changes()
+		subscribers, unsubscribers, current_subscribers, mailman_unsubscribe_emails = list.incoming_changes()
 		self.assertNotIn( s.email, subscribers )
 		self.assertNotIn( s.email, [x.email for x in current_subscribers] )
 
 		# Subscribe	
 		list.subscribe( s )
-		subscribers, unsubscribers, current_subscribers = list.incoming_changes()
+		subscribers, unsubscribers, current_subscribers, mailman_unsubscribe_emails = list.incoming_changes()
 		self.assertIn( s.email, [x.email for x in current_subscribers] )
 		self.assertNotIn( s.email, unsubscribers )
 		self.assertNotIn( s.email, subscribers )
 		
 		# Unsubscribe
 		list.unsubscribe( s )
-		subscribers, unsubscribers, current_subscribers = list.incoming_changes()
+		subscribers, unsubscribers, current_subscribers, mailman_unsubscribe_emails= list.incoming_changes()
 		self.assertNotIn( s.email, [x.email for x in current_subscribers] )
 		self.assertNotIn( s.email, unsubscribers )
 		self.assertNotIn( s.email, subscribers )

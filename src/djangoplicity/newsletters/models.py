@@ -150,10 +150,13 @@ class List( models.Model ):
 		current_list_subscribers = self.subscribers.all()
 		current_emails = set( [s.email for s in current_list_subscribers] )
 
-		subscribe_emails = mailman_emails - current_emails
-		unsubscribe_emails = current_emails - mailman_emails
+		bad_emails = set( [x.email for x in BadEmailAddress.objects.all()] )
+		mailman_unsubscribe_emails = mailman_emails & bad_emails # Remove all mailman emails that has been detected as bad emails.
 
-		return ( subscribe_emails, unsubscribe_emails, current_list_subscribers )
+		subscribe_emails = (mailman_emails - current_emails) - mailman_unsubscribe_emails
+		unsubscribe_emails = ( current_emails - mailman_emails ) | ( current_emails & mailman_unsubscribe_emails )
+
+		return ( subscribe_emails, unsubscribe_emails, current_list_subscribers, mailman_unsubscribe_emails )
 
 
 	@classmethod
@@ -365,39 +368,39 @@ class MailChimpList( models.Model ):
 		"""
 		grand_total = 0
 		data = []
-		
+
 		total = self.member_count
 		limit = 1000
 		start = 0
-		
+
 		while total > 0:
 			try:
 				res = self.connection.listMembers( id=self.list_id, status=status, start=start, limit=1000 )
 				grand_total += res['total']
 				data += res['data']
-				
+
 				total -= limit
 				start += 1
 			except ( HTTPError, URLError ), e:
 				raise MailChimpError( http_error=e )
 			except KeyError, e:
 				raise MailChimpError( response=res )
-			
+
 		return { 'total' : grand_total, 'data' : data }
-	
-	
+
+
 	def outgoing_changes( self ):
 		"""
 		"""
 		self.fetch_info()
 		res = self._list_all_members( 'subscribed' )
-		
+
 		mailchimp_subscribers = set( [x['email'] for x in res['data']] )
 		current_subscribers = set( [x.email for x in self.get_subscribers()] )
-		
+
 		subscribe_emails = current_subscribers - mailchimp_subscribers
 		unsubscribe_emails = mailchimp_subscribers - current_subscribers
-		
+
 		return ( subscribe_emails, unsubscribe_emails )
 
 
