@@ -548,17 +548,20 @@ class MailChimpListToken( models.Model ):
 		return str( m.hexdigest() )
 
 	@classmethod
-	def validate_token( cls, list_id, uuid, token ):
+	def get_token( cls, token ):
+		try:
+			return cls.objects.filter( token=token ).filter( models.Q( expired__lte=datetime.now() - timedelta( minutes=10 ) ) | models.Q( expired__isnull=True ) ).get()
+		except cls.DoesNotExist:
+			return None
+
+	def validate_token( self, list ):
 		"""
 		Validate input parameters
 		"""
-		expected_token = cls.token_value( list_id, uuid )
-		if token == expected_token:
-			# Token is valid, so let's hit the db and check if it's expired
-			# A token is valid 15 minutes after it expired, to allow for MailChimp to update it's
-			# data.
-			return cls.objects.filter( token=token ).filter( models.Q( expired__lte=datetime.now() - timedelta( minutes=10 ) ) | models.Q( expired__isnull=True ) ).exists()
-		return False
+		if list and self.list.pk == list.pk:
+			return True
+		else:
+			return False 
 
 	def hook_params( self ):
 		"""

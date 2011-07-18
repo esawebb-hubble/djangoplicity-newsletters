@@ -450,8 +450,9 @@ class WebHooksTest( TestCase ):
 			"data[merges][INTERESTS]": "Group1,Group2",
 			"data[ip_opt]": "10.20.10.30"
 		}
-		from django.http import Http404
-		self.assertRaises( Http404, self._mailchimp_webhook, data, )
+		response = self._mailchimp_webhook( data )
+		self.assertEqual( response.status_code, 200 )
+		self.assertEqual( response.content, "ERROR" )
 
 
 

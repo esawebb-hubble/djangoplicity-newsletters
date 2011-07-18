@@ -253,7 +253,10 @@ EVENT_HANDLERS = {
 	'cleaned' : cleaned_event,
 }
 
-def mailchimp_webhook( request, require_secure=True ):
+class WebHookError( Exception ):
+	pass
+
+def mailchimp_webhook( request, require_secure=False ):
 	"""
 	MailChimp webhook view (see http://apidocs.mailchimp.com/webhooks/)
 	
@@ -270,44 +273,58 @@ def mailchimp_webhook( request, require_secure=True ):
 	event handlers should only gather the data they need, and send the rest 
 	for background processing.
 	"""
-	# Check expected request type
-	if request.method != "POST":
-		raise Http404
+	try:
+		if not request.is_secure():
+			if require_secure:
+				raise Http404
 	
-	if not request.is_secure():
-		if require_secure:
-			raise Http404
+		# Get input values
+		try:
+			token = request.GET['token']
+			
+			# Check token
+			t = MailChimpListToken.get_token( token )
 
-	# Get input values
-	try:
-		token = request.GET['token']
-		uuid = request.GET['uuid']
+			if t is None:
+				raise Http404
+		except KeyError:
+			raise Http404
 		
-		type = request.POST['type']
-		fired_at = request.POST['fired_at']
-		list_id = request.POST['data[list_id]']
-	except KeyError:
-		raise Http404
-	
-	# Check type 
-	if type not in ['subscribe', 'unsubscribe', 'profile', 'upemail', 'cleaned']:
-		raise Http404
-	
-	# Check token
-	if not MailChimpListToken.validate_token( list_id, uuid, token ):
-		raise Http404
-	
-	# Check list
-	try:
-		list = MailChimpList.objects.get( list_id=list_id )
-	except MailChimpList.DoesNotExist:
-		raise Http404
-	
-	# Get event handler
-	try:
-		view = EVENT_HANDLERS[type]
-	except KeyError:
-		raise Http404
-	
-	# Pass to event handler for processing.
-	return view( request, list, fired_at, ip=request.META['REMOTE_ADDR'], user_agent=request.META.get('HTTP_USER_AGENT',''), )
+		try:
+			# Check expected request type
+			if request.method != "POST":
+				raise WebHookError("ERROR")
+		
+			type = request.POST['type']
+			fired_at = request.POST['fired_at']
+			list_id = request.POST['data[list_id]']
+		except KeyError:
+			raise WebHookError( "ERROR" )
+		
+		# Check type 
+		if type not in ['subscribe', 'unsubscribe', 'profile', 'upemail', 'cleaned']:
+			raise WebHookError( "ERROR" )
+		
+		# Check list
+		try:
+			list = MailChimpList.objects.get( list_id=list_id )
+		except MailChimpList.DoesNotExist:
+			raise WebHookError( "ERROR" )
+		
+		# Check token is valid for list
+		if not t.validate_token( list ):
+			raise WebHookError( "ERROR" )
+		
+		# Get event handler
+		try:
+			view = EVENT_HANDLERS[type]
+		except KeyError:
+			raise WebHookError( "ERROR" )
+		
+		# Pass to event handler for processing.
+		return view( request, list, fired_at, ip=request.META['REMOTE_ADDR'], user_agent=request.META.get( 'HTTP_USER_AGENT', '' ), )
+	except WebHookError, e:
+		return HttpResponse( "ERROR" )
+
+
+		
