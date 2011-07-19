@@ -104,6 +104,8 @@ class List( models.Model ):
 	name = models.SlugField( unique=True )
 	password = models.SlugField()
 	subscribers = models.ManyToManyField( Subscriber, through='Subscription', blank=True )
+	
+	last_sync = models.DateTimeField( blank=True, null=True )
 
 	def _get_mailman( self ):
 		"""

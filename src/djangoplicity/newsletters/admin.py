@@ -50,9 +50,10 @@ class SubscriptionAdmin( admin.ModelAdmin ):
 	search_fields = ['subscriber__email','list__name']
 
 class ListAdmin( admin.ModelAdmin ):
-	list_display = ['name', 'password', 'subscriptions_count','admin_url',]
+	list_display = ['name', 'password', 'subscriptions_count','admin_url','last_sync']
 	search_fields = ['name', 'password']
 	actions = ['action_sync']
+	readonly_fields = ['last_sync']
 	
 	def subscriptions_count( self, obj ):
 		return Subscription.objects.filter( list=obj ).count()

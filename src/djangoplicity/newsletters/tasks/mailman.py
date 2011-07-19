@@ -60,11 +60,12 @@ def synchronize_mailman( list_name ):
 	"""
 	from djangoplicity.newsletters.models import List, Subscriber, BadEmailAddress
 	
-	
 	logger = synchronize_mailman.get_logger()
 
 	try:
 		list = List.objects.get( name=list_name )
+		list.last_sync = datetime.now()
+		list.save()
 	except List.DoesNotExist:
 		raise Exception( "List %s does not exist." % list_name )
 
@@ -80,8 +81,7 @@ def synchronize_mailman( list_name ):
 		if e in existing_subscribers:
 			subscriber = existing_subscribers[e]
 		else:
-			subscriber = Subscriber( email=e )
-			subscriber.save()
+			subscriber, created = Subscriber.objects.get_or_create( email=e )
 
 		logger.info( "Subscribe %s to %s" % ( subscriber.email, list.name ) )
 		list.subscribe( subscriber, source=list )
