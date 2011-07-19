@@ -487,7 +487,7 @@ class MailChimpSourceList( models.Model ):
 		"""
 		A relation was created between mailman and mailchimp list 
 		"""
-		print "MailChimpSourceList.post_save_handler"
+		#print "MailChimpSourceList.post_save_handler"
 		if created and not raw:
 			from djangoplicity.newsletters.tasks import synchronize_mailchimplist
 			synchronize_mailchimplist( instance.mailchimplist.list_id )

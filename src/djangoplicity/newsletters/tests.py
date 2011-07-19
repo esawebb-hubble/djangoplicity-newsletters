@@ -44,11 +44,13 @@ class ListTest( TestCase ):
 		"""
 		Test creating a list and syncing it with 
 		"""
-		from djangoplicity.newsletters.models import List
+		from djangoplicity.newsletters.models import List, Subscriber
 		
 		List.objects.all().delete()
 		list = List( name=self.LIST_NAME, password=self.LIST_PASSWORD )
 		list.save()
+		# Make sure we don't have any subscribers
+		Subscriber.objects.all().delete()
 		
 		subscribers, unsubscribers, current_subscribers, mailman_unsubscribe_emails = list.incoming_changes()
 		
@@ -108,13 +110,12 @@ class ListTest( TestCase ):
 		list = List( name=self.LIST_NAME, password=self.LIST_PASSWORD )
 		list.save()
 		
-		self.assertEqual( len( list.subscribers.all() ), 0 )
-
-		synchronize_mailman.delay( list.name )
+		# Is called by post_save signal on list.save 
+		#synchronize_mailman.delay( list.name )
 		
 		list_len = len( list.subscribers.all() )
 		self.assertGreater( list_len, 0 )
-		
+
 		# Fake an unsubscription
 		s = Subscriber( email="lnielsen@spacetelescope.org" )
 		s.save()
@@ -210,7 +211,10 @@ class MailChimpListTest( TestCase ):
 	
 	def _fixture_delete( self, objects ):
 		for o in objects:
-			o.delete()
+			try:
+				o.delete()
+			except Exception:
+				pass
 	
 	def _reset(self):
 		from djangoplicity.newsletters.models import List, Subscriber, Subscription, MailChimpList, MailChimpListToken, MailChimpSourceList, MailChimpSubscriberExclude
