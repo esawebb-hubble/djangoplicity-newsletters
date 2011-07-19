@@ -36,12 +36,15 @@
 
 from datetime import datetime, timedelta
 from django.conf import settings
+from django.contrib.sites.models import Site
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save, pre_delete, post_delete
 from django.dispatch import Signal, receiver
 from djangoplicity.newsletters.exceptions import MailChimpError
-from mailsnake import MailSnake
 from djangoplicity.newsletters.mailman import MailmanList
+from mailsnake import MailSnake
+from urllib import urlencode
 from urllib2 import HTTPError, URLError
 import hashlib
 import uuid as uuidmod
@@ -519,6 +522,18 @@ class MailChimpListToken( models.Model ):
 	uuid = models.CharField( unique=True, max_length=36, verbose_name="UUID" )
 	token = models.CharField( unique=True, max_length=56 )
 	expired = models.DateTimeField( null=True, blank=True )
+	
+	def get_absolute_url( self ):
+		"""
+		Get absolute URL to webhook. 
+		"""
+		if self.token and (self.expired is None or self.expired >= datetime.now() - timedelta( minutes=10 ) ):  
+			baseurl = "https://%s%s" % ( Site.objects.get_current().domain, reverse( 'djangoplicity_newsletters:mailchimp_webhook' ) )
+			hookurl = "%s?%s" % ( baseurl, urlencode( self.hook_params() ) )
+			return hookurl
+		return None
+	get_absolute_url.short_description = "Webhook URL"
+		
 
 	@classmethod
 	def create( cls, list ):
@@ -549,8 +564,11 @@ class MailChimpListToken( models.Model ):
 
 	@classmethod
 	def get_token( cls, token ):
+		"""
+		Find a valid token instance matching the token
+		"""
 		try:
-			return cls.objects.filter( token=token ).filter( models.Q( expired__lte=datetime.now() - timedelta( minutes=10 ) ) | models.Q( expired__isnull=True ) ).get()
+			return cls.objects.filter( token=token ).filter( models.Q( expired__gte=datetime.now() - timedelta( minutes=10 ) ) | models.Q( expired__isnull=True ) ).get()
 		except cls.DoesNotExist:
 			return None
 
@@ -567,4 +585,4 @@ class MailChimpListToken( models.Model ):
 		"""
 		Return a dict of query parameters for a MailChimp webhook 
 		"""
-		return { 'token' : self.token, 'uuid' : self.uuid }
+		return { 'token' : self.token, }

@@ -203,8 +203,10 @@ class MailChimpListTokenAdmin( admin.ModelAdmin ):
 	list_display = ['list', 'uuid', 'token', 'expired' ]
 	list_filter = ['expired', 'list']
 	search_fields = ['uuid', 'token']
-	readonly_fields = ['list', 'uuid', 'token', 'expired' ]
+	readonly_fields = ['list', 'uuid', 'token', 'expired', 'get_absolute_url' ]
 	ordering = ['-expired']
+	
+	fields = ['list', 'uuid', 'token', 'expired', 'get_absolute_url' ]
 
 	def has_add_permissions( self, request ):
 		return False

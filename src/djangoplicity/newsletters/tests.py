@@ -353,8 +353,45 @@ class MailChimpListTest( TestCase ):
 		self.assertEqual( len( hooks ), 0 )
 
 
+class MailChimpListTokenTest( TestCase ):
+	def test_get_token( self ):
+		from djangoplicity.newsletters.models import MailChimpList, MailChimpListToken
+		from datetime import datetime, timedelta
 		
-
+		list = MailChimpList( api_key="not_valid", list_id="not_valid", connected=True )
+		list.save()
+		
+		t = MailChimpListToken.create( list )
+		
+		# Valid unexpired token
+		t2 = MailChimpListToken.get_token( t.token )
+		self.assertNotEqual( t2, None )
+		self.assertEqual( t.token, t2.token )
+		self.assertEqual( t.uuid, t2.uuid )
+		self.assertEqual( t.list, t2.list )
+		assert( t.validate_token( list ) )
+		assert( t2.validate_token( list ) )
+		
+		# Expire token, but still valid 10 min after expire date.
+		t.expired = datetime.now() - timedelta( minutes=9 )
+		t.save()
+		
+		t2 = MailChimpListToken.get_token( t.token )
+		self.assertNotEqual( t2, None )
+		self.assertEqual( t.token, t2.token )
+		self.assertEqual( t.uuid, t2.uuid )
+		self.assertEqual( t.list, t2.list )
+		assert( t.validate_token( list ) )
+		assert( t2.validate_token( list ) )
+		
+		# Expire token but now not valid any more.
+		t.expired = datetime.now() - timedelta( minutes=11 )
+		t.save()
+		
+		t2 = MailChimpListToken.get_token( t.token )
+		self.assertEqual( t2, None )
+	
+	
 
 class WebHooksTest( TestCase ):
 	def setUp( self ):
