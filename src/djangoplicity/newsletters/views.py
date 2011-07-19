@@ -39,6 +39,8 @@ from djangoplicity.newsletters.models import MailChimpListToken, MailChimpList, 
 from djangoplicity.newsletters.tasks import mailchimp_subscribe, mailchimp_unsubscribe, mailchimp_upemail, mailchimp_cleaned
 from django.http import Http404, HttpResponse
 
+class WebHookError( Exception ):
+	pass
 
 def newsletters_detail ( request ):
 
@@ -253,9 +255,6 @@ EVENT_HANDLERS = {
 	'cleaned' : cleaned_event,
 }
 
-class WebHookError( Exception ):
-	pass
-
 def mailchimp_webhook( request, require_secure=False ):
 	"""
 	MailChimp webhook view (see http://apidocs.mailchimp.com/webhooks/)
@@ -266,7 +265,7 @@ def mailchimp_webhook( request, require_secure=False ):
 	Validation checks::
 	  * POST request
 	  * HTTPS request
-	  * Validate token
+	  * Validate token (not expired, and belongs to list being updated)
 	  * Validate that list exists
 	  
 	A request to mailchimp_webook must be completed within 15 seconds, thus 
@@ -278,7 +277,7 @@ def mailchimp_webhook( request, require_secure=False ):
 			if require_secure:
 				raise Http404
 	
-		# Get input values
+		# Get token
 		try:
 			token = request.GET['token']
 			
@@ -293,33 +292,34 @@ def mailchimp_webhook( request, require_secure=False ):
 		try:
 			# Check expected request type
 			if request.method != "POST":
-				raise WebHookError("ERROR")
+				raise WebHookError()
 		
+			# Get parameters
 			type = request.POST['type']
 			fired_at = request.POST['fired_at']
 			list_id = request.POST['data[list_id]']
 		except KeyError:
-			raise WebHookError( "ERROR" )
+			raise WebHookError()
 		
-		# Check type 
+		# Check webhook type 
 		if type not in ['subscribe', 'unsubscribe', 'profile', 'upemail', 'cleaned']:
-			raise WebHookError( "ERROR" )
+			raise WebHookError()
 		
-		# Check list
+		# Check if list exists
 		try:
 			list = MailChimpList.objects.get( list_id=list_id )
 		except MailChimpList.DoesNotExist:
-			raise WebHookError( "ERROR" )
+			raise WebHookError()
 		
-		# Check token is valid for list
+		# Validate token for list
 		if not t.validate_token( list ):
-			raise WebHookError( "ERROR" )
+			raise WebHookError()
 		
 		# Get event handler
 		try:
 			view = EVENT_HANDLERS[type]
 		except KeyError:
-			raise WebHookError( "ERROR" )
+			raise WebHookError()
 		
 		# Pass to event handler for processing.
 		return view( request, list, fired_at, ip=request.META['REMOTE_ADDR'], user_agent=request.META.get( 'HTTP_USER_AGENT', '' ), )
