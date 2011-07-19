@@ -41,24 +41,24 @@ from urllib import urlencode
 __all__ = ['clean_subscribers', 'synchronize_mailman', 'mailman_send_unsubscribe', 'mailman_send_subscribe']
 
 
-@task( name='newsletters.clean_subscribers', ignore_result=True )
+@task( name='mailinglists.clean_subscribers', ignore_result=True )
 def clean_subscribers():
 	"""
 	Remove subscribers which no longer have any subscriptions or is on an exclude list.
 	"""
-	from djangoplicity.newsletters.models import Subscription, MailChimpSubscriberExclude
+	from djangoplicity.mailinglists.models import Subscription, MailChimpSubscriberExclude
 	
 	logger = clean_subscribers.get_logger()
 
 	#TODO - Remove all subscribers not having a subscription nor being excluded.
 	
 
-@task( name="newsletters.synchronize_mailman", ignore_result=True )
+@task( name="mailinglists.synchronize_mailman", ignore_result=True )
 def synchronize_mailman( list_name ):
 	"""
 	Task to synchronise a mailman list into djangoplicity.
 	"""
-	from djangoplicity.newsletters.models import List, Subscriber, BadEmailAddress
+	from djangoplicity.mailinglists.models import List, Subscriber, BadEmailAddress
 	
 	logger = synchronize_mailman.get_logger()
 
@@ -99,13 +99,13 @@ def synchronize_mailman( list_name ):
 		mailman_send_unsubscribe.delay( list_name, e )
 			
 
-@task( name="newsletters.mailman_send_subscribe", ignore_result=True )
+@task( name="mailinglists.mailman_send_subscribe", ignore_result=True )
 def mailman_send_subscribe( list_name, email ):
 	"""
 	Task to subscribe an email to a mailman list. Task is executed
 	when e.g. a person subscribes via e.g. mailchimp.
 	"""
-	from djangoplicity.newsletters.models import List
+	from djangoplicity.mailinglists.models import List
 	
 	logger = mailman_send_unsubscribe.get_logger()
 	
@@ -115,13 +115,13 @@ def mailman_send_subscribe( list_name, email ):
 	logger.info( "Subscribed %s to mailman list %s" % ( email, list_name ) )
 		
 	
-@task( name="newsletters.mailman_send_unsubscribe", ignore_result=True )
+@task( name="mailinglists.mailman_send_unsubscribe", ignore_result=True )
 def mailman_send_unsubscribe( list_name, email ):
 	"""
 	Task to subscribe an email to a mailman list. Task is executed
 	when e.g. a person subscribes via e.g. mailchimp.
 	"""
-	from djangoplicity.newsletters.models import List
+	from djangoplicity.mailinglists.models import List
 	
 	logger = mailman_send_unsubscribe.get_logger()
 	

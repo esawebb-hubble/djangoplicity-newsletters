@@ -36,7 +36,7 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from urllib import urlencode
-from djangoplicity.newsletters.models import  MailChimpList, \
+from djangoplicity.mailinglists.models import  MailChimpList, \
 	MailChimpSubscriberExclude
 
 
@@ -53,7 +53,7 @@ def _log_webhook_action( logger, ip, user_agent, action, list, message ):
 	logger.info( "Webhook %s action; list %s: %s; IP: %s User Agent: %s" % ( action, list, message, ip, user_agent ) )
 	
 
-@task( name="newsletters.mailchimp_subscribe", ignore_result=True )
+@task( name="mailinglists.mailchimp_subscribe", ignore_result=True )
 def mailchimp_subscribe( list=None, fired_at=None, email=None, ip=None, user_agent=None ):
 	"""
 	User subscribed via MailChimp.
@@ -64,7 +64,7 @@ def mailchimp_subscribe( list=None, fired_at=None, email=None, ip=None, user_age
 	logger = mailchimp_subscribe.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'subscribe', list, email )
 
-	from djangoplicity.newsletters.models import Subscriber, MailChimpList, MailChimpSubscriberExclude, BadEmailAddress
+	from djangoplicity.mailinglists.models import Subscriber, MailChimpList, MailChimpSubscriberExclude, BadEmailAddress
 
 	mailchimplist = MailChimpList.objects.get( pk=list )
 	sub, created = Subscriber.objects.get_or_create( email=email )
@@ -95,7 +95,7 @@ def mailchimp_subscribe( list=None, fired_at=None, email=None, ip=None, user_age
 		pass
 
 
-@task( name="newsletters.mailchimp_unsubscribe", ignore_result=True )
+@task( name="mailinglists.mailchimp_unsubscribe", ignore_result=True )
 def mailchimp_unsubscribe( list=None, fired_at=None, email=None, ip=None, user_agent=None ):
 	"""
 	User unsubscribed via MailChimp.
@@ -112,7 +112,7 @@ def mailchimp_unsubscribe( list=None, fired_at=None, email=None, ip=None, user_a
 	logger = mailchimp_unsubscribe.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'unsubscribe', list, email )
 
-	from djangoplicity.newsletters.models import Subscriber, Subscription, MailChimpList, MailChimpSubscriberExclude
+	from djangoplicity.mailinglists.models import Subscriber, Subscription, MailChimpList, MailChimpSubscriberExclude
 
 	# Get mail chimp list and subscriber
 	mailchimplist = MailChimpList.objects.get( pk=list )
@@ -131,7 +131,7 @@ def mailchimp_unsubscribe( list=None, fired_at=None, email=None, ip=None, user_a
 	exclude_obj, created = MailChimpSubscriberExclude.objects.get_or_create( mailchimplist=mailchimplist, subscriber=sub )
 
 
-@task( name="newsletters.mailchimp_cleaned", ignore_result=True )
+@task( name="mailinglists.mailchimp_cleaned", ignore_result=True )
 def mailchimp_cleaned( list=None, fired_at=None, email=None, ip=None, user_agent=None ):
 	"""
 	User was removed from MailChimp list, since email was invalid.
@@ -143,7 +143,7 @@ def mailchimp_cleaned( list=None, fired_at=None, email=None, ip=None, user_agent
 	logger = mailchimp_cleaned.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'cleaned', list, email )
 
-	from djangoplicity.newsletters.models import Subscriber, Subscription, MailChimpList, MailChimpSubscriberExclude, BadEmailAddress
+	from djangoplicity.mailinglists.models import Subscriber, Subscription, MailChimpList, MailChimpSubscriberExclude, BadEmailAddress
 	
 	# Exclude subscriber from being put any list again, unless explicitly subscribing again.
 	badaddress, created = BadEmailAddress.objects.get_or_create( email=email )
@@ -163,7 +163,7 @@ def mailchimp_cleaned( list=None, fired_at=None, email=None, ip=None, user_agent
 	
 
 
-@task( name="newsletters.mailchimp_upemail", ignore_result=True )
+@task( name="mailinglists.mailchimp_upemail", ignore_result=True )
 def mailchimp_upemail( list=None, fired_at=None, new_email=None, old_email=None, ip=None, user_agent=None ):
 	"""
 	User updated his her email address. First unsubscribe the old email, then 
@@ -182,13 +182,13 @@ def mailchimp_upemail( list=None, fired_at=None, new_email=None, old_email=None,
 # ===================
 # Mailman event tasks
 # ===================
-@task( name="newsletters.mailchimp_send_subscribe", ignore_result=True )
+@task( name="mailinglists.mailchimp_send_subscribe", ignore_result=True )
 def mailchimp_send_subscribe( list_name=None, email=None ):
 	"""
 	A user was subscribed via mailman, so send subscription to mailchimp
 	"""
 	logger = mailchimp_send_subscribe.get_logger()
-	from djangoplicity.newsletters.models import MailChimpList, List, MailChimpListSource
+	from djangoplicity.mailinglists.models import MailChimpList, List, MailChimpListSource
 
 	# Find lists, that this email should be excluded from.
 	excludes = [e.mailchimplist for e in MailChimpSubscriberExclude.objects.filter( subscriber__email=email )]
@@ -200,7 +200,7 @@ def mailchimp_send_subscribe( list_name=None, email=None ):
 			res = l.connection.listSubscribe( id=l.list_id, email_address=email, double_optin=False, send_welcome=False )
 
 
-@task( name="newsletters.mailchimp_send_unsubscribe", ignore_result=True )
+@task( name="mailinglists.mailchimp_send_unsubscribe", ignore_result=True )
 def mailchimp_send_unsubscribe( list_name=None, email=None ):
 	"""
 	A user was unsubscribed via mailman, so send subscription to mailchimp
@@ -217,13 +217,13 @@ def mailchimp_send_unsubscribe( list_name=None, email=None ):
 # Misc tasks
 # =============
 
-@task( name="newsletters.mailchimp_cleanup", ignore_result=True )
+@task( name="mailinglists.mailchimp_cleanup", ignore_result=True )
 def mailchimp_cleanup( api_key=None, list_id=None ):
 	"""
 	Cleanup mailchimp when a mailchimplist is deleted.
 	"""
-	from djangoplicity.newsletters.models import MailChimpList, MailChimpListToken
-	from djangoplicity.newsletters.exceptions import MailChimpError
+	from djangoplicity.mailinglists.models import MailChimpList, MailChimpListToken
+	from djangoplicity.mailinglists.exceptions import MailChimpError
 	from mailsnake import MailSnake
 
 	logger = mailchimp_cleanup.get_logger()
@@ -249,29 +249,29 @@ def mailchimp_cleanup( api_key=None, list_id=None ):
 # Webhook tasks
 # =============
 
-@task( name="newsletters.clean_tokens", ignore_result=True )
+@task( name="mailinglists.clean_tokens", ignore_result=True )
 def clean_tokens():
 	"""
 	Remove invalid tokens from the database. A token is considered invalid
 	10 minutes after it expired.
 	"""
-	from djangoplicity.newsletters.models import MailChimpListToken
+	from djangoplicity.mailinglists.models import MailChimpListToken
 	MailChimpListToken.objects.filter( expired__lte=datetime.now() - timedelta( minutes=10 ) ).delete()
 
 
-@task( name="newsletters.webhooks", ignore_result=True )
+@task( name="mailinglists.webhooks", ignore_result=True )
 def webhooks( list_id=None ):
 	"""
 	Celery task for installing webhooks for lists in MailChimp. If ``list_id`` is provided
 	webhooks for only the specific list will be installed. If ``list_id`` is none, webhooks for all
 	lists will be installed.
 	"""
-	from djangoplicity.newsletters.models import MailChimpList, MailChimpListToken
-	from djangoplicity.newsletters.exceptions import MailChimpError
+	from djangoplicity.mailinglists.models import MailChimpList, MailChimpListToken
+	from djangoplicity.mailinglists.exceptions import MailChimpError
 
 	logger = webhooks.get_logger()
 
-	baseurl = "https://%s%s" % ( Site.objects.get_current().domain, reverse( 'djangoplicity_newsletters:mailchimp_webhook' ) )
+	baseurl = "https://%s%s" % ( Site.objects.get_current().domain, reverse( 'djangoplicity_mailinglists:mailchimp_webhook' ) )
 	errors = []
 
 	# Check, one or many lists.	
@@ -336,12 +336,12 @@ def webhooks( list_id=None ):
 # =============================
 # MailChimp synchronize members
 # =============================
-@task( name="newsletters.mailchimplist_fetch_info", ignore_result=True )
+@task( name="mailinglists.mailchimplist_fetch_info", ignore_result=True )
 def mailchimplist_fetch_info( list_id ):
 	"""
 	Celery task to fetch info from MailChimp and store it locally.
 	"""
-	from djangoplicity.newsletters.models import MailChimpList
+	from djangoplicity.mailinglists.models import MailChimpList
 
 	logger = mailchimplist_fetch_info.get_logger()
 
@@ -355,12 +355,12 @@ def mailchimplist_fetch_info( list_id ):
 
 
 
-@task( name="newsletters.synchronize_mailchimplist", ignore_result=True )
+@task( name="mailinglists.synchronize_mailchimplist", ignore_result=True )
 def synchronize_mailchimplist( list_id ):
 	"""
 	Celery task to synchronise a MailChimp list
 	"""
-	from djangoplicity.newsletters.models import List, Subscription, Subscriber, MailChimpList
+	from djangoplicity.mailinglists.models import List, Subscription, Subscriber, MailChimpList
 
 	logger = synchronize_mailchimplist.get_logger()
 

@@ -45,11 +45,11 @@ setup(
 	include_package_data = True,
 	zip_safe = False,
 	namespace_packages = ['djangoplicity'],
-	entry_points = {
-		'console_scripts': [
-				'somescriptname = djangoplicity.newsletters.script:main',
-			],		
-		},
+	#entry_points = {
+	#	'console_scripts': [
+	#			'somescriptname = djangoplicity.newsletters.script:main',
+	#		],		
+	#	},
 	
 	# metadata for upload to PyPI
 	author = 'European Southern Observatory',

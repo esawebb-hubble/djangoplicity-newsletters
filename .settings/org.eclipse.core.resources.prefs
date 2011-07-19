@@ -1,16 +1,28 @@
-#Wed Jun 22 16:50:54 CEST 2011
+#Tue Jul 19 13:53:58 CEST 2011
 eclipse.preferences.version=1
 encoding//src/djangoplicity/__init__.py=utf-8
+encoding//src/djangoplicity/mailinglists/admin.py=utf-8
+encoding//src/djangoplicity/mailinglists/exceptions.py=utf-8
+encoding//src/djangoplicity/mailinglists/mailman.py=utf-8
+encoding//src/djangoplicity/mailinglists/migrations/0001_initial.py=utf-8
+encoding//src/djangoplicity/mailinglists/models.py=utf-8
+encoding//src/djangoplicity/mailinglists/tasks/__init__.py=utf-8
+encoding//src/djangoplicity/mailinglists/tasks/mailchimp.py=utf-8
+encoding//src/djangoplicity/mailinglists/tasks/mailman.py=utf-8
+encoding//src/djangoplicity/mailinglists/tests.py=utf-8
+encoding//src/djangoplicity/mailinglists/urls.py=utf-8
+encoding//src/djangoplicity/mailinglists/utils.py=utf-8
+encoding//src/djangoplicity/mailinglists/views.py=utf-8
 encoding//src/djangoplicity/newsletters/__init__.py=utf-8
 encoding//src/djangoplicity/newsletters/admin.py=utf-8
 encoding//src/djangoplicity/newsletters/exceptions.py=utf-8
-encoding//src/djangoplicity/newsletters/mailman.py=utf-8
+encoding//src/djangoplicity/newsletters/migrations/0001_initial.py=utf-8
+encoding//src/djangoplicity/newsletters/migrations/0003_auto__add_field_list_last_sync.py=utf-8
+encoding//src/djangoplicity/newsletters/migrations/0004_auto__del_list__del_bademailaddress__del_mailchimplisttoken__del_mailc.py=utf-8
 encoding//src/djangoplicity/newsletters/models.py=utf-8
 encoding//src/djangoplicity/newsletters/tasks/__init__.py=utf-8
-encoding//src/djangoplicity/newsletters/tasks/mailchimp.py=utf-8
-encoding//src/djangoplicity/newsletters/tasks/mailman.py=utf-8
 encoding//src/djangoplicity/newsletters/tests.py=utf-8
 encoding//src/djangoplicity/newsletters/urls.py=utf-8
-encoding//src/djangoplicity/newsletters/urls_hooks.py=utf-8
 encoding//src/djangoplicity/newsletters/utils.py=utf-8
 encoding//src/djangoplicity/newsletters/views.py=utf-8
+encoding/setup.py=utf-8

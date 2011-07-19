@@ -30,5 +30,3 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from djangoplicity.newsletters.tasks.mailchimp import *
-from djangoplicity.newsletters.tasks.mailman import *

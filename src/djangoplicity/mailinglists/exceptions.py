@@ -30,8 +30,21 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-"""
-
-"""
-
-
+class MailChimpError( Exception ):
+	"""
+	MailChimp API Error. Pass either the HTTP response from 
+	MailChimp or an URLError/HttpError.
+	"""
+	def __init__( self, response=None, http_error=None ):
+		self.code = None
+		self.http_error = None
+		
+		if response:
+			self.code = response.get( 'code', None )
+			msg = response.get( 'error', '' )
+		elif http_error:
+			msg = unicode( http_error )
+			self.code = -98
+			super( MailChimpError, self ).__init__( msg )
+			
+		super( MailChimpError, self ).__init__( msg )
