@@ -289,6 +289,12 @@ def mailchimp_webhook( request, require_secure=False ):
 		except KeyError:
 			raise Http404
 		
+		ip = request.META['REMOTE_ADDR']
+		user_agent = request.META.get( 'HTTP_USER_AGENT', '' )
+		
+		if user_agent != 'MailChimp.com':
+			raise Http404
+		
 		try:
 			# Check expected request type
 			if request.method != "POST":
@@ -322,7 +328,7 @@ def mailchimp_webhook( request, require_secure=False ):
 			raise WebHookError()
 		
 		# Pass to event handler for processing.
-		return view( request, list, fired_at, ip=request.META['REMOTE_ADDR'], user_agent=request.META.get( 'HTTP_USER_AGENT', '' ), )
+		return view( request, list, fired_at, ip=ip, user_agent=user_agent, )
 	except WebHookError, e:
 		return HttpResponse( "ERROR" )
 
