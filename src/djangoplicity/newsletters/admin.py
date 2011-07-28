@@ -32,10 +32,36 @@
 
 from django.contrib import admin
 from django.utils.translation import ugettext as _
-#from djangoplicity.newsletters.models import BadEmailAddress, Subscriber, Subscription, List, MailChimpList, MailChimpSourceList, MailChimpListToken, MailChimpSubscriberExclude
+from djangoplicity.newsletters.models import NewsletterType, Newsletter, NewsletterContent, NewsletterDataSource
+
+class NewsletterAdmin( admin.ModelAdmin ):
+	list_display = ['type', 'from_name', 'from_email', 'subject','release_date','published','last_modified']
+	list_editable = ['from_name', 'from_email', 'subject', ]
+	list_filter = ['type', 'last_modified', 'published']
+	search_fields = ['from_name', 'from_email', 'subject', 'html', 'text']
+	
+class NewsletterTypeAdmin( admin.ModelAdmin ):
+	list_display = ['name', 'default_from_name', 'default_from_email', 'sharing', 'archive' ]
+	list_editable = ['default_from_name', 'default_from_email', 'sharing', 'archive']
+	list_filter = ['sharing', 'archive' ]
+	search_fields = ['name', 'default_from_name', 'default_from_email', 'subject_template', 'html_template', 'text_template']
+
+class NewsletterContentAdmin( admin.ModelAdmin ):
+	list_display = ['newsletter', 'content_type', 'object_id', ]
+	list_filter = ['newsletter__type__name', 'content_type' ]
+	search_fields = ['newsletter__name', ]
+
+class NewsletterDataSourceAdmin( admin.ModelAdmin ):
+	list_display = ['name', 'title', 'type', 'content_type', 'list' ]
+	list_editable = ['type', 'title', 'content_type', 'list' ]
+	list_filter = ['list', 'type', 'content_type', ]
+	search_fields = ['name', 'title' ]
 
 def register_with_admin( admin_site ):
-	pass
+	admin_site.register( NewsletterType, NewsletterTypeAdmin )
+	admin_site.register( Newsletter, NewsletterAdmin )
+	admin_site.register( NewsletterContent, NewsletterContentAdmin )
+	admin_site.register( NewsletterDataSource, NewsletterDataSourceAdmin )
 		
 # Register with default admin site	
 register_with_admin( admin.site )
