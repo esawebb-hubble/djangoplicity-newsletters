@@ -83,8 +83,8 @@ class NewsletterType( models.Model ):
 	#
 	archive = models.BooleanField( default=True, help_text=_( 'Enable public archives for this newsletter type.' ) )
 	sharing = models.BooleanField( default=True, help_text=_( 'Enable social sharing of newsletter.' ) )
-	
-	def __unicode__(self):
+
+	def __unicode__( self ):
 		return self.name
 
 
@@ -137,12 +137,12 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 		self.html = t_html.render( ctx )
 		self.text = t_text.render( ctx )
 		self.subject = t_subject.render( ctx )
-	
+
 	#def clean_fields( self, exclude=None ):
 	#	"""
 	#	"""
 	#	super( Newsletter, self ).clean_fields( exclude=exclude )
-		
+
 	def save( self, *args, **kwargs ):
 		"""
 		"""
@@ -152,8 +152,8 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			self.from_email = self.type.default_from_email
 		self.render()
 		return super( Newsletter, self ).save( *args, **kwargs )
-	
-	def __unicode__(self):
+
+	def __unicode__( self ):
 		return self.subject
 
 	class Meta:
@@ -190,11 +190,11 @@ class NewsletterContent( models.Model ):
 	newsletter = models.ForeignKey( Newsletter )
 	content_type = models.ForeignKey( ContentType )
 	object_id = archives.IdField()
-	#subgroup = models.SlugField( blank=True )
+	subgroup = models.SlugField( blank=True )
 	content_object = generic.GenericForeignKey( 'content_type', 'object_id' )
-	
+
 	class Meta:
-		ordering = ['newsletter', 'content_type', 'object_id',]# 'subgroup']
+		ordering = ['newsletter', 'content_type', 'object_id', 'subgroup']
 
 	@classmethod
 	def data_context( cls, newsletter ):
@@ -211,23 +211,29 @@ class NewsletterContent( models.Model ):
 			content_objects = cls.objects.filter( newsletter=newsletter, content_type=datasrc.content_type )
 
 			# Make dictionary of groups with empty lists as values 
-			groups = dict( [( g, [] ) for g in set( [obj.subgroup for obj in content_objects] )] )
+			groups = dict( [( g, [] ) for g in filter( lambda x: x != "", set( [obj.subgroup for obj in content_objects] ) )] )
 			
-			pks = []
-			groups = set()
+			allpks = []
 			for obj in content_objects:
-				pks.append( obj.object_id )
-				groups.add( obj.subgroup )
-			
+				allpks.append( obj.object_id )
+				if obj.subgroup:
+					groups[obj.subgroup].append( obj.object_id )
+
 			try:
 				if datasrc.list:
-					data = modelcls.objects.filter( pk__in=pks )
+					data = modelcls.objects.filter( pk__in=allpks )
+					
+					# Create groups if needed.
+					if len( groups.keys() ) > 0:
+						data = { 'all' : data }
+						for g, gpks in groups.items():
+							data[g] = filter( lambda o: o.pk in gpks, data['all'] )
 				else:
-					if len( pks ) > 0:
-						data = modelcls.objects.get( pk=pks[0] )
+					if len( allpks ) > 0:
+						data = modelcls.objects.get( pk=allpks[0] )
 			except modelcls.DoesNotExist:
 				data = None
-			
+
 			ctx[datasrc.name] = data
 		return ctx
 
@@ -241,8 +247,8 @@ class NewsletterDataSource( models.Model ):
 	title = models.CharField( max_length=255 )
 	content_type = models.ForeignKey( ContentType )
 	list = models.BooleanField( default=True )
-	
-	def __unicode__(self):
+
+	def __unicode__( self ):
 		return self.title
 
 	@classmethod
