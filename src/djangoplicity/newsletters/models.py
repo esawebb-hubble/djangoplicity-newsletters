@@ -76,7 +76,7 @@ class NewsletterType( models.Model ):
 	#
 	subject_template = models.CharField( max_length=255, blank=True )
 	text_template = models.TextField( blank=True )
-	html_template = models.TextField( blank=True )
+	html_template = models.TextField( blank=True, verbose_name="HTML template" )
 
 	#
 	# Options fields
@@ -190,7 +190,11 @@ class NewsletterContent( models.Model ):
 	newsletter = models.ForeignKey( Newsletter )
 	content_type = models.ForeignKey( ContentType )
 	object_id = archives.IdField()
+	#subgroup = models.SlugField( blank=True )
 	content_object = generic.GenericForeignKey( 'content_type', 'object_id' )
+	
+	class Meta:
+		ordering = ['newsletter', 'content_type', 'object_id',]# 'subgroup']
 
 	@classmethod
 	def data_context( cls, newsletter ):
@@ -205,7 +209,15 @@ class NewsletterContent( models.Model ):
 			data = None
 
 			content_objects = cls.objects.filter( newsletter=newsletter, content_type=datasrc.content_type )
-			pks = [obj.object_id for obj in content_objects]
+
+			# Make dictionary of groups with empty lists as values 
+			groups = dict( [( g, [] ) for g in set( [obj.subgroup for obj in content_objects] )] )
+			
+			pks = []
+			groups = set()
+			for obj in content_objects:
+				pks.append( obj.object_id )
+				groups.add( obj.subgroup )
 			
 			try:
 				if datasrc.list:

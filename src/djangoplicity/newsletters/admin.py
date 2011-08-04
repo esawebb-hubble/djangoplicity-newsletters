@@ -33,18 +33,59 @@
 from django.contrib import admin
 from django.utils.translation import ugettext as _
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, NewsletterContent, NewsletterDataSource
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, render_to_response
+from django.conf.urls.defaults import patterns
+
+class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
+	model = NewsletterDataSource
+	extra = 0
+	
+class NewsletterContentInlineAdmin( admin.TabularInline ):
+	model = NewsletterContent
+	extra = 0
 
 class NewsletterAdmin( admin.ModelAdmin ):
 	list_display = ['type', 'from_name', 'from_email', 'subject','release_date','published','last_modified']
 	list_editable = ['from_name', 'from_email', 'subject', ]
 	list_filter = ['type', 'last_modified', 'published']
 	search_fields = ['from_name', 'from_email', 'subject', 'html', 'text']
+	inlines = [NewsletterContentInlineAdmin]
 	
+	def get_urls( self ):
+		urls = super( NewsletterAdmin, self ).get_urls()
+		extra_urls = patterns( '',
+			( r'^(?P<pk>[0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ) ),
+			( r'^(?P<pk>[0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
+		)
+		return extra_urls + urls
+	
+	def html_newsletter_view( self, request, pk=None ):
+		"""
+		View HTML version of newsletter
+		"""
+		newsletter = get_object_or_404( Newsletter, pk=pk )
+		return HttpResponse( newsletter.html, mimetype="text/html" )
+	
+	def text_newsletter_view( self, request, pk=None ):
+		"""
+		View text version of newsletter
+		"""
+		newsletter = get_object_or_404( Newsletter, pk=pk )
+		response = HttpResponse( newsletter.text )
+		response["Content-Type"] = "text/plain; charset=utf-8"
+		return response
+		
+
+
+	
+
 class NewsletterTypeAdmin( admin.ModelAdmin ):
 	list_display = ['name', 'default_from_name', 'default_from_email', 'sharing', 'archive' ]
 	list_editable = ['default_from_name', 'default_from_email', 'sharing', 'archive']
 	list_filter = ['sharing', 'archive' ]
 	search_fields = ['name', 'default_from_name', 'default_from_email', 'subject_template', 'html_template', 'text_template']
+	inlines = [NewsletterDataSourceInlineAdmin]
 
 class NewsletterContentAdmin( admin.ModelAdmin ):
 	list_display = ['newsletter', 'content_type', 'object_id', ]
@@ -60,8 +101,8 @@ class NewsletterDataSourceAdmin( admin.ModelAdmin ):
 def register_with_admin( admin_site ):
 	admin_site.register( NewsletterType, NewsletterTypeAdmin )
 	admin_site.register( Newsletter, NewsletterAdmin )
-	admin_site.register( NewsletterContent, NewsletterContentAdmin )
-	admin_site.register( NewsletterDataSource, NewsletterDataSourceAdmin )
+	#admin_site.register( NewsletterContent, NewsletterContentAdmin )
+	#admin_site.register( NewsletterDataSource, NewsletterDataSourceAdmin )
 		
 # Register with default admin site	
 register_with_admin( admin.site )
