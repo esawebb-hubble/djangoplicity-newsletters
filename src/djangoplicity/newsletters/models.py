@@ -105,6 +105,8 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	subject = models.CharField( max_length=255, blank=True )
 	text = models.TextField( blank=True )
 	html = models.TextField( verbose_name="HTML", blank=True )
+	
+	editorial = models.TextField( blank=True )
 
 	#
 	# A/B split testing
@@ -128,6 +130,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 		ctx = Context( {
 			'base_url' : "http://%s" % Site.objects.get_current().domain,
 			'data' : NewsletterContent.data_context( self ),
+			'editorial' : self.editorial,
 			'enable_sharing' : self.type.sharing,
 			'enable_archive' : self.type.archive,
 			'release_date' : self.release_date,
@@ -189,7 +192,7 @@ class NewsletterContent( models.Model ):
 	"""
 	newsletter = models.ForeignKey( Newsletter )
 	content_type = models.ForeignKey( ContentType )
-	object_id = archives.IdField()
+	object_id = models.SlugField( primary_key=False )
 	subgroup = models.SlugField( blank=True )
 	content_object = generic.GenericForeignKey( 'content_type', 'object_id' )
 

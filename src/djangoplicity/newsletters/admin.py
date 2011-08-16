@@ -45,12 +45,39 @@ class NewsletterContentInlineAdmin( admin.TabularInline ):
 	model = NewsletterContent
 	extra = 0
 
+from tinymce.widgets import TinyMCE
+from django.db import models
+
 class NewsletterAdmin( admin.ModelAdmin ):
 	list_display = ['type', 'from_name', 'from_email', 'subject','release_date','published','last_modified']
 	list_editable = ['from_name', 'from_email', 'subject', ]
 	list_filter = ['type', 'last_modified', 'published']
 	search_fields = ['from_name', 'from_email', 'subject', 'html', 'text']
+	readonly_fields = ['last_modified',]
+	fieldsets = (
+		( 
+			None, 
+			{
+				'fields' : ( 'type', 'release_date', 'published', 'last_modified' ),
+			}
+		),
+		( 
+			"Sender", 
+			{
+				'fields' : ( 'from_name', 'from_email' ),
+			}
+		),
+		( 
+			"Content", 
+			{
+				'fields' : ( 'subject', 'editorial' ),
+			}
+		),
+	)
 	inlines = [NewsletterContentInlineAdmin]
+	formfield_overrides = {
+        models.TextField: {'widget': TinyMCE( attrs={'cols': 80, 'rows': 20}, )},
+    }
 	
 	def get_urls( self ):
 		urls = super( NewsletterAdmin, self ).get_urls()
