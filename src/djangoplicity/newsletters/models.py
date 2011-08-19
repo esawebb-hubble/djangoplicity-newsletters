@@ -210,34 +210,37 @@ class NewsletterContent( models.Model ):
 			# For each data source - get object(s) for this newsletter.
 			modelcls = datasrc.content_type.model_class()
 			data = None
-
-			content_objects = cls.objects.filter( newsletter=newsletter, content_type=datasrc.content_type )
-
-			# Make dictionary of groups with empty lists as values 
-			groups = dict( [( g, [] ) for g in filter( lambda x: x != "", set( [obj.subgroup for obj in content_objects] ) )] )
 			
-			allpks = []
-			for obj in content_objects:
-				allpks.append( obj.object_id )
-				if obj.subgroup:
-					groups[obj.subgroup].append( obj.object_id )
-
-			try:
-				if datasrc.list:
-					data = modelcls.objects.filter( pk__in=allpks )
-					
-					# Create groups if needed.
-					if len( groups.keys() ) > 0:
-						data = { 'all' : data }
-						for g, gpks in groups.items():
-							data[g] = filter( lambda o: o.pk in gpks, data['all'] )
-				else:
-					if len( allpks ) > 0:
-						data = modelcls.objects.get( pk=allpks[0] )
-			except modelcls.DoesNotExist:
-				data = None
+			if modelcls is not None:
+				content_objects = cls.objects.filter( newsletter=newsletter, content_type=datasrc.content_type )
+	
+				# Make dictionary of groups with empty lists as values 
+				groups = dict( [( g, [] ) for g in filter( lambda x: x != "", set( [obj.subgroup for obj in content_objects] ) )] )
+				
+				allpks = []
+				for obj in content_objects:
+					allpks.append( obj.object_id )
+					if obj.subgroup:
+						groups[obj.subgroup].append( obj.object_id )
+	
+				try:
+					if datasrc.list:
+						data = modelcls.objects.filter( pk__in=allpks )
+						
+						# Create groups if needed.
+						if len( groups.keys() ) > 0:
+							data = { 'all' : data }
+							for g, gpks in groups.items():
+								data[g] = filter( lambda o: o.pk in gpks, data['all'] )
+					else:
+						if len( allpks ) > 0:
+							data = modelcls.objects.get( pk=allpks[0] )
+				except modelcls.DoesNotExist:
+					data = None
 
 			ctx[datasrc.name] = data
+			
+		print ctx
 		return ctx
 
 
