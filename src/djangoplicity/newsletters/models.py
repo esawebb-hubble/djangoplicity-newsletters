@@ -90,6 +90,9 @@ class NewsletterType( models.Model ):
 
 	def __unicode__( self ):
 		return self.name
+	
+	class Meta:
+		ordering = ['name']
 
 
 class Newsletter( archives.ArchiveModel, models.Model ):

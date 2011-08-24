@@ -33,9 +33,12 @@
 from django.contrib import admin
 from django.utils.translation import ugettext as _
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.core.urlresolvers import reverse 
 from django.shortcuts import get_object_or_404, render_to_response
 from django.conf.urls.defaults import patterns
+from django.utils.encoding import force_unicode
+from django.template import RequestContext
 
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
 	model = NewsletterDataSource
@@ -90,6 +93,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		extra_urls = patterns( '',
 			( r'^(?P<pk>[0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
+			( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ) ),
 		)
 		return extra_urls + urls
 	
@@ -108,6 +112,50 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		response = HttpResponse( newsletter.text )
 		response["Content-Type"] = "text/plain; charset=utf-8"
 		return response
+	
+	def generate_newsletter_view( self, request ):
+		"""
+		Generate a new newsletter
+		"""
+		from djangoplicity.newsletters.forms import GenerateNewsletterForm 
+		if request.method == "POST":
+			form = GenerateNewsletterForm( request.POST )
+			if form.is_valid():
+				# Create newsletter object
+				nl = form.save( commit=False )
+				
+				# Set default values
+				nl.published = False
+				nl.release_date = nl.end_date
+				nl.save()
+				
+				# Generate newsletter
+				nl.type.get_generator().update_newsletter( nl )
+
+				# Redirect to change view for generated newsletter 
+				return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
+		else:
+			form = GenerateNewsletterForm()
+		
+		opts = self.model._meta
+		
+		return render_to_response(
+				"admin/newsletters/newsletter/generate_form.html",
+				{
+					'title': _( 'Generate %s' ) % force_unicode( opts.verbose_name ),
+					'adminform': form,
+					#'object_id': object_id,
+					#'original': obj,
+					#'errors': helpers.AdminErrorList(form, formsets),
+					'root_path': self.admin_site.root_path,
+					'app_label': opts.app_label,
+					'opts' : opts,
+        		},
+				context_instance=RequestContext( request )
+			)
+		
+		return render_to_response( "TEST", mimetype="text/html" )
+	
 		
 
 
