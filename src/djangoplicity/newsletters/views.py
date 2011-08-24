@@ -37,6 +37,18 @@ from django.conf import settings
 
 
 from django.http import Http404, HttpResponse
+from djangoplicity.newsletters.models import Newsletter
+
+
+def newsletter_liverender( request, pk ):
+	nl = Newsletter.objects.get( pk = pk )
+	nl.render()
+	
+	if request.GET.get( 'text', False ):
+		response = HttpResponse( nl.text, mimetype="text/plain; charset=utf8" )
+		return response
+	else:
+		return HttpResponse( nl.html, mimetype="text/html" )
 
 def newsletters_detail ( request ):
 

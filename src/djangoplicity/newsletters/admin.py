@@ -32,7 +32,7 @@
 
 from django.contrib import admin
 from django.utils.translation import ugettext as _
-from djangoplicity.newsletters.models import NewsletterType, Newsletter, NewsletterContent, NewsletterDataSource
+from djangoplicity.newsletters.models import NewsletterType, Newsletter, NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.conf.urls.defaults import patterns
@@ -49,7 +49,7 @@ from tinymce.widgets import TinyMCE
 from django.db import models
 
 class NewsletterAdmin( admin.ModelAdmin ):
-	list_display = ['type', 'from_name', 'from_email', 'subject','release_date','published','last_modified']
+	list_display = [ 'id', 'subject', 'type', 'from_name', 'from_email', 'release_date','published','last_modified']
 	list_editable = ['from_name', 'from_email', 'subject', ]
 	list_filter = ['type', 'last_modified', 'published']
 	search_fields = ['from_name', 'from_email', 'subject', 'html', 'text']
@@ -58,7 +58,13 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		( 
 			None, 
 			{
-				'fields' : ( 'type', 'release_date', 'published', 'last_modified' ),
+				'fields' : ( 'type', 'release_date', 'published', 'frozen', 'last_modified' ),
+			}
+		),
+		( 
+			"Auto generation", 
+			{
+				'fields' : ( 'start_date', 'end_date' ),
 			}
 		),
 		( 
@@ -124,10 +130,24 @@ class NewsletterDataSourceAdmin( admin.ModelAdmin ):
 	list_editable = ['type', 'title', 'content_type', 'list' ]
 	list_filter = ['list', 'type', 'content_type', ]
 	search_fields = ['name', 'title' ]
+	
+class DataSourceSelectorAdmin( admin.ModelAdmin ):
+	list_display = [ 'id', 'name', 'filter', 'field', 'match', 'value' ]
+	list_editable = ['name', 'filter', 'field', 'match', 'value' ]
+	list_filter = [ 'filter', 'match' ]
+	search_fields = [ 'name', 'filter', 'field', 'match', 'value' ]
+	
+class DataSourceOrderingAdmin( admin.ModelAdmin ):
+	list_display = [ 'id', 'name', 'fields', ]
+	list_editable = ['name', 'fields', ]
+	list_filter = []
+	search_fields = [ 'name', 'fields', ]
 
 def register_with_admin( admin_site ):
 	admin_site.register( NewsletterType, NewsletterTypeAdmin )
 	admin_site.register( Newsletter, NewsletterAdmin )
+	admin_site.register( DataSourceOrdering, DataSourceOrderingAdmin )
+	admin_site.register( DataSourceSelector, DataSourceSelectorAdmin )
 	#admin_site.register( NewsletterContent, NewsletterContentAdmin )
 	#admin_site.register( NewsletterDataSource, NewsletterDataSourceAdmin )
 		
