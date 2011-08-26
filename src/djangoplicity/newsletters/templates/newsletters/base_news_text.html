@@ -1,0 +1,89 @@
+{% load djangoplicity_text_utils release_links djangoplicity_datetime %}For Your Information:
+
+ESO {{data.release.release_type}} {{data.release.id}}{% block embargo_note %} *UNDER EMBARGO*{% endblock %} - {{data.release.title}}{% if data.release.subtitle %} — {{data.release.subtitle}}{% endif %}
+{% block embargo_time %}
+EMBARGOED* UNTIL {{data.release.release_date|time4lang:"en"|datetime:"DATETIME" }}
+{% endblock %}
+For your convenience the first paragraph of the release is provided below:
+
+{{data.release.headline|striptags}}
+
+The release{%if data.release.related_images and data.release.related_videos %}, images and videos are {% else %}{% if data.release.related_images %} and images are {% else %}{% if data.release.related_videos %} and videos are {% else %} is {%endif%}{%endif%}{% endif %}available on:
+http://www.eso.org{{data.release.get_absolute_url}}{% block embargo_login %}
+login: {{data.release.get_embargo_login.0}}
+password: {{data.release.get_embargo_login.1}}{% endblock %}
+
+{%if data.release.get_translations_by.language %}Translations are available in:{% for translation in data.release.get_translations_by.language %}
+ * {{translation.language}}: http://www.eso.org{{translation.release_url}}{%endfor%}{% endif %}
+{% if data.release.kids_title and data.release.kids_description %} 
+Space Scoop - the children's version of this release is available at: 
+http://www.eso.org{% url releases_detail_kids data.release.id %}{% endif%}  
+ 
+Kind regards,
+The ESO Education and Public Outreach Department
+{% block signature_time %}{{ data.release.embargo_date|date }}{% endblock %}
+
+*************************************************************************
+
+We would also like to direct your attention to the following:
+
+=================
+ESO Announcements
+=================
+{% for obj in data.announcements %}
+*{{ obj.title|safe }}{% if obj.subtitle%} - {{ obj.subtitle|safe }}{% endif %}*
+
+{{ obj.release_date|date }}: {{ obj.description|striptags|truncatewords:50|unescape|safe }} [read more on http://www.eso.org{{ obj.get_absolute_url }}]
+{% endfor %}
+See latest ESO annoucements on http://www.eso.org/public/announcements/
+
+==============
+New on eso.org
+==============
+{% for obj in data.newoneso %}
+*{{ obj.title|safe }}*
+{{ obj.link }}
+{% endfor %}
+
+==============
+Ongoing events
+==============
+{% for obj in data.events.all %}{% if obj.type.name == "Special Events" and obj.ongoing %}
+*{{ obj.title|safe }}*
+{{ obj.link }}
+{%endif%}{% endfor %}
+
+===============
+Upcoming events
+===============
+{% for obj in data.events.all %}{% if obj.type.name == "Special Events" and not obj.ongoing %}
+* {{ obj.get_dates|unescape|safe }}: {{ obj.title|striptags|unescape|safe }}
+{% endif %}{% endfor %}
+See more on http://www.eso.org/public/events/special-evt.html
+
+====================
+Upcoming exhibitions
+====================
+{% for obj in data.events.all %}{% if obj.type.name == "Exhibitions" %}
+* {{ obj.get_dates|unescape|safe }}: {{ obj.title|striptags|unescape|safe }}{% if obj.get_location %}. {{ obj.get_location }}.{%endif%}
+{% endif %}{% endfor %}
+See more on http://www.eso.org/public/events/exhibitions.html
+
+---
+You are receiving this newsletter because you subscribed to ESO News.
+
+Unsubscribe at *|UNSUB|*
+Change subscription preferences at *|UPDATE_PROFILE|*{% if enable_sharing %}
+View newsletter in browser at *|ARCHIVE|*{% endif %}
+
+European Southern Observatory
+Karl-Schwarzschild-Str 2
+D-85748 Garching bei Muenchen
+Germany
+
+Tel: +49 89 3200 6291
+Fax: +49 89 3200 6703
+Email: information@eso.org{% block embargo_explain %}
+
+* The embargo that ePOD uses for its press releases acts as an advanced notice system and it is not meant to "hype" news items. Given the often complex nature of the astronomical discoveries, we prefer to make our press releases and additional materials available about 48 hours in advance of the public release to give media representatives the time to research a topic, gather relevant information or conduct interviews. This ultimately leads to a better and a more accurate coverage of our news and therefore a better informing of the general public.
+{% endblock %}
