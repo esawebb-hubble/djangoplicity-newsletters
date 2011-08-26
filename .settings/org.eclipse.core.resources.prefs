@@ -1,4 +1,4 @@
-#Wed Aug 24 09:44:53 CEST 2011
+#Thu Aug 25 12:16:36 CEST 2011
 eclipse.preferences.version=1
 encoding//src/djangoplicity/__init__.py=utf-8
 encoding//src/djangoplicity/mailinglists/admin.py=utf-8
@@ -28,6 +28,7 @@ encoding//src/djangoplicity/newsletters/migrations/0008_auto__add_field_newslett
 encoding//src/djangoplicity/newsletters/migrations/0011_auto__chg_field_datasourceordering_name__del_field_newslettercontent_c.py=utf-8
 encoding//src/djangoplicity/newsletters/models.py=utf-8
 encoding//src/djangoplicity/newsletters/tasks/__init__.py=utf-8
+encoding//src/djangoplicity/newsletters/templates/newsletters/embargo.html=UTF-8
 encoding//src/djangoplicity/newsletters/templates/newsletters/news-text.html=UTF-8
 encoding//src/djangoplicity/newsletters/tests.py=utf-8
 encoding//src/djangoplicity/newsletters/urls.py=utf-8

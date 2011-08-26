@@ -247,12 +247,27 @@ class DataSourceSelector( models.Model ):
 	field = models.SlugField()
 	match = models.SlugField()
 	value = models.CharField( max_length=255 )
+	type = models.CharField( max_length=4, default='str', choices=[ ( 'str', 'Text' ), ( 'int', 'Integer' ), ( 'bool', 'Boolean' ), ( 'date', 'Date' ), ] )
 	
 	def get_query_dict( self, ctx ):
-		return { str( "%s__%s" % ( self.field, self.match ) ) : self.value % ctx }
+		return { str( "%s__%s" % ( self.field, self.match ) ) : self.get_value( ctx )  }
 	
+	def get_value( self, ctx={} ):
+		if self.type == 'str':
+			return self.value % ctx
+		elif self.type == 'int':
+			try:
+				return int( self.value % ctx )
+			except ValueError:
+				return None
+		elif self.type == 'bool':
+			return (self.value % ctx).lower() == 'true'
+		elif self.type == 'date':
+			return self.value % ctx
+			
 	def get_q_object( self, ctx ):
 		d = self.get_query_dict( ctx )
+		
 		return models.Q( **d ) if self.filter == 'I' else ~models.Q( **d ) 
 
 	def __unicode__( self ):

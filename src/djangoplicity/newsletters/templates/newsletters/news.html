@@ -1,169 +1,23 @@
-{% extends "newsletters/base.html" %}
+{% extends "newsletters/base_news.html" %}
 {% load release_links %}
-{% block text_only %}ESO {{data.release.release_type}} {{data.release.id}}:  {{data.release.title}}{% if data.release.subtitle %} &mdash; {{data.release.subtitle}}{% endif %}. {{data.release.headline|striptags|truncatewords:40|safe}}<br /><br />{% endblock %}
+
 {% block html_title %}ESO News{% endblock %}
 {% block header_title %}ESO News{% endblock %}
-{% block header_subtitle %}{{data.release.release_date|date}}{% endblock %}
+{% block text_only_embargo %}{% endblock %}
 
 {% block reason %} you subscribed to ESO News.{% endblock %}
+{% block image_embargonote %}{% endblock %}
 
-
-{% block main_image %}
-<tr> 
-<td colspan="2" class="headerContent" height="300px";  background="http://www.eso.org/public/archives/images/newsfeature/{{data.release.main_image.id}}.jpg" style="color: #202020;font-family: Helvetica, Arial;font-size: 24px;font-weight: bold;line-height: 100%;padding: 0;text-align: left;vertical-align: bottom;background-color:black;"> 
-<!-- Outlook 2007 only -->
-<!--[if gte mso 9]>
-<img src="http://www.eso.org/public/archives/images/newsfeature/{{data.release.main_image.id}}.jpg" width="733" height="300" />
-<![endif]-->
-<div style="padding:20px;color:white;font-size:22px;">
-	<div style="font-size:14px;">
-	<span style="background:black;padding:2px;">
-		<a style="color:white; font-size:14px; text-decoration: none; font-weight: bold;" href="http://www.eso.org{{data.release.get_absolute_url}}">{{data.release.release_date|date}} &mdash; ESO {{data.release.release_type}} {{data.release.id}}</a>
-	</span>
-	</div>
-	<span style="background:black;padding:2px;">
-		<a style="color:white;font-size:22px; text-decoration: none; font-weight: bold;" href="http://www.eso.org{{data.potws.mainimage.0.image.get_absolute_url}}">{{data.release.title}}{% if data.release.subtitle %}&mdash; {{data.release.subtitle}}{% endif %}</a>
-	</span>
-
-</div> 
-</td> 
-</tr>
-{% endblock %}
-
-{% block content %}
-{% with a_style="color: #285A97;font-size: 12px;font-family: Helvetica, Arial;" hr_style="height:1px;border:0;border-bottom:1px solid #DEDEDE;" h2_style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 15px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;" %}
-
-
-<p>{{data.release.headline|linebreaksbr|description_links|release_ids|safe}}</p>
-
-<p>The release, images and videos are available on:<br/>
-<a href="http://www.eso.org{{data.release.get_absolute_url}}">http://www.eso.org{{data.release.get_absolute_url}}</a></p>
-
-<p>
-Kind regards,<br/>
-The ESO Education and Public Outreach Department</br>
-{{ data.release.release_date|date }}</p>
-
-<p style="font-size:10px;">Translations available in:</p>
-<div align="left"> 
-{% for t in data.release.get_translations %}
-<a href="http://www.eso.org{{t.release_url}}" class="noicon" title="{{ t.name }}" style="{% ifequal t.name "Chile" %}margin-left:15px;{% endifequal %}margin-right: 5px;"><img src="{{t.flag_url}}" alt="{{ t.name }}" class="nopadding"/></a>
-{% endfor %}
-</div>
-
-{% if editorial %}
-<br />
-<hr style="{{hr_style}}">
-<br />
-
-{{ editorial|safe }}
-{% endif %}
-
-{# ############### ANNOUNCEMENTS ############### #}
-{% if data.announcements %}
-
-<br />
-<hr style="{{hr_style}}">
-<br />
-
-<h2 class="h2" style="{{h2_style}}">
-<a href="http://feeds.feedburner.com/EsoAnnouncements"><img border="0" src="http://www.eso.org/public/archives/djangoplicity/images/rssicon.png"></a>&nbsp;
-<a style="color: #285A97;font-size: 15px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/announcements/">ESO Announcements</a>
-</h2> 
-
-{% for obj in data.announcements %}
-<br />
-<table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;"> 
-<tr> 
-<td valign="top" width="220">
-<a href="http://www.eso.org{{ obj.get_absolute_url }}"><img width="220" border="0" src="http://www.eso.org/public/archives/{% if "video" in obj.main_visual.Archive.Meta.root %}videos/videoframe{% else %}images/potwmedium{%endif%}/{{obj.main_visual.id}}.jpg"></img></a>
-</td> 
-<td valign="top" style="padding-left:20px;font-family: Helvetica, Arial;font-size: 12px;" width="281"> 
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
-<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org{{ obj.get_absolute_url }}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a>
-</h3>
-<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
-<p><strong>{{ obj.release_date|date }}:</strong> {{ obj.description|striptags|truncatewords:30|safe }}</p> 
-</div>
-</td> 
-</tr> 
-<tr><td colspan="2" align="right"><a style="{{a_style}}" href="http://www.eso.org{{ obj.get_absolute_url }}">Read more</a></td></tr> 
-</table> 
-{% endfor %}
-{% endif %}
-
-
-{% endwith %}
-{% endblock %}
+{% block embargo_block_start %}{% endblock %}
+{% block embargo_block_end %}{% endblock %}
+{% block embargo_login %}{% endblock %}
+{% block signature_date %}{{ data.release.release_date|date }}{% endblock %}
 
 
 
-{% block sidebar %}
-{% with a_style="color: #285A97;font-size: 12px;" hr_style="height:1px;border:0;border-bottom:1px solid #DEDEDE;" h2_style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 15px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;" %}
-
-{# ############### POTW ############### #}
-{% if data.potws %}
-<hr style="{{hr_style}}"/> 
-
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
-<a href="http://feeds.feedburner.com/eso_potw"><img border="0"  src="http://www.eso.org/public/archives/djangoplicity/images/rssicon.png"></a>&nbsp;<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/images/potw/">Picture{{ data.potws|pluralize }} of the Week</a>
-</h3> 
-
-{% for obj in data.potws %}
-<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
-<p style="margin-bottom: 20px;"><a href="http://www.eso.org{{obj.image.get_absolute_url}}"><img border="0" src="http://www.eso.org/public/archives/images/frontpagethumbs/{{obj.image.id}}.jpg" style="margin-bottom: 5px;"></img></a><br><strong>{{obj.image.release_date|date}}</strong><br /><a href="http://www.eso.org{{obj.image.get_absolute_url}}">{{ obj.image.title }}</a></p>
-</div>
-{% endfor %}
-{% endif %}
-
-{# ############### NEW ON ESO.ORG ############### #}
-<hr style="{{hr_style}}">
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">New on eso.org</h3> 
-<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
-
-{% for obj in data.newoneso %}
-<p><a href="{{obj.link}}">{{obj.title}}</a></p>
-{% endfor %}
-</div>
-
-{# ############### EVENTS ############### #}
-<hr style="{{hr_style}}"/> 
-
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
-<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/events/special-evt.html">Upcoming Events</a>
-</h3> 
-<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
-
-<p><strong>Ongoing</strong><br> 
-<ul> 
-{% for obj in data.events %}{% if obj.type.name == "Special Events" and obj.ongoing %}
-<li><a href="{{obj.link}}">{{obj.title}}</a></li>
-{% endif %}{% endfor %}
-</ul> 
-</p> 
-{% for obj in data.events %}{% if obj.type.name == "Special Events" and not obj.ongoing %}
-<p><strong>{{ obj.get_dates|safe }}</strong>: {% if obj.link %}<a href="{{obj.link}}">{{obj.title|safe}}</a>{% else %}{{obj.title|safe}}{% endif %}</p>
-{% endif %}{% endfor %}
-</div>
-
-{# ############### EXHIBITIONS ############### #}
-<hr style="{{hr_style}}"/> 
 
 
-<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
-<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/events/exhibitions.html">Upcoming Exhibitions</a>
-</h3> 
 
-
-<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
-{% for obj in data.events %}{% if obj.type.name == "Exhibitions" %}
-<p><strong>{{ obj.get_dates|safe }}</strong>: {% if obj.link %}<a href="{{obj.link}}">{{obj.title|safe}}</a>{% else %}{{obj.title|safe}}{% endif %}{% if obj.get_location %}. {{ obj.get_location }}.{% endif %}</p>
-{% endif%}{% endfor %}
-
-</div>
-
-{% endwith %}
-{% endblock %}
 
 
 

@@ -180,8 +180,8 @@ class NewsletterDataSourceAdmin( admin.ModelAdmin ):
 	search_fields = ['name', 'title' ]
 	
 class DataSourceSelectorAdmin( admin.ModelAdmin ):
-	list_display = [ 'id', 'name', 'filter', 'field', 'match', 'value' ]
-	list_editable = ['name', 'filter', 'field', 'match', 'value' ]
+	list_display = [ 'id', 'name', 'filter', 'field', 'match', 'value', 'type' ]
+	list_editable = ['name', 'filter', 'field', 'match', 'value', 'type' ]
 	list_filter = [ 'filter', 'match' ]
 	search_fields = [ 'name', 'filter', 'field', 'match', 'value' ]
 	
