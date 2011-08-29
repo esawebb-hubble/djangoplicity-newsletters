@@ -22,12 +22,12 @@ http://www.eso.org{% url releases_detail_kids data.release.id %}{% endif%}
 Kind regards,
 The ESO Education and Public Outreach Department
 {% block signature_time %}{{ data.release.embargo_date|date }}{% endblock %}
-
+{% if data.announcements or data.newoneso or data.ongoing_events or data.exhibitions or data.special_events %}
 *************************************************************************
 
 We would also like to direct your attention to the following:
 
-=================
+{% if data.announcements %}=================
 ESO Announcements
 =================
 {% for obj in data.announcements %}
@@ -37,7 +37,7 @@ ESO Announcements
 {% endfor %}
 See latest ESO annoucements on http://www.eso.org/public/announcements/
 
-==============
+{% endif %}{% if data.newoneso %}==============
 New on eso.org
 ==============
 {% for obj in data.newoneso %}
@@ -45,30 +45,30 @@ New on eso.org
 {{ obj.link }}
 {% endfor %}
 
-==============
+{% endif %}{% if data.newoneso %}==============
 Ongoing events
 ==============
-{% for obj in data.events.all %}{% if obj.type.name == "Special Events" and obj.ongoing %}
+{% for obj in data.ongoing_events %}
 *{{ obj.title|safe }}*
 {{ obj.link }}
-{%endif%}{% endfor %}
+{% endfor %}
 
-===============
+{% endif %}{% if data.special_events %}===============
 Upcoming events
 ===============
-{% for obj in data.events.all %}{% if obj.type.name == "Special Events" and not obj.ongoing %}
+{% for obj in data.special_events.all %}
 * {{ obj.get_dates|unescape|safe }}: {{ obj.title|striptags|unescape|safe }}
-{% endif %}{% endfor %}
+{% endfor %}
 See more on http://www.eso.org/public/events/special-evt.html
 
-====================
+{% endif %}{% if data.exhibitions %}====================
 Upcoming exhibitions
 ====================
-{% for obj in data.events.all %}{% if obj.type.name == "Exhibitions" %}
+{% for obj in data.exhibitions.all %}
 * {{ obj.get_dates|unescape|safe }}: {{ obj.title|striptags|unescape|safe }}{% if obj.get_location %}. {{ obj.get_location }}.{%endif%}
-{% endif %}{% endfor %}
+{% endfor %}
 See more on http://www.eso.org/public/events/exhibitions.html
-
+{% endif%}{% endif %}
 ---
 You are receiving this newsletter because you subscribed to ESO News.
 
