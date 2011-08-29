@@ -54,6 +54,44 @@ SPLIT_TEST_WINNER = (
 	( 'clicks', 'Clicks' ),
  )
 
+#class Mailer( models.Model ):
+#	_registry = {}
+#	
+#	type = models.CharField( max_length=255, blank=False, choices=lambda: Mailer.get_registry() )
+#	name = models.SlugField( unique=True )
+#	
+#	def send_now( self, newsletter ):
+#		raise NotImplementedError
+#	
+#	def send_test( self, newsletter, emails = [] ):
+#		raise NotImplementedError
+#	
+#	@classmethod
+#	def get_registry_choices( cls ):
+#		self._registry.items()
+#	
+#	@classmethod
+#	def register( cls, mailercls ):
+#		self._registry[mailercls] = 
+#		
+#	@classmethod
+#	def unregister(cls, mailercls ):
+#		pass
+#	
+#	def __unicode__( self ):
+#		return "%s: %s" % ( self.type, self.name )
+#
+#	class Meta:
+#		ordering = ['name']
+#
+#	
+#class MailerParameter( models.Model ):
+#	mailer = models.ForeignKey( Mailer )
+#	name = models.SlugField( max_length=255 )
+#	value = models.CharField( max_length=255 )
+	
+
+
 class NewsletterType( models.Model ):
 	"""
 	Definition of a newsletter type - e.g. ESO Outreach Community Newsletter
@@ -85,6 +123,11 @@ class NewsletterType( models.Model ):
 	archive = models.BooleanField( default=True, help_text=_( 'Enable public archives for this newsletter type.' ) )
 	sharing = models.BooleanField( default=True, help_text=_( 'Enable social sharing of newsletter.' ) )
 	
+	#
+	# Mailers
+	#
+	#mailers = models.ManyToManyField( Mailer, blank=True )
+	
 	def get_generator( self ):
 		return NewsletterGenerator( type=self )
 
@@ -101,6 +144,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	# Status
 	type = models.ForeignKey( NewsletterType )
 	frozen = models.BooleanField( default=False )
+	send = models.DateTimeField( blank=True, null=True )
 
 	# Auto generation support
 	start_date = models.DateTimeField( blank=True, null=True )
@@ -131,6 +175,28 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 #	alternate_from_email = models.EmailField()
 #	alternate_subject = models.CharField( max_length=255 )
 
+#	def send_now( self ):
+#		"""
+#		Send a newsletter right away.
+#		"""
+#		if self.send is None:
+#			self.render()
+#			self.frozen = True
+#			self.send = datetime.now()
+#			for m in self.type.mailers.all():
+#				m.send_now( self )
+#			self.save()
+#		else:
+#			raise Exception( "Newsletter have already been sent." )
+#			
+#	def send_test( self, emails ):
+#		"""
+#		Send a test version of the newsletter
+#		"""
+#		self.render()
+#		for m in self.type.mailers.all():
+#			m.send_test( self, emails )
+
 	@classmethod
 	def latest_for_type( cls, type ):
 		"""
@@ -152,7 +218,6 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			t_text = Template( self.type.text_template )
 			t_subject = Template( self.type.subject_template )
 	
-	
 			ctx = Context( {
 				'base_url' : "http://%s" % Site.objects.get_current().domain,
 				'data' : NewsletterContent.data_context( self ),
@@ -167,19 +232,16 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			self.text = t_text.render( ctx )
 			self.subject = t_subject.render( ctx )
 
-	#def clean_fields( self, exclude=None ):
-	#	"""
-	#	"""
-	#	super( Newsletter, self ).clean_fields( exclude=exclude )
 
 	def save( self, *args, **kwargs ):
 		"""
 		"""
-		if self.from_name == '':
-			self.from_name = self.type.default_from_name
-		if self.from_email == '':
-			self.from_email = self.type.default_from_email
-		self.render()
+		if not self.frozen:
+			if self.from_name == '':
+				self.from_name = self.type.default_from_name
+			if self.from_email == '':
+				self.from_email = self.type.default_from_email
+			self.render()
 		return super( Newsletter, self ).save( *args, **kwargs )
 
 	def __unicode__( self ):
@@ -366,6 +428,10 @@ class NewsletterGenerator( object ):
 		self.type = type
 
 	def make_next( self, release_date ):
+		"""
+		Make the next issue of a newsletter (takes the start date from previous
+		issue).
+		"""
 		latest_nl = Newsletter.latest_for_type( self.type )
 
 		start_date = datetime.now() - timedelta( days=30 )
@@ -379,12 +445,16 @@ class NewsletterGenerator( object ):
 
 	def make( self, start_date, end_date ):
 		"""
+		Generate an newsletter based on content published between certain dates.
 		"""
 		nl = Newsletter( type=self.type, published=False, release_date=end_date, start_date=start_date, end_date=end_date )
 		nl.save()
 		return self.update_newsletter( nl )
 
 	def update_newsletter( self, nl ):
+		"""
+		Update an newsletter based on content published between certain dates.
+		"""
 		context = {
 			'start_date' : nl.start_date,
 			'end_date' : nl.end_date,
@@ -398,12 +468,6 @@ class NewsletterGenerator( object ):
 
 		nl.save()
 		return nl
-
-
-
-
-
-
 
 
 
