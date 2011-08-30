@@ -30,38 +30,47 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from django.contrib import admin
-from django.utils.translation import ugettext as _
-from djangoplicity.newsletters.models import NewsletterType, Newsletter, NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector
-from django.http import Http404, HttpResponse, HttpResponseRedirect
-from django.core.urlresolvers import reverse 
-from django.shortcuts import get_object_or_404, render_to_response
 from django.conf.urls.defaults import patterns
-from django.utils.encoding import force_unicode
+from django.contrib import admin
+from django.core.urlresolvers import reverse
+from django.db import models
+from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.utils.encoding import force_unicode
+from django.utils.translation import ugettext as _
+from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
+	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
+	MailerParameter, Mailer
+from tinymce.widgets import TinyMCE
 
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
 	model = NewsletterDataSource
 	extra = 0
 	
+class MailerParameterInlineAdmin( admin.TabularInline ):
+	model = MailerParameter
+	extra = 0
+	max_num = 0
+	readonly_fields = ['type', 'help_text', 'name']
+	can_delete = False
+	fields = ['name', 'value', 'type', 'help_text', ]
+	
 class NewsletterContentInlineAdmin( admin.TabularInline ):
 	model = NewsletterContent
 	extra = 0
-
-from tinymce.widgets import TinyMCE
-from django.db import models
 
 class NewsletterAdmin( admin.ModelAdmin ):
 	list_display = [ 'id', 'subject', 'type', 'from_name', 'from_email', 'release_date','published','last_modified']
 	list_editable = ['from_name', 'from_email', 'subject', ]
 	list_filter = ['type', 'last_modified', 'published']
 	search_fields = ['from_name', 'from_email', 'subject', 'html', 'text']
-	readonly_fields = ['last_modified',]
+	readonly_fields = ['last_modified', 'send', ]
 	fieldsets = (
 		( 
 			None, 
 			{
-				'fields' : ( 'type', 'release_date', 'published', 'frozen', 'last_modified' ),
+				'fields' : ( 'type', 'release_date', 'published', 'frozen', 'send', 'last_modified' ),
 			}
 		),
 		( 
@@ -93,6 +102,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		extra_urls = patterns( '',
 			( r'^(?P<pk>[0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
+			( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
 			( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ) ),
 		)
 		return extra_urls + urls
@@ -137,24 +147,56 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		else:
 			form = GenerateNewsletterForm()
 		
+		return self._render_admin_view( 
+					request, 
+					"admin/newsletters/newsletter/generate_form.html",
+					{
+						'title': _( 'Generate %s' ) % force_unicode( self.model._meta.verbose_name ),
+						'adminform': form,
+	        		},
+				)
+		
+	def send_newsletter_test_view( self, request, pk=None ):
+		"""
+		Send a newsletter test
+		"""
+		from djangoplicity.newsletters.forms import TestEmailsForm
+		
+		nl = get_object_or_404( Newsletter, pk=pk ) 
+		
+		if request.method == "POST":
+			form = TestEmailsForm( request.POST )
+			if form.is_valid():
+				emails = form.cleaned_data['emails']
+				nl.send_test( emails )
+				self.message_user( request, _( "Sent newsletter test emails to %(emails)s" ) % { 'emails' : ", ".join( emails ) } )
+				return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
+		else:
+			form = TestEmailsForm()
+			
+		ctx = {
+			'title': _( '%s: Send test email' ) % force_unicode( self.model._meta.verbose_name ).title(),
+			'adminform': form,
+			'original' : nl,
+		}
+		
+		return self._render_admin_view( request, "admin/newsletters/newsletter/send_test_form.html", ctx )
+		
+	def _render_admin_view( self, request, template, context ):
+		"""
+		Helper function for rendering an admin view
+		"""
 		opts = self.model._meta
 		
-		return render_to_response(
-				"admin/newsletters/newsletter/generate_form.html",
-				{
-					'title': _( 'Generate %s' ) % force_unicode( opts.verbose_name ),
-					'adminform': form,
-					#'object_id': object_id,
-					#'original': obj,
-					#'errors': helpers.AdminErrorList(form, formsets),
+		defaults = {
 					'root_path': self.admin_site.root_path,
 					'app_label': opts.app_label,
 					'opts' : opts,
-        		},
-				context_instance=RequestContext( request )
-			)
+        }
+		defaults.update( context )
 		
-		return render_to_response( "TEST", mimetype="text/html" )
+		return render_to_response( template, defaults, context_instance=RequestContext( request ) )
+
 	
 		
 
@@ -190,14 +232,20 @@ class DataSourceOrderingAdmin( admin.ModelAdmin ):
 	list_editable = ['name', 'fields', ]
 	list_filter = []
 	search_fields = [ 'name', 'fields', ]
+	
+class MailerAdmin( admin.ModelAdmin ):
+	list_display = [ 'name', 'plugin' ]
+	list_filter = ['plugin']
+	search_fields = [ 'name', 'plugin', ]
+	inlines = [ MailerParameterInlineAdmin ]
 
 def register_with_admin( admin_site ):
 	admin_site.register( NewsletterType, NewsletterTypeAdmin )
 	admin_site.register( Newsletter, NewsletterAdmin )
 	admin_site.register( DataSourceOrdering, DataSourceOrderingAdmin )
 	admin_site.register( DataSourceSelector, DataSourceSelectorAdmin )
-	#admin_site.register( NewsletterContent, NewsletterContentAdmin )
-	#admin_site.register( NewsletterDataSource, NewsletterDataSourceAdmin )
+	admin_site.register( Mailer, MailerAdmin )
+
 		
 # Register with default admin site	
 register_with_admin( admin.site )

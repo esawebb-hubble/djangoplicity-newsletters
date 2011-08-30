@@ -42,6 +42,9 @@ from django.contrib.contenttypes import generic
 from django.template import Context, Template
 from django.contrib.sites.models import Site
 from datetime import datetime, timedelta
+from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin
+from django.utils.functional import lazy
+from django.db.models.signals import post_save
 
 SPLIT_TEST = ( 
 	( '', 'Disabled' ),
@@ -54,43 +57,146 @@ SPLIT_TEST_WINNER = (
 	( 'clicks', 'Clicks' ),
  )
 
-#class Mailer( models.Model ):
-#	_registry = {}
-#	
-#	type = models.CharField( max_length=255, blank=False, choices=lambda: Mailer.get_registry() )
-#	name = models.SlugField( unique=True )
-#	
-#	def send_now( self, newsletter ):
-#		raise NotImplementedError
-#	
-#	def send_test( self, newsletter, emails = [] ):
-#		raise NotImplementedError
-#	
-#	@classmethod
-#	def get_registry_choices( cls ):
-#		self._registry.items()
-#	
-#	@classmethod
-#	def register( cls, mailercls ):
-#		self._registry[mailercls] = 
-#		
-#	@classmethod
-#	def unregister(cls, mailercls ):
-#		pass
-#	
-#	def __unicode__( self ):
-#		return "%s: %s" % ( self.type, self.name )
-#
-#	class Meta:
-#		ordering = ['name']
-#
-#	
-#class MailerParameter( models.Model ):
-#	mailer = models.ForeignKey( Mailer )
-#	name = models.SlugField( max_length=255 )
-#	value = models.CharField( max_length=255 )
-	
+class Mailer( models.Model ):
+	"""
+	Model for defining mailers. A newsletter type can define several mailers to use
+	when sending a newsletter (e.g. send newsletter via mailchimp and two other mail-man
+	mailing lists. Each mailer defines the plug-in to use parameters for each plugin.
+	"""
+	_plugins = {}
 
+	plugin = models.CharField( max_length=255, blank=False, choices=[] )
+	name = models.CharField( max_length=255 )
+
+	def __init__( self, *args, **kwargs ):
+		"""
+		"""
+		super( Mailer, self ).__init__( *args, **kwargs )
+		print Mailer.get_plugin_choices()
+		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices()#lazy( Mailer.get_plugin_choices, list )
+
+	def get_plugincls( self ):
+		"""
+		Get the mailer plug-in class for this mailer.
+		"""
+		try:
+			return self._plugins[ self.plugin ]
+		except KeyError:
+			raise Exception( "Plug-in %s does not exists." % self.plugin )
+
+	def get_plugin( self ):
+		"""
+		Get an instance of the plug-in for this mailer
+		"""
+		cls = self.get_plugincls()
+		return cls( self.get_parameters() )
+
+	def get_parameters( self ):
+		return dict( [( p.name, p.get_value() ) for p in MailerParameter.objects.filter( mailer=self ) ] )
+
+	def send_now( self, newsletter ):
+		"""
+		Send newsletter now via this mailer
+		"""
+		plugin = self.get_plugin()
+		return plugin.send_now( newsletter )
+
+	def send_test( self, newsletter, emails=[] ):
+		"""
+		Send test newsletter now via this mailer to listed emails
+		"""
+		plugin = self.get_plugin()
+		return plugin.send_test( newsletter, emails )
+
+	@classmethod
+	def register_plugin( cls, mailercls ):
+		"""
+		Register a new mailer plug-in.
+		"""
+		if issubclass( mailercls, MailerPlugin ):
+			cls._plugins[mailercls.get_class_path()] = mailercls
+
+	@classmethod
+	def get_plugin_choices( cls ):
+		"""
+		Get list of mailer plug-in choices
+		"""
+		choices = [ ( p, pcls.name ) for p, pcls in cls._plugins.items() ]
+		choices.sort( key=lambda x: x[1] )
+		return list( choices )
+
+	@classmethod
+	def post_save_handler( cls, sender=None, instance=None, created=False, raw=True, using=None, **kwargs ):
+		"""
+		Callback to save blank value for all parameters for this plugin and remove unknown parameters
+		"""
+		if instance:
+			known_params = dict([( p.name, p ) for p in MailerParameter.objects.filter( mailer=instance )])
+			
+			for p, desc, t in instance.get_plugincls().parameters:
+				touched = False
+				try:
+					param = MailerParameter.objects.get( mailer=instance, name=p )
+				except MailerParameter.DoesNotExist:
+					param = MailerParameter( mailer=instance, name=p )
+					touched = True
+					
+				for attr, val in [( 'type', t ), ( 'help_text', desc )]:
+					if getattr( param, attr ) != val:
+						setattr( param, attr, val )
+						touched = True
+						
+				if touched:
+					param.save()
+				
+				try:
+					del known_params[ param.name ]
+				except KeyError:
+					pass
+			
+			# Delete unknown parameters
+			for param in known_params.values():
+				param.delete()
+					
+		
+	def __unicode__( self ):
+		return "%s: %s" % ( self.get_plugincls().name, self.name )
+
+	class Meta:
+		ordering = ['name']
+
+post_save.connect( Mailer.post_save_handler, sender=Mailer )
+
+class MailerParameter( models.Model ):
+	"""
+	Specify parameter for a mailer
+	"""
+	mailer = models.ForeignKey( Mailer )
+	name = models.SlugField( max_length=255, unique=False )
+	value = models.CharField( max_length=255, blank=True, default='' )
+	type = models.CharField( max_length=4, default='str', choices=[ ( 'str', 'Text' ), ( 'int', 'Integer' ), ( 'bool', 'Boolean' ), ( 'date', 'Date' ), ] )
+	help_text = models.CharField( max_length=255, blank=True )
+
+	def get_value( self ):
+		if self.type == 'str':
+			return self.value
+		elif self.type == 'int':
+			try:
+				return int( self.value )
+			except ValueError:
+				return None
+		elif self.type == 'bool':
+			return ( self.value ).lower() == 'true'
+		elif self.type == 'date':
+			return self.value
+
+	def __unicode__( self ):
+		return u"%s = %s (%s)" % ( self.name, self.value, self.type )
+
+	
+	class Meta:
+		ordering = ['mailer','name']
+		unique_together = ['mailer', 'name']
 
 class NewsletterType( models.Model ):
 	"""
@@ -122,18 +228,18 @@ class NewsletterType( models.Model ):
 	#
 	archive = models.BooleanField( default=True, help_text=_( 'Enable public archives for this newsletter type.' ) )
 	sharing = models.BooleanField( default=True, help_text=_( 'Enable social sharing of newsletter.' ) )
-	
+
 	#
 	# Mailers
 	#
-	#mailers = models.ManyToManyField( Mailer, blank=True )
-	
+	mailers = models.ManyToManyField( Mailer, blank=True )
+
 	def get_generator( self ):
 		return NewsletterGenerator( type=self )
 
 	def __unicode__( self ):
 		return self.name
-	
+
 	class Meta:
 		ordering = ['name']
 
@@ -175,27 +281,27 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 #	alternate_from_email = models.EmailField()
 #	alternate_subject = models.CharField( max_length=255 )
 
-#	def send_now( self ):
-#		"""
-#		Send a newsletter right away.
-#		"""
-#		if self.send is None:
-#			self.render()
-#			self.frozen = True
-#			self.send = datetime.now()
-#			for m in self.type.mailers.all():
-#				m.send_now( self )
-#			self.save()
-#		else:
-#			raise Exception( "Newsletter have already been sent." )
-#			
-#	def send_test( self, emails ):
-#		"""
-#		Send a test version of the newsletter
-#		"""
-#		self.render()
-#		for m in self.type.mailers.all():
-#			m.send_test( self, emails )
+	def send_now( self ):
+		"""
+		Send a newsletter right away.
+		"""
+		if self.send is None:
+			self.render()
+			self.frozen = True
+			self.send = datetime.now()
+			for m in self.type.mailers.all():
+				m.send_now( self )
+			self.save()
+		else:
+			raise Exception( "Newsletter have already been sent." )
+
+	def send_test( self, emails ):
+		"""
+		Send a test version of the newsletter
+		"""
+		self.render()
+		for m in self.type.mailers.all():
+			m.send_test( self, emails )
 
 	@classmethod
 	def latest_for_type( cls, type ):
@@ -217,7 +323,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			t_html = Template( self.type.html_template )
 			t_text = Template( self.type.text_template )
 			t_subject = Template( self.type.subject_template )
-	
+
 			ctx = Context( {
 				'base_url' : "http://%s" % Site.objects.get_current().domain,
 				'data' : NewsletterContent.data_context( self ),
@@ -227,7 +333,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 				'release_date' : self.release_date,
 				'published' : self.published,
 			} )
-	
+
 			self.html = t_html.render( ctx )
 			self.text = t_text.render( ctx )
 			self.subject = t_subject.render( ctx )
@@ -288,7 +394,7 @@ class NewsletterContent( models.Model ):
 			if modelcls is not None:
 				content_objects = cls.objects.filter( newsletter=newsletter, data_source=datasrc )
 				allpks = [obj.object_id for obj in content_objects]
-				
+
 				try:
 					if datasrc.list:
 						data = modelcls.objects.filter( pk__in=allpks )
@@ -304,17 +410,27 @@ class NewsletterContent( models.Model ):
 
 
 class DataSourceSelector( models.Model ):
+	"""
+	Data source selector is used for selecting objects when auto-generating 
+	newsletters.
+	"""
 	name = models.CharField( max_length=255 )
 	filter = models.CharField( max_length=1, default='I', choices=[( 'I', "Include" ), ( 'E', "Exclude" )] )
 	field = models.SlugField()
 	match = models.SlugField()
 	value = models.CharField( max_length=255 )
 	type = models.CharField( max_length=4, default='str', choices=[ ( 'str', 'Text' ), ( 'int', 'Integer' ), ( 'bool', 'Boolean' ), ( 'date', 'Date' ), ] )
-	
+
 	def get_query_dict( self, ctx ):
+		"""
+		Get a dictionary to use in a query object for this selector.
+		"""
 		return { str( "%s__%s" % ( self.field, self.match ) ) : self.get_value( ctx )  }
-	
+
 	def get_value( self, ctx={} ):
+		"""
+		Get value to search for. Context is passed in from the newsletter generator.
+		"""
 		if self.type == 'str':
 			return self.value % ctx
 		elif self.type == 'int':
@@ -323,35 +439,42 @@ class DataSourceSelector( models.Model ):
 			except ValueError:
 				return None
 		elif self.type == 'bool':
-			return (self.value % ctx).lower() == 'true'
+			return ( self.value % ctx ).lower() == 'true'
 		elif self.type == 'date':
 			return self.value % ctx
-			
+
 	def get_q_object( self, ctx ):
+		"""
+		Get query object for this queryset selector
+		"""
 		d = self.get_query_dict( ctx )
-		
-		return models.Q( **d ) if self.filter == 'I' else ~models.Q( **d ) 
+
+		return models.Q( **d ) if self.filter == 'I' else ~models.Q( **d )
 
 	def __unicode__( self ):
 		return self.name
-	
+
 	class Meta:
 		ordering = ['name']
 
-	
+
 class DataSourceOrdering( models.Model ):
+	"""
+	Data source ordering is used to order objects in a data source
+	when auto-generating objects 
+	"""
 	name = models.CharField( max_length=255 )
 	fields = models.SlugField()
-	
+
 	def get_order_by( self ):
 		return [x.strip() for x in self.fields.split( ',' ) ]
-	
+
 	def __unicode__( self ):
 		return self.name
-	
+
 	class Meta:
-		ordering = ['name'] 
-		
+		ordering = ['name']
+
 
 class NewsletterDataSource( models.Model ):
 	"""
@@ -369,19 +492,19 @@ class NewsletterDataSource( models.Model ):
 	def __unicode__( self ):
 		return "%s: %s" % ( self.type, self.title )
 
-	
+
 	def _limit_queryset( self, qs ):
 		limits = self.limit.split( ":" )[:2]
-		try: 
+		try:
 			start = int( limits[0] )
-		except (ValueError, IndexError):
+		except ( ValueError, IndexError ):
 			start = None
-			
-		try: 
+
+		try:
 			end = int( limits[1] )
-		except (ValueError, IndexError):
+		except ( ValueError, IndexError ):
 			end = None
-			
+
 		if start is not None and end is not None:
 			return qs[start:end]
 		elif start is not None:
@@ -401,23 +524,23 @@ class NewsletterDataSource( models.Model ):
 		"""
 		modelcls = self.content_type.model_class()
 		qs = modelcls.objects.all()
-		
+
 		# Run all filters 
 		selectors = self.selectors.all()
-		if len(selectors) > 0:
+		if len( selectors ) > 0:
 			qs = qs.filter( *[sel.get_q_object( ctx ) for sel in selectors] )
-		
+
 		if self.ordering:
 			qs = qs.order_by( *self.ordering.get_order_by() )
-			
+
 		if self.limit:
-			qs = self._limit_queryset( qs ) 
-		
+			qs = self._limit_queryset( qs )
+
 		return qs
 
 	class Meta:
 		unique_together = ( 'type', 'name' )
-		ordering = ['type__name','title']
+		ordering = ['type__name', 'title']
 
 
 class NewsletterGenerator( object ):
@@ -471,6 +594,7 @@ class NewsletterGenerator( object ):
 
 
 
-
-
-
+#
+# Register default mailer interfaces
+#
+Mailer.register_plugin( EmailMailerPlugin )

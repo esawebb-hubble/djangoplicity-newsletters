@@ -5,6 +5,7 @@
 {% if change %}{% if not is_popup %}
   <ul class="object-tools">
     {% block object-tools-items %}
+    <li><a href="send_test" class="historylink">{% trans "Send test" %}</a></li>
     <li><a href="html/" class="historylink">{% trans "View HTML" %}</a></li>
     <li><a href="text/" class="historylink">{% trans "View text" %}</a></li>
     <li><a href="history/" class="historylink">{% trans "History" %}</a></li>
