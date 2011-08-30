@@ -72,4 +72,7 @@ class GenerateNewsletterForm( forms.ModelForm ):
 
 class TestEmailsForm( forms.Form ):
 	emails = MultiEmailField( max_length=255 )
+	
+class SendNewsletterForm( forms.Form ):
+	send_now = forms.BooleanField()
 

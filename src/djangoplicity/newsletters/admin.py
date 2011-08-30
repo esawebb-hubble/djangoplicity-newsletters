@@ -88,7 +88,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		( 
 			"Content", 
 			{
-				'fields' : ( 'subject', 'editorial' ),
+				'fields' : ( 'subject', 'editorial', 'editorial_text' ),
 			}
 		),
 	)
@@ -103,6 +103,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 			( r'^(?P<pk>[0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
+			( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ) ),
 			( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ) ),
 		)
 		return extra_urls + urls
@@ -181,6 +182,40 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		}
 		
 		return self._render_admin_view( request, "admin/newsletters/newsletter/send_test_form.html", ctx )
+	
+	def send_newsletter_view( self, request, pk=None ):
+		"""
+		Send a newsletter test
+		"""
+		from djangoplicity.newsletters.forms import SendNewsletterForm
+		
+		nl = get_object_or_404( Newsletter, pk=pk )
+		
+		if request.method == "POST":
+			form = SendNewsletterForm( request.POST )
+			if form.is_valid():
+				send_now = form.cleaned_data['send_now']
+				if send_now:
+					nl.send_now()
+					self.message_user( request, _( "Sent newsletter" ) )
+					return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
+				
+			#print form.non_field_errors
+			if 'send_now' not in form.errors:
+				form.errors['send_now'] = []
+			form.errors['send_now'].append( "Please check-mark the box to send the newsletter." )
+		else:
+			form = SendNewsletterForm()
+			
+		nl.render()
+		
+		ctx = {
+			'title': _( '%s: Send now' ) % force_unicode( self.model._meta.verbose_name ).title(),
+			'adminform': form,
+			'original' : nl,
+		}
+		
+		return self._render_admin_view( request, "admin/newsletters/newsletter/send_now_form.html", ctx )
 		
 	def _render_admin_view( self, request, template, context ):
 		"""

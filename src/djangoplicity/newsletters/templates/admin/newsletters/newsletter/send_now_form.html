@@ -21,7 +21,7 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
      <a href="../../../">{{ app_label|capfirst|escape }}</a> &rsaquo;
      <a href="../../">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
      <a href="../">{{ original }}</a> &rsaquo;
-     {% trans "Send test" %} {{ opts.verbose_name }}
+     {% trans "Send now" %}
 </div>
 {% endif %}{% endblock %}
 
@@ -37,6 +37,14 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
     {{ adminform.non_field_errors }}
 {% endif %}
 
+<fieldset class="module" style="background-color: #FFC; ">
+<div class="form-row">
+<p>You are about to send the newsletter shown below. Please check carefully before sending.</p>
+</div>
+</fieldset>
+
+{% include "admin/newsletters/newsletter/include_newsletter.html" %}
+
 <fieldset class="module aligned">
 {% for f in adminform %}
 <div class="form-row">
@@ -47,12 +55,9 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
 {% endfor %}
 </fieldset>
 
-{% include "admin/newsletters/newsletter/include_newsletter.html" %}
-
-
 {% load i18n %}
 <div class="submit-row" {% if is_popup %}style="overflow: auto;"{% endif %}>
-<input type="submit" value="{% trans 'Send test' %}" class="default" name="_generate" {{ onclick_attrib }}/>
+<input type="submit" value="{% trans 'Send now!' %}" class="default" name="_generate" {{ onclick_attrib }}/>
 </div>
 
 

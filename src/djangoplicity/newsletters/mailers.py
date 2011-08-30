@@ -32,6 +32,9 @@
 
 from django.core.mail import EmailMultiAlternatives
 
+class CampaignUploadError( Exception ):
+	pass
+
 class MailerPlugin():
 	"""
 	Interface for mailer implementations
@@ -84,3 +87,103 @@ class EmailMailerPlugin( MailerPlugin ):
 
 	def send_test( self, newsletter, emails ):
 		self._send( newsletter, emails )
+		
+
+		
+class MailChimpMailerPlugin( MailerPlugin ):
+	"""
+	Mailer implementation that will send the newsletter to a predefined
+	list of email addresses (which could be e.g. a mailing list). 
+	"""
+	name = 'MailChimp mailer'
+	parameters = [ 
+		( 'list_id', 'MailChimp list id - must be defined in djangoplicity.', 'str' ), 
+	]
+
+	def __init__( self, params ):
+		try:
+			list_id = params['list_id'].strip()
+		except KeyError:
+			raise Exception( "Parameter 'list_id' is missing" )
+		
+		from djangoplicity.mailinglists.models import MailChimpList
+		self.ml = MailChimpList.objects.get( list_id = list_id )
+
+	
+	def _update_campaign( self, nl, campaign_id ):
+		"""
+		Update an existing campaign in MailChimp
+		"""
+		campaigns = self.ml.connection.campaigns( filters={ 'list_id' : self.ml.list_id, 'campaign_id' : campaign_id } )
+		
+		if 'total' in campaigns and campaigns['total'] > 0:
+			vals = []
+			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'subject', value = nl.subject ) )
+			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'from_email', value = nl.from_email ) )
+			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'from_name', value = nl.from_name ) )
+			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'title', value = nl.subject ) )
+			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'content', value = { 'html' : nl.html, 'text' : nl.text } ) )
+			if False in vals:
+				raise Exception( "Could update campaign" )
+			return ( campaign_id, False )
+		else:
+			return ( self._create_campaign( nl ), True )
+
+	def _create_campaign( self, nl ):
+		"""
+		Create a new campaign in MailChimp
+		"""
+		val = self.ml.connection.campaignCreate(
+			type = 'regular',
+			options = {
+				'list_id' : self.ml.list_id,
+				'subject' : nl.subject,
+				'from_email' : nl.from_email,
+				'from_name' : nl.from_name,
+				'tracking' : { 'opens' : True, 'html_clicks' : True, 'text_clicks' : False },
+				'title' : nl.subject,
+				'authenticate' : True,
+				'auto_footer' : False,
+				'inline_css' : True,
+				'fb_comments' : True,
+			},
+			content = {
+				'html' : nl.html,
+				'text' : nl.text,
+			}
+		 )
+		return val
+	
+	def _upload_newsletter( self, newsletter ):
+		"""
+		Send combined html and plain text email.
+		"""
+		from djangoplicity.newsletters.models import MailChimpCampaign
+		
+		( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter, list_id=self.ml.list_id )
+		
+		if not created and info.campaign_id:
+			( info.campaign_id, touched ) = self._update_campaign( newsletter, info.campaign_id )
+			if touched:
+				info.save()
+		else:
+			info.campaign_id = self._create_campaign( newsletter )
+			info.save()
+		
+		return info
+
+	def send_now( self, newsletter ):
+		"""
+		Send newsletter now.
+		"""
+		info = self._upload_newsletter( newsletter )
+		self.ml.connection.campaignSendNow( cid=info.campaign_id )
+
+	def send_test( self, newsletter, emails ):
+		"""
+		Send a test email for this newsletter
+		"""
+		info = self._upload_newsletter( newsletter )
+		self.ml.connection.campaignSendTest( cid=info.campaign_id, test_emails=emails )
+
+	

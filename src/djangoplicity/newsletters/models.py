@@ -39,12 +39,13 @@ from django.utils.translation import ugettext as _
 from djangoplicity import archives
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
-from django.template import Context, Template
+from django.template import Context, Template, defaultfilters
 from django.contrib.sites.models import Site
 from datetime import datetime, timedelta
 from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin
 from django.utils.functional import lazy
 from django.db.models.signals import post_save
+
 
 SPLIT_TEST = ( 
 	( '', 'Disabled' ),
@@ -197,7 +198,8 @@ class MailerParameter( models.Model ):
 	class Meta:
 		ordering = ['mailer','name']
 		unique_together = ['mailer', 'name']
-
+		
+		
 class NewsletterType( models.Model ):
 	"""
 	Definition of a newsletter type - e.g. ESO Outreach Community Newsletter
@@ -270,6 +272,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	html = models.TextField( verbose_name="HTML", blank=True )
 
 	editorial = models.TextField( blank=True )
+	editorial_text = models.TextField( blank=True )
 
 	#
 	# A/B split testing
@@ -328,6 +331,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 				'base_url' : "http://%s" % Site.objects.get_current().domain,
 				'data' : NewsletterContent.data_context( self ),
 				'editorial' : self.editorial,
+				'editorial_text' : self.editorial,
 				'enable_sharing' : self.type.sharing,
 				'enable_archive' : self.type.archive,
 				'release_date' : self.release_date,
@@ -347,6 +351,9 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 				self.from_name = self.type.default_from_name
 			if self.from_email == '':
 				self.from_email = self.type.default_from_email
+			if self.editorial_text == '' and self.editorial:
+				self.editorial_text = defaultfilters.striptags( defaultfilters.safe( self.editorial ) )
+				
 			self.render()
 		return super( Newsletter, self ).save( *args, **kwargs )
 
@@ -593,8 +600,25 @@ class NewsletterGenerator( object ):
 		return nl
 
 
+class MailChimpCampaign( models.Model ):
+	"""
+	Model used to keep track of mailchimp campaign ids for each newsletter.
+	"""
+	newsletter = models.ForeignKey( Newsletter )
+	list_id = models.CharField( max_length=50 )
+	campaign_id = models.CharField( max_length=50 )
+	
+	class Meta:
+		unique_together = ['newsletter', 'list_id']
 
 #
 # Register default mailer interfaces
 #
 Mailer.register_plugin( EmailMailerPlugin )
+
+try:
+	from djangoplicity.mailinglists.models import MailChimpList
+	from djangoplicity.newsletters.mailers import MailChimpMailerPlugin
+	Mailer.register_plugin( MailChimpMailerPlugin )
+except ImportError:
+	pass
