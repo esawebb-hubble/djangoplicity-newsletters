@@ -45,7 +45,7 @@ New on eso.org
 {{ obj.link }}
 {% endfor %}
 
-{% endif %}{% if data.newoneso %}==============
+{% endif %}{% if data.ongoing_events %}==============
 Ongoing events
 ==============
 {% for obj in data.ongoing_events %}
@@ -69,12 +69,12 @@ Upcoming exhibitions
 {% endfor %}
 See more on http://www.eso.org/public/events/exhibitions.html
 {% endif%}{% endif %}
----
+---{% if unsubscribe_link %}
 You are receiving this newsletter because you subscribed to ESO News.
 
-Unsubscribe at *|UNSUB|*
-Change subscription preferences at *|UPDATE_PROFILE|*{% if enable_sharing %}
-View newsletter in browser at *|ARCHIVE|*{% endif %}
+{% endif %}{% if unsubscribe_link %}Unsubscribe at *|UNSUB|*
+{% endif %}{% if preferences_link %}Change subscription preferences at *|UPDATE_PROFILE|*
+{% endif%}{% if enable_sharing %}{% if browser_link %}View newsletter in browser at *|ARCHIVE|*{% endif %}{% endif %}
 
 European Southern Observatory
 Karl-Schwarzschild-Str 2

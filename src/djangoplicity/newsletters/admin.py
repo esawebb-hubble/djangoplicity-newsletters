@@ -41,7 +41,7 @@ from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
-	MailerParameter, Mailer
+	MailerParameter, Mailer, MailerLog
 from tinymce.widgets import TinyMCE
 
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
@@ -113,14 +113,16 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		View HTML version of newsletter
 		"""
 		newsletter = get_object_or_404( Newsletter, pk=pk )
-		return HttpResponse( newsletter.html, mimetype="text/html" )
+		data = newsletter.render( {}, store=False )
+		return HttpResponse( data['html'], mimetype="text/html" )
 	
 	def text_newsletter_view( self, request, pk=None ):
 		"""
 		View text version of newsletter
 		"""
 		newsletter = get_object_or_404( Newsletter, pk=pk )
-		response = HttpResponse( newsletter.text )
+		data = newsletter.render( {}, store=False )
+		response = HttpResponse( data['text'] )
 		response["Content-Type"] = "text/plain; charset=utf-8"
 		return response
 	
@@ -185,7 +187,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 	
 	def send_newsletter_view( self, request, pk=None ):
 		"""
-		Send a newsletter test
+		Send a newsletter right away.
 		"""
 		from djangoplicity.newsletters.forms import SendNewsletterForm
 		
@@ -207,13 +209,13 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		else:
 			form = SendNewsletterForm()
 			
-		nl.render()
-		
 		ctx = {
 			'title': _( '%s: Send now' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
 			'original' : nl,
 		}
+		
+		nl.render( {}, store=False )
 		
 		return self._render_admin_view( request, "admin/newsletters/newsletter/send_now_form.html", ctx )
 		
@@ -273,13 +275,25 @@ class MailerAdmin( admin.ModelAdmin ):
 	list_filter = ['plugin']
 	search_fields = [ 'name', 'plugin', ]
 	inlines = [ MailerParameterInlineAdmin ]
+	
+class MailerLogAdmin( admin.ModelAdmin ):
+	list_display = [ 'timestamp', 'subject', 'name', 'plugin', 'parameters', 'success', 'is_test' ]
+	list_filter = ['plugin', 'is_test', 'success', 'timestamp']
+	search_fields = [ 'name', 'plugin', 'subject', 'error', 'parameters' ]
+	readonly_fields = [ 'timestamp', 'subject', 'name', 'plugin', 'parameters', 'success', 'is_test', 'error', 'newsletter_pk' ]
+	
+	def has_add_permission( self, request ):
+		return False
 
+	
 def register_with_admin( admin_site ):
 	admin_site.register( NewsletterType, NewsletterTypeAdmin )
 	admin_site.register( Newsletter, NewsletterAdmin )
 	admin_site.register( DataSourceOrdering, DataSourceOrderingAdmin )
 	admin_site.register( DataSourceSelector, DataSourceSelectorAdmin )
 	admin_site.register( Mailer, MailerAdmin )
+	admin_site.register( MailerLog, MailerLogAdmin )
+	
 
 		
 # Register with default admin site	

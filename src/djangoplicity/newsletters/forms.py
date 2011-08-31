@@ -41,6 +41,11 @@ from django.contrib.admin import widgets
 from django.core.validators import validate_email
 
 class MultiEmailField( forms.CharField ):
+	"""
+	Field for entering multiple email addresses.
+	
+	Initial code from https://docs.djangoproject.com/en/1.3/ref/forms/validation/#form-field-default-cleaning
+	"""
 	def to_python( self, value ):
 		"""
 		Normalize data to a list of strings.
@@ -61,6 +66,9 @@ class MultiEmailField( forms.CharField ):
 
 
 class GenerateNewsletterForm( forms.ModelForm ):
+	"""
+	Form for generating a newsletter.
+	"""
 	class Meta:
 		model = Newsletter
 		fields = [ 'type', 'start_date', 'end_date' ]
@@ -71,8 +79,16 @@ class GenerateNewsletterForm( forms.ModelForm ):
 
 
 class TestEmailsForm( forms.Form ):
+	"""
+	Admin form for getting the emails to send the 
+	test newsletter to.
+	"""
 	emails = MultiEmailField( max_length=255 )
 	
 class SendNewsletterForm( forms.Form ):
+	"""
+	Admin form for requesting confirmation to 
+	send the newsletter.
+	"""
 	send_now = forms.BooleanField()
 

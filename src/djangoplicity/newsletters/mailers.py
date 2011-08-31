@@ -46,6 +46,9 @@ class MailerPlugin():
 		pass
 	
 	def send_now( self, newsletter ):
+		"""
+		When invoked this method should send the newsletter immediately
+		"""
 		raise NotImplementedError
 	
 	def send_test( self, newsletter, emails ):
@@ -57,6 +60,13 @@ class MailerPlugin():
 	@classmethod
 	def get_class_path( cls ):
 		return "%s.%s" % ( cls.__module__, cls.__name__ )
+	
+	def get_mailer_context( self ):
+		return {
+			'unsubscribe_link' : '',
+			'preferences_link' : '', 
+			'browser_link' : '', 
+		}
 
 
 class EmailMailerPlugin( MailerPlugin ):
@@ -77,9 +87,11 @@ class EmailMailerPlugin( MailerPlugin ):
 		"""
 		Send combined html and plain text email.
 		"""
+		data = newsletter.render( self.get_mailer_context(), store=False )
+		
 		from_email = '%s <%s>' % ( newsletter.from_name, newsletter.from_email )
-		msg = EmailMultiAlternatives( newsletter.subject, newsletter.text, from_email, emails )
-		msg.attach_alternative( newsletter.html, "text/html" )
+		msg = EmailMultiAlternatives( data['subject'], data['text'], from_email, emails )
+		msg.attach_alternative( data['html'], "text/html" )
 		msg.send()
 
 	def send_now( self, newsletter ):
@@ -88,6 +100,36 @@ class EmailMailerPlugin( MailerPlugin ):
 	def send_test( self, newsletter, emails ):
 		self._send( newsletter, emails )
 		
+	def get_mailer_context( self ):
+		return {
+			'unsubscribe_link' : '',
+			'preferences_link' : '', 
+			'browser_link' : '',
+			'is_email_mailer' : True, 
+		}
+		
+	
+class MailmanMailerPlugin( EmailMailerPlugin ):
+	name = 'Mailman mailer'
+	parameters = [ 
+		( 'emails', 'Comma separated list of mailman list emails to send to.', 'str' ),
+		( 'listinfo_url', 'URL to the listinfo mailman page', 'str' ),
+	]
+	
+	def __init__( self, params ):
+		super( MailmanMailerPlugin, self ).__init__( params )
+		try:
+			self.listinfo_url = params['listinfo_url'].strip()
+		except KeyError:
+			raise Exception( "Parameter 'listinfo_url' is missing" )
+	
+	def get_mailer_context(self):
+		return {
+			'unsubscribe_link' : self.listinfo_url,
+			'preferences_link' : self.listinfo_url, 
+			'browser_link' : '',
+			'is_mailman_mailer' : True,
+		}
 
 		
 class MailChimpMailerPlugin( MailerPlugin ):
@@ -97,7 +139,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 	"""
 	name = 'MailChimp mailer'
 	parameters = [ 
-		( 'list_id', 'MailChimp list id - must be defined in djangoplicity.', 'str' ), 
+		( 'list_id', 'MailChimp list id - must be defined in djangoplicity.', 'str' ),
+		( 'enable_browser_link', "Enable 'view in browser' link", 'bool' ), 
 	]
 
 	def __init__( self, params ):
@@ -105,9 +148,13 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			list_id = params['list_id'].strip()
 		except KeyError:
 			raise Exception( "Parameter 'list_id' is missing" )
+		try:
+			self.enable_browser_link = params['enable_browser_link']
+		except KeyError:
+			raise Exception( "Parameter 'enable_browser_link' is missing" )
 		
 		from djangoplicity.mailinglists.models import MailChimpList
-		self.ml = MailChimpList.objects.get( list_id = list_id )
+		self.ml = MailChimpList.objects.get( list_id=list_id )
 
 	
 	def _update_campaign( self, nl, campaign_id ):
@@ -160,6 +207,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		"""
 		from djangoplicity.newsletters.models import MailChimpCampaign
 		
+		newsletter.render( self.get_mailer_context() )
+		
 		( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter, list_id=self.ml.list_id )
 		
 		if not created and info.campaign_id:
@@ -171,6 +220,14 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			info.save()
 		
 		return info
+	
+	def get_mailer_context(self):
+		return {
+			'unsubscribe_link' : '*|UNSUB|*',
+			'preferences_link' : '*|UPDATE_PROFILE|*', 
+			'browser_link' : '*|ARCHIVE|*' if self.enable_browser_link else '',
+			'is_mailchimp_mailer' : True,
+		}
 
 	def send_now( self, newsletter ):
 		"""

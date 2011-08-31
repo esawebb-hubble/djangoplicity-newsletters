@@ -4,7 +4,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         
         <!-- Facebook sharing information tags -->
-        <meta property="og:title" content="{% block facebook_title %}ESO Outreach Community Newsletter July 2011{% endblock %}">
+        <meta property="og:title" content="{% block facebook_title %}{% endblock %}">
         
         <title>{% block html_title %}{% endblock %}</title>
 		
@@ -274,10 +274,16 @@
                                                 {% block text_only %}{% endblock %}
                                                 </div> 
                                             </td> 
-                                                                                </tr> 
+                                        </tr>
+                                        {% if unsubscribe_link or preferences_link or browser_link %} 
                                         <tr> 
-                                        	<td colspan="2" style="color: #505050;font-family: Helvetica, Arial;font-size: 10px;line-height: 100%; text-align:center;"><a href="*|UNSUB|*">Unsubscribe</a> | <a href="*|UPDATE_PROFILE|*">Subscription preferences</a> {% if enable_sharing %}| <a href="*|ARCHIVE|*">View in browser</a>{% endif %}</td> 
+                                        	<td colspan="2" style="color: #505050;font-family: Helvetica, Arial;font-size: 10px;line-height: 100%; text-align:center;">
+                                        	{% if unsubscribe_link %}<a href="*|UNSUB|*">Unsubscribe</a>{% endif %}
+                                        	{% if preferences_link %}{% if unsubscribe_link %} | {%endif%}<a href="*|UPDATE_PROFILE|*">Subscription preferences</a>{% endif %}
+                                        	{% if browser_link and enable_sharing %}{% if unsubscribe_link or preferences_link %} | {%endif%} <a href="*|ARCHIVE|*">View in browser</a>{% endif %}
+                                        	</td> 
                                         </tr> 
+                                        {% endif %}
                                     </table> 
                                 	<!-- // End Module: Standard Preheader \ --> 
                                 
@@ -357,13 +363,14 @@
                                             	<table border="0" cellpadding="10" cellspacing="0" width="192" > 
                                                 	<tr > 
                                                     	<td valign="top" class="sidebarContent" style="background-image: url(http://www.eso.org/public/archives/newsletter/tile.png); background-repeat: repeat-x; color: #505050; font-family: Helvetica, Arial; font-size: 12px; line-height: 130%; text-align: left;"> 
-                                                        	{% if enable_sharing %}
+                                                        	{% if enable_sharing %}{% if is_mailchimp_mailer %}
                                                             <!-- // Begin Module: Top Image with Content \\ --> 
                                                             <h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">Share this newsletter on:</h3> 
                                                             
                                                             *|FACEBOOK:LIKE|* &nbsp; *|TWITTER:TWEET|* &nbsp; *|GOOGLE:BUZZ|*
 															<hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/> 
                                                             *|MC:SHARE|*
+															{% else %}{%block sharebuttons %}{% endblock %}{% endif %}
 															{% endif %}
                                                             
                                                             {% block sidebar %}
@@ -405,8 +412,14 @@
                                                                 {% endblock %} 
                                                                 <div style="text-align:left;padding-top:5px;color:white; background-color:#292929;">
                                                                 {% block footer_note %}{% endblock%} 
-                                                                <p style="font-size: 11px;">You are receiving this newsletter because {% block reason %}you subscribed to the ESO Outreach Community Newsletter.{% endblock %}</p> 
-																<p style="font-size: 11px; text-align:center;"><a href="*|UNSUB|*" style="color:white">Unsubscribe</a> | <a href="*|UPDATE_PROFILE|*" style="color:white">Subscription preferences</a> {% if enable_sharing %}| <a href="*|ARCHIVE|*" style="color:white">View in browser</a>{% endif %}</p>
+                                                                {% if unsubscribe_link %}<p style="font-size: 11px;">You are receiving this newsletter because {% block reason %}you subscribed to the ESO Outreach Community Newsletter.{% endblock %}</p>{% endif %} 
+																{% if unsubscribe_link or preferences_link or browser_link %}
+																<p style="font-size: 11px; text-align:center;">
+																	{% if unsubscribe_link %}<a href="*|UNSUB|*" style="color:white">Unsubscribe</a>{% endif %}
+	                                        						{% if preferences_link %}{% if unsubscribe_link %} | {%endif%}<a href="*|UPDATE_PROFILE|*" style="color:white">Subscription preferences</a>{% endif %}
+	                                        						{% if browser_link and enable_sharing %}{% if unsubscribe_link or preferences_link %} | {%endif%} <a href="*|ARCHIVE|*" style="color:white">View in browser</a>{% endif %}
+																</p>
+																{% endif %}
 																<p style="font-size: 11px; text-align:center;"><img src="http://www.eso.org/public/archives/images/socialicons.png" style="border:0px;" usemap="#sociallinks"></img></p>
 																<p style="font-size: 11px; text-align:center; margin-bottom: 0px;">European Southern Observatory, Karl-Schwarzschild-Str 2, D-85748 Garching bei M&uuml;nchen, Germany</p>
 																<map id="sociallinks" name="sociallinks">

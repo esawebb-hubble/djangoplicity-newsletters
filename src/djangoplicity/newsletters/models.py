@@ -31,32 +31,46 @@
 #
 
 """
+Data models for the newsletter system.
 
+The newsletter system consists of the following components:
+
+ * Newsletter types which are used to define:
+    *) where to send the newsletter
+    *) how to render the newsletter
+    *) how to select content for the newsletter (auto-generation support)
+ * Mailer plug-in system that allow sending a newsletter
+   via different channels (e.g. via mailchimp, standard email or mailman list).
+   The mailer plug-in system can be extended with the users own mailer plug-ins.
+ * Newsletter generation component, that can integrate content from any django
+   model into the newsletter. 
 """
 
+from datetime import datetime, timedelta
+from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.sites.models import Site
 from django.db import models
+from django.db.models.signals import post_save
+from django.template import Context, Template, defaultfilters
+from django.utils.functional import lazy
 from django.utils.translation import ugettext as _
 from djangoplicity import archives
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
-from django.template import Context, Template, defaultfilters
-from django.contrib.sites.models import Site
-from datetime import datetime, timedelta
-from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin
-from django.utils.functional import lazy
-from django.db.models.signals import post_save
+from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
+	MailmanMailerPlugin
+from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
+import traceback
 
-
-SPLIT_TEST = ( 
-	( '', 'Disabled' ),
-	( 'from_name', 'From' ),
-	( 'subject', 'Subject' ),
- )
-
-SPLIT_TEST_WINNER = ( 
-	( 'opens', 'Opens' ),
-	( 'clicks', 'Clicks' ),
- )
+#SPLIT_TEST = ( 
+#	( '', 'Disabled' ),
+#	( 'from_name', 'From' ),
+#	( 'subject', 'Subject' ),
+# )
+#
+#SPLIT_TEST_WINNER = ( 
+#	( 'opens', 'Opens' ),
+#	( 'clicks', 'Clicks' ),
+# )
 
 class Mailer( models.Model ):
 	"""
@@ -71,9 +85,9 @@ class Mailer( models.Model ):
 
 	def __init__( self, *args, **kwargs ):
 		"""
+		Set choices for plugin field dynamically based on registered plugins.
 		"""
 		super( Mailer, self ).__init__( *args, **kwargs )
-		print Mailer.get_plugin_choices()
 		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices()#lazy( Mailer.get_plugin_choices, list )
 
 	def get_plugincls( self ):
@@ -93,21 +107,54 @@ class Mailer( models.Model ):
 		return cls( self.get_parameters() )
 
 	def get_parameters( self ):
+		"""
+		Get parameters to be send to the mailer
+		"""
 		return dict( [( p.name, p.get_value() ) for p in MailerParameter.objects.filter( mailer=self ) ] )
 
 	def send_now( self, newsletter ):
 		"""
 		Send newsletter now via this mailer
 		"""
-		plugin = self.get_plugin()
-		return plugin.send_now( newsletter )
+		l = self._log_entry( newsletter )
+		
+		try:
+			plugin = self.get_plugin()
+			return plugin.send_now( newsletter )
+		except Exception, e:
+			l.succeess = False
+			l.error = traceback.format_exc()
+		finally:
+			l.save()
 
 	def send_test( self, newsletter, emails=[] ):
 		"""
 		Send test newsletter now via this mailer to listed emails
 		"""
-		plugin = self.get_plugin()
-		return plugin.send_test( newsletter, emails )
+		l = self._log_entry( newsletter )
+		l.is_test = True
+
+		try:
+			plugin = self.get_plugin()
+			return plugin.send_test( newsletter, emails )
+		except Exception, e:
+			l.succeess = False
+			l.error = traceback.format_exc()
+		finally:
+			l.save()
+			
+	def _log_entry( self, newsletter ):
+		"""
+		Create a log entry for sending a mail
+		"""
+		l = MailerLog( 
+				plugin = self.plugin,
+				name = self.name,
+				subject = newsletter.subject,
+				newsletter_pk = newsletter.pk,
+				parameters = '; '.join([unicode( p ) for p in MailerParameter.objects.filter( mailer=self )]),
+			)
+		return l
 
 	@classmethod
 	def register_plugin( cls, mailercls ):
@@ -129,10 +176,10 @@ class Mailer( models.Model ):
 	@classmethod
 	def post_save_handler( cls, sender=None, instance=None, created=False, raw=True, using=None, **kwargs ):
 		"""
-		Callback to save blank value for all parameters for this plugin and remove unknown parameters
+		Callback to save a blank value for all parameters for this plugin and remove unknown parameters
 		"""
-		if instance:
-			known_params = dict([( p.name, p ) for p in MailerParameter.objects.filter( mailer=instance )])
+		if instance and not raw:
+			known_params = dict( [( p.name, p ) for p in MailerParameter.objects.filter( mailer=instance )] )
 			
 			for p, desc, t in instance.get_plugincls().parameters:
 				touched = False
@@ -166,11 +213,12 @@ class Mailer( models.Model ):
 	class Meta:
 		ordering = ['name']
 
+# Connect signal handlers
 post_save.connect( Mailer.post_save_handler, sender=Mailer )
 
 class MailerParameter( models.Model ):
 	"""
-	Specify parameter for a mailer
+	Parameter for a mailer (e.g. mailchimp list id, or list of email addresses
 	"""
 	mailer = models.ForeignKey( Mailer )
 	name = models.SlugField( max_length=255, unique=False )
@@ -179,6 +227,9 @@ class MailerParameter( models.Model ):
 	help_text = models.CharField( max_length=255, blank=True )
 
 	def get_value( self ):
+		"""
+		Return value in the proper type
+		"""
 		if self.type == 'str':
 			return self.value
 		elif self.type == 'int':
@@ -193,24 +244,36 @@ class MailerParameter( models.Model ):
 
 	def __unicode__( self ):
 		return u"%s = %s (%s)" % ( self.name, self.value, self.type )
-
 	
 	class Meta:
 		ordering = ['mailer','name']
 		unique_together = ['mailer', 'name']
+		
+
+class MailerLog( models.Model ):
+	"""
+	Logging o
+	"""
+	timestamp = models.DateTimeField( auto_now_add=True )
+	success = models.BooleanField( default=True )
+	is_test = models.BooleanField( default=False )
+	plugin = models.CharField( max_length=255 )
+	name = models.CharField( max_length=255 )
+	parameters = models.TextField( blank=True )
+	subject = models.CharField( max_length=255, blank=False )
+	newsletter_pk = models.IntegerField()
+	error = models.TextField( blank=True )
+	
+	class Meta:
+		ordering = ['-timestamp']
+	
+	
 		
 		
 class NewsletterType( models.Model ):
 	"""
 	Definition of a newsletter type - e.g. ESO Outreach Community Newsletter
 	"""
-	#sender = ....
-	#default_list =
-	#mailing_list_email =
-	#mailchimp_folder =
-	#tracking  = models.BooleanField( default=True, help_text=_('Enable social sharing of newsletter.') )
-	#analytics = models.BoeeleanField 
-
 	#
 	# Default from email/name
 	#
@@ -248,7 +311,9 @@ class NewsletterType( models.Model ):
 
 class Newsletter( archives.ArchiveModel, models.Model ):
 	"""
+	A definition of a newsletter.
 	"""
+	
 	# Status
 	type = models.ForeignKey( NewsletterType )
 	frozen = models.BooleanField( default=False )
@@ -258,51 +323,45 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	start_date = models.DateTimeField( blank=True, null=True )
 	end_date = models.DateTimeField( blank=True, null=True )
 
-	#
-	# Email
-	#
+	# From name/email
 	from_name = models.CharField( max_length=255, blank=True )
 	from_email = models.EmailField( blank=True )
 
-	#
 	# Content
-	#
 	subject = models.CharField( max_length=255, blank=True )
 	text = models.TextField( blank=True )
 	html = models.TextField( verbose_name="HTML", blank=True )
 
+	# Editorial if needed
 	editorial = models.TextField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
-	#
-	# A/B split testing
-	#
-#	split_test = models.CharField( max_length=10, blank=True, choices=SPLIT_TEST )
-#	split_test_winner = models.CharField( max_length=10, blank=True, choices=SPLIT_TEST_WINNER )
-#	
-#	alternate_from_name = models.CharField( max_length=255 )
-#	alternate_from_email = models.EmailField()
-#	alternate_subject = models.CharField( max_length=255 )
-
 	def send_now( self ):
 		"""
-		Send a newsletter right away.
+		Send a newsletter right away. Once send, it
+		cannot be send again.
+		
+		Note each mailer will render the newsletter, since subscription
+		links etc might change depending on the mailer.
 		"""
 		if self.send is None:
-			self.render()
-			self.frozen = True
 			self.send = datetime.now()
+			
 			for m in self.type.mailers.all():
 				m.send_now( self )
+			
+			self.frozen = True
 			self.save()
 		else:
 			raise Exception( "Newsletter have already been sent." )
 
 	def send_test( self, emails ):
 		"""
-		Send a test version of the newsletter
+		Send a test version of the newsletter.
+		
+		Note each mailer will render the newsletter, since subscription
+		links etc might change depending on the mailer.
 		"""
-		self.render()
 		for m in self.type.mailers.all():
 			m.send_test( self, emails )
 
@@ -318,7 +377,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			return None
 
 
-	def render( self ):
+	def render( self, extra_ctx, store=True ):
 		"""
 		Render the newsletter
 		"""
@@ -327,7 +386,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			t_text = Template( self.type.text_template )
 			t_subject = Template( self.type.subject_template )
 
-			ctx = Context( {
+			defaults = {
 				'base_url' : "http://%s" % Site.objects.get_current().domain,
 				'data' : NewsletterContent.data_context( self ),
 				'editorial' : self.editorial,
@@ -336,11 +395,31 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 				'enable_archive' : self.type.archive,
 				'release_date' : self.release_date,
 				'published' : self.published,
-			} )
+				'unsubscribe_link' : '', # Will be provided by the mailer plugin
+				'preferences_link' : '', # Will be provided by the mailer plugin 
+				'browser_link' : '', # Will be provided by the mailer plugin
+			}
+			defaults.update( extra_ctx )
+			ctx = Context( defaults )
 
-			self.html = t_html.render( ctx )
-			self.text = t_text.render( ctx )
-			self.subject = t_subject.render( ctx )
+			data = {
+				'html' : t_html.render( ctx ),
+				'text' : t_text.render( ctx ),
+				'subject' : t_subject.render( ctx ),
+			}
+			
+			if store:
+				self.html = data['html']
+				self.text = data['text']
+				self.subject = data['subject']
+			
+			return data
+		else:
+			return {
+				'html' : self.html,
+				'text' : self.text,
+				'subject' : self.subject,
+			}
 
 
 	def save( self, *args, **kwargs ):
@@ -352,16 +431,16 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			if self.from_email == '':
 				self.from_email = self.type.default_from_email
 			if self.editorial_text == '' and self.editorial:
-				self.editorial_text = defaultfilters.striptags( defaultfilters.safe( self.editorial ) )
+				self.editorial_text = defaultfilters.striptags( unescape( defaultfilters.safe( self.editorial ) ) )
 				
-			self.render()
+			self.render( {} )
 		return super( Newsletter, self ).save( *args, **kwargs )
 
 	def __unicode__( self ):
 		return self.subject
 
 	class Meta:
-		pass
+		ordering = ['-release_date']
 
 	class Archive:
 		class Meta:
@@ -485,7 +564,10 @@ class DataSourceOrdering( models.Model ):
 
 class NewsletterDataSource( models.Model ):
 	"""
-	Specifies data sources and names for
+	Data source for a newsletter. A data source is a reference to a 
+	django content type combined with selectors, ordering etc. that 
+	can be used to generate a normal query set for selecting new
+	objects
 	"""
 	type = models.ForeignKey( NewsletterType )
 	list = models.BooleanField( default=True )
@@ -501,6 +583,10 @@ class NewsletterDataSource( models.Model ):
 
 
 	def _limit_queryset( self, qs ):
+		"""
+		Parse the limit field, and limit the queryset
+		accordingly
+		"""
 		limits = self.limit.split( ":" )[:2]
 		try:
 			start = int( limits[0] )
@@ -521,13 +607,16 @@ class NewsletterDataSource( models.Model ):
 		else:
 			return qs
 
-
 	@classmethod
 	def data_sources( cls, type ):
 		return cls.objects.filter( type=type )
 
 	def get_queryset( self, ctx ):
 		"""
+		Get the queryset for this data source. Since a selector
+		provides ability to include variables you must also 
+		provide a context. This is normally done by the 
+		newsletter generation system.
 		"""
 		modelcls = self.content_type.model_class()
 		qs = modelcls.objects.all()
@@ -550,6 +639,10 @@ class NewsletterDataSource( models.Model ):
 		ordering = ['type__name', 'title']
 
 
+
+# =================================
+# Auto generation component
+# =================================
 class NewsletterGenerator( object ):
 	"""
 	Generator for newsletters
@@ -600,6 +693,9 @@ class NewsletterGenerator( object ):
 		return nl
 
 
+# ==========================================
+# Support models for MailChimpMailer plug-in
+# ==========================================
 class MailChimpCampaign( models.Model ):
 	"""
 	Model used to keep track of mailchimp campaign ids for each newsletter.
@@ -615,6 +711,7 @@ class MailChimpCampaign( models.Model ):
 # Register default mailer interfaces
 #
 Mailer.register_plugin( EmailMailerPlugin )
+Mailer.register_plugin( MailmanMailerPlugin )
 
 try:
 	from djangoplicity.mailinglists.models import MailChimpList
