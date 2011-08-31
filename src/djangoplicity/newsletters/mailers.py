@@ -117,7 +117,10 @@ class MailmanMailerPlugin( EmailMailerPlugin ):
 	]
 	
 	def __init__( self, params ):
-		super( MailmanMailerPlugin, self ).__init__( params )
+		try:
+			self._to_emails = [x.strip() for x in params['emails'].split()]
+		except KeyError:
+			raise Exception( "Parameter 'emails' is missing" )
 		try:
 			self.listinfo_url = params['listinfo_url'].strip()
 		except KeyError:
@@ -234,13 +237,15 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		Send newsletter now.
 		"""
 		info = self._upload_newsletter( newsletter )
-		self.ml.connection.campaignSendNow( cid=info.campaign_id )
+		if not self.ml.connection.campaignSendNow( cid=info.campaign_id ):
+			raise Exception("MailChimp could not send newsletter.")
 
 	def send_test( self, newsletter, emails ):
 		"""
 		Send a test email for this newsletter
 		"""
 		info = self._upload_newsletter( newsletter )
-		self.ml.connection.campaignSendTest( cid=info.campaign_id, test_emails=emails )
+		if not self.ml.connection.campaignSendTest( cid=info.campaign_id, test_emails=emails ):
+			raise Exception("MailChimp could not send test email.")
 
 	

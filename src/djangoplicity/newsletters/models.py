@@ -58,6 +58,8 @@ from django.utils.translation import ugettext as _
 from djangoplicity import archives
 from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 	MailmanMailerPlugin
+from djangoplicity.newsletters.tasks import send_newsletter, \
+	send_newsletter_test
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 import traceback
 
@@ -136,11 +138,12 @@ class Mailer( models.Model ):
 
 		try:
 			plugin = self.get_plugin()
-			return plugin.send_test( newsletter, emails )
-		except Exception, e:
-			l.succeess = False
+			res = plugin.send_test( newsletter, emails )
+			l.save()
+			return res
+		except:
+			l.success = False
 			l.error = traceback.format_exc()
-		finally:
 			l.save()
 			
 	def _log_entry( self, newsletter ):
@@ -336,6 +339,30 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	editorial = models.TextField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
+	def _send_now( self ):
+		"""
+		Function that does the actual work. Is called from 
+		the task send_newsletter
+		"""
+		if self.send is None:
+			self.send = datetime.now()
+				
+			for m in self.type.mailers.all():
+				m.send_now( self )
+			
+			self.frozen = True
+			self.save()
+		else:
+			raise Exception( "Newsletter have already been sent." )
+		
+	def _send_test( self, emails ):
+		"""
+		Function that does the actual work. Is called from 
+		the task send_newsletter_test
+		"""
+		for m in self.type.mailers.all():
+			m.send_test( self, emails )
+			
 	def send_now( self ):
 		"""
 		Send a newsletter right away. Once send, it
@@ -344,16 +371,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 		Note each mailer will render the newsletter, since subscription
 		links etc might change depending on the mailer.
 		"""
-		if self.send is None:
-			self.send = datetime.now()
-			
-			for m in self.type.mailers.all():
-				m.send_now( self )
-			
-			self.frozen = True
-			self.save()
-		else:
-			raise Exception( "Newsletter have already been sent." )
+		send_newsletter.delay( self.pk )
 
 	def send_test( self, emails ):
 		"""
@@ -362,8 +380,9 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 		Note each mailer will render the newsletter, since subscription
 		links etc might change depending on the mailer.
 		"""
-		for m in self.type.mailers.all():
-			m.send_test( self, emails )
+		
+		send_newsletter_test.delay( self.pk, emails )
+	
 
 	@classmethod
 	def latest_for_type( cls, type ):

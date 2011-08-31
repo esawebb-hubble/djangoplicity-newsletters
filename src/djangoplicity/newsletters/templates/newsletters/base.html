@@ -278,9 +278,9 @@
                                         {% if unsubscribe_link or preferences_link or browser_link %} 
                                         <tr> 
                                         	<td colspan="2" style="color: #505050;font-family: Helvetica, Arial;font-size: 10px;line-height: 100%; text-align:center;">
-                                        	{% if unsubscribe_link %}<a href="*|UNSUB|*">Unsubscribe</a>{% endif %}
-                                        	{% if preferences_link %}{% if unsubscribe_link %} | {%endif%}<a href="*|UPDATE_PROFILE|*">Subscription preferences</a>{% endif %}
-                                        	{% if browser_link and enable_sharing %}{% if unsubscribe_link or preferences_link %} | {%endif%} <a href="*|ARCHIVE|*">View in browser</a>{% endif %}
+                                        	{% if unsubscribe_link %}<a href="{{unsubscribe_link}}">Unsubscribe</a>{% endif %}
+                                        	{% if preferences_link %}{% if unsubscribe_link %} | {%endif%}<a href="{{preferences_link}}">Subscription preferences</a>{% endif %}
+                                        	{% if browser_link and enable_sharing %}{% if unsubscribe_link or preferences_link %} | {%endif%} <a href="{{browser_link}}">View in browser</a>{% endif %}
                                         	</td> 
                                         </tr> 
                                         {% endif %}
@@ -415,9 +415,9 @@
                                                                 {% if unsubscribe_link %}<p style="font-size: 11px;">You are receiving this newsletter because {% block reason %}you subscribed to the ESO Outreach Community Newsletter.{% endblock %}</p>{% endif %} 
 																{% if unsubscribe_link or preferences_link or browser_link %}
 																<p style="font-size: 11px; text-align:center;">
-																	{% if unsubscribe_link %}<a href="*|UNSUB|*" style="color:white">Unsubscribe</a>{% endif %}
-	                                        						{% if preferences_link %}{% if unsubscribe_link %} | {%endif%}<a href="*|UPDATE_PROFILE|*" style="color:white">Subscription preferences</a>{% endif %}
-	                                        						{% if browser_link and enable_sharing %}{% if unsubscribe_link or preferences_link %} | {%endif%} <a href="*|ARCHIVE|*" style="color:white">View in browser</a>{% endif %}
+																	{% if unsubscribe_link %}<a href="{{unsubscribe_link}}" style="color:white">Unsubscribe</a>{% endif %}
+	                                        						{% if preferences_link %}{% if unsubscribe_link %} | {%endif%}<a href="{{preferences_link}}" style="color:white">Subscription preferences</a>{% endif %}
+	                                        						{% if browser_link and enable_sharing %}{% if unsubscribe_link or preferences_link %} | {%endif%} <a href="{{browser_link}}" style="color:white">View in browser</a>{% endif %}
 																</p>
 																{% endif %}
 																<p style="font-size: 11px; text-align:center;"><img src="http://www.eso.org/public/archives/images/socialicons.png" style="border:0px;" usemap="#sociallinks"></img></p>
