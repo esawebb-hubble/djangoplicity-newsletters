@@ -168,10 +168,10 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		
 		if 'total' in campaigns and campaigns['total'] > 0:
 			vals = []
-			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'subject', value = nl.subject ) )
+			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'subject', value = nl.subject[:150] ) )
 			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'from_email', value = nl.from_email ) )
 			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'from_name', value = nl.from_name ) )
-			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'title', value = nl.subject ) )
+			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'title', value = nl.subject[:100] ) )
 			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'content', value = { 'html' : nl.html, 'text' : nl.text } ) )
 			if False in vals:
 				raise Exception( "Could update campaign" )
@@ -187,7 +187,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			type = 'regular',
 			options = {
 				'list_id' : self.ml.list_id,
-				'subject' : nl.subject,
+				'subject' : nl.subject[:150],
+				'title' : nl.subject[:100],
 				'from_email' : nl.from_email,
 				'from_name' : nl.from_name,
 				'tracking' : { 'opens' : True, 'html_clicks' : True, 'text_clicks' : False },
