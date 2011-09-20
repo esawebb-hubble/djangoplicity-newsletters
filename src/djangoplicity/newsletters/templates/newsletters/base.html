@@ -310,12 +310,12 @@
                                         
                                         {% block main_image %}
                                         <tr> 
-                                        	<td colspan="2" class="headerContent" height="300px";  background="http://www.eso.org/public/archives/images/newsfeature/{{data.potws.mainimage.0.image.id}}.jpg" style="color: #202020;font-family: Helvetica, Arial;font-size: 24px;font-weight: bold;line-height: 100%;padding: 0;text-align: left;vertical-align: bottom;background-color:black;"> 
+                                        	<td colspan="2" class="headerContent" height="300px";  background="http://www.eso.org/public/archives/images/newsfeature/{{data.potw.image.id}}.jpg" style="color: #202020;font-family: Helvetica, Arial;font-size: 24px;font-weight: bold;line-height: 100%;padding: 0;text-align: left;vertical-align: bottom;background-color:black;"> 
 	                                            <!-- Outlook 2007 only -->
 												<!--[if gte mso 9]>
-												<img src="http://www.eso.org/public/archives/images/newsfeature/{{data.potws.mainimage.0.image.id}}.jpg" width="733" height="300" />
+												<img src="http://www.eso.org/public/archives/images/newsfeature/{{data.potw.image.id}}.jpg" width="733" height="300" />
 												<![endif]-->
-                                            	<div style="padding:20px;color:white;font-size:22px;"><div style="font-size:14px;"><span style="background:black;padding:2px;"><a style="color:white; font-size:14px; text-decoration: none; font-weight: bold;" href="http://www.eso.org/public/images/potw/">ESO Picture of the Week</a></span></div><span style="background:black;padding:2px;"><a style="color:white;font-size:22px; text-decoration: none; font-weight: bold;" href="http://www.eso.org{{data.potws.mainimage.0.image.get_absolute_url}}">{{data.potws.mainimage.0.image.title}}</a></span></div> 
+                                            	<div style="padding:20px;color:white;font-size:22px;"><div style="font-size:14px;"><span style="background:black;padding:2px;"><a style="color:white; font-size:14px; text-decoration: none; font-weight: bold;" href="http://www.eso.org/public/images/potw/">ESO Picture of the Week</a></span></div><span style="background:black;padding:2px;"><a style="color:white;font-size:22px; text-decoration: none; font-weight: bold;" href="http://www.eso.org{{data.potw.get_absolute_url}}">{{data.potw.image.title}}</a></span></div> 
                                             </td> 
                                         </tr>
                                         {% endblock %} 

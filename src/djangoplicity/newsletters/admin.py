@@ -93,9 +93,9 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		),
 	)
 	inlines = [NewsletterContentInlineAdmin]
-	formfield_overrides = {
-        models.TextField: {'widget': TinyMCE( attrs={'cols': 80, 'rows': 20}, )},
-    }
+#	formfield_overrides = {
+#        models.TextField: {'widget': TinyMCE( attrs={'cols': 80, 'rows': 20}, )},
+#    }
 	
 	def get_urls( self ):
 		urls = super( NewsletterAdmin, self ).get_urls()

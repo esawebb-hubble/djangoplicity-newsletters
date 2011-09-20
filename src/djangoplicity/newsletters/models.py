@@ -62,6 +62,8 @@ from djangoplicity.newsletters.tasks import send_newsletter, \
 	send_newsletter_test
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 import traceback
+from tinymce import models as tinymce_models
+
 
 #SPLIT_TEST = ( 
 #	( '', 'Disabled' ),
@@ -336,7 +338,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	html = models.TextField( verbose_name="HTML", blank=True )
 
 	# Editorial if needed
-	editorial = models.TextField( blank=True )
+	editorial = tinymce_models.HTMLField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
 	def _send_now( self ):
@@ -409,7 +411,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 				'base_url' : "http://%s" % Site.objects.get_current().domain,
 				'data' : NewsletterContent.data_context( self ),
 				'editorial' : self.editorial,
-				'editorial_text' : self.editorial,
+				'editorial_text' : self.editorial_text,
 				'enable_sharing' : self.type.sharing,
 				'enable_archive' : self.type.archive,
 				'release_date' : self.release_date,

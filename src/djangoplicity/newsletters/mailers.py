@@ -188,11 +188,10 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			options = {
 				'list_id' : self.ml.list_id,
 				'subject' : nl.subject[:150],
-				'title' : nl.subject[:100],
 				'from_email' : nl.from_email,
 				'from_name' : nl.from_name,
 				'tracking' : { 'opens' : True, 'html_clicks' : True, 'text_clicks' : False },
-				'title' : nl.subject,
+				'title' : nl.subject[:100],
 				'authenticate' : True,
 				'auto_footer' : False,
 				'inline_css' : True,
