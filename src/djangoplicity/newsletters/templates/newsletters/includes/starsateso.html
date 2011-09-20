@@ -1,0 +1,30 @@
+{# ############### Stars@ESO ############### #}
+{% if data.starsateso %}
+<br/> 
+<hr style="{{hr_style}}"/> 
+<br/>
+
+<h2 class="h2" style="{{h2_style}}">
+<a style="color: #285A97;font-size: 15px;font-weight: bold; text-decoration:none;" href="http://www.eso.org/public/events/starsateso.html">Stars@ESO</a>
+</h2> 
+{% for obj in data.starsateso %}
+<br />
+<table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;"> 
+<tr> 
+<td valign="top" width="220"> 
+<a href="http://www.eso.org{{ obj.get_absolute_url }}"><img border="0" src="http://www.eso.org/public/archives/images/potwmedium/{{obj.image.id}}.jpg"></img></a>
+</td> 
+<td valign="top" style="padding-left:20px;font-family: Helvetica, Arial;font-size: 12px;" width="281"> 
+<h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
+<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="http://www.eso.org{{ obj.get_absolute_url }}">{{ obj.title }}</a>
+</h3>
+<div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
+<p><strong>{{ obj.release_date|date }}:</strong> {{ obj.description|striptags|truncatewords:30|safe }}</p> 
+</div>
+</td> 
+</tr> 
+<tr><td colspan="2" align="right"><a style="{{a_style}}" href="http://www.eso.org{{ obj.get_absolute_url }}">Read more</a></td></tr> 
+</table> 
+{% endfor %}
+
+{% endif %}
