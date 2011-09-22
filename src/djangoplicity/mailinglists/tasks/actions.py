@@ -30,6 +30,56 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from djangoplicity.mailinglists.tasks.mailchimp import *
-from djangoplicity.mailinglists.tasks.mailman import *
-from djangoplicity.mailinglists.tasks.actions import *
+from djangoplicity.actions.plugins import ActionPlugin
+
+
+class MailmanAction( ActionPlugin ):
+	"""
+	An action plugin is a configureable celery task,
+	that can be dynamically connected to events in the system.
+	"""
+	action_parameters = [ 
+		( 'listadmin_url', 'URL to the listadmin mailman page', 'str' ),
+		( 'password', 'Admin password for list', 'str' ),
+	]
+	abstract = True
+	
+	@classmethod
+	def get_arguments( self, *args, **kwargs ):
+		"""
+		Parse incoming arguments. Email lookup:
+		1) if an 'email' kwarg is provided, then the value is used.
+		2) otherwise 
+		"""
+		email = None
+		if 'email' in kwargs:
+			email = kwargs['email']
+		else:
+			for v in kwargs.values():
+				if hasattr( v, 'email' ):
+					email = v.email
+					break
+
+		return ( [], { 'email' : email } )
+
+
+class MailmanSubscribeAction( MailmanAction ):
+	action_name = 'Mailman subscribe'
+	
+	def run( self, conf, email=None ):
+		"""
+		Subscribe to mailman list
+		"""
+		print "Subscribe %s to %s" % ( email, unicode( conf ) )
+		
+class MailmanUnsubscribeAction( MailmanAction ):
+	action_name = 'Mailman unsubscribe'
+	
+	def run( self, conf, email=None ):
+		"""
+		Unsubscribe from mailman list
+		"""
+		print "Unsubscribe %s to %s" % ( email, unicode( conf ) )
+
+MailmanSubscribeAction.register()
+MailmanUnsubscribeAction.register()
