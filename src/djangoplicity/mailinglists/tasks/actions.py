@@ -116,6 +116,9 @@ class MailmanUpdateAction( MailmanAction ):
 
 class MailmanSyncAction( MailmanAction ):
 	action_name = 'Mailman synchronize'
+	action_parameters = MailmanAction.action_parameters + [ 
+		('remove_existing', 'Remove any mailman subscriber not defined in djangoplicity.', 'bool'),
+	]
 	
 	@classmethod
 	def get_arguments( cls, conf, *args, **kwargs ):
@@ -143,7 +146,9 @@ class MailmanSyncAction( MailmanAction ):
 		"""
 		emails = self._get_emails()
 		mlist = self._get_list( conf['list_name'] )
-		mlist.update_subscribers( emails )			
+		mlist.update_subscribers( emails )
+		mlist.push( remove_existing=conf['remove_existing'] )
+
 
 
 MailmanSubscribeAction.register()

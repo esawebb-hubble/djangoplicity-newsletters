@@ -204,10 +204,8 @@ class List( models.Model ):
 			sub = Subscription( list=self, subscriber=subscriber )
 			sub.save()
 		
-		# Push all changes to mailman
-		self.push()
-		
-	def push( self ):
+
+	def push( self, remove_existing=True ):
 		"""
 		Push entire list of subscribers to mailman (will overwrite anything in Mailman)
 		"""
@@ -220,8 +218,9 @@ class List( models.Model ):
 		for e in subscribe:
 			self._subscribe( e )
 		
-		for e in unsubscribe:
-			self._unsubscribe( e )
+		if remove_existing:
+			for e in unsubscribe:
+				self._unsubscribe( e )
 
 
 	def incoming_changes( self ):
