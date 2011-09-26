@@ -128,7 +128,7 @@ class List( models.Model ):
 		
 		if async:
 			from djangoplicity.mailinglists.tasks import mailman_send_subscribe
-			mailman_send_subscribe.delay( self.name, sub.pk )
+			mailman_send_subscribe.delay( sub.pk )
 		else:
 			self._subscribe( subscriber.email )
 
@@ -152,7 +152,7 @@ class List( models.Model ):
 				sub.delete()
 				self._unsubscribe(  email )
 		except Subscription.DoesNotExist, e:
-			print e
+			raise e
 		
 	def _subscribe(self, email):
 		"""
@@ -166,7 +166,7 @@ class List( models.Model ):
 		Method that will directly unsubscribe an email to this list (normally called from
 		a background task. 
 		"""
-		self.mailman.unsubscribe( email ) 
+		self.mailman.unsubscribe( email )
 
 
 	def incoming_changes( self ):

@@ -73,9 +73,10 @@ class MailmanSubscribeAction(MailmanAction):
 		"""
 		Subscribe to mailman list
 		"""
-		list = self._get_list( conf['list_name'] )
-		list.subscribe( email=email, async=False )
-		self.get_logger().info("Subscribed %s to mailman list %s" % ( email, list.name ) )
+		if email:
+			list = self._get_list( conf['list_name'] )
+			list.subscribe( email=email, async=False )
+			self.get_logger().info("Subscribed %s to mailman list %s" % ( email, list.name ) )
 		
 		
 class MailmanUnsubscribeAction(MailmanAction):
@@ -85,22 +86,32 @@ class MailmanUnsubscribeAction(MailmanAction):
 		"""
 		Unsubscribe from mailman list
 		"""
-		list = self._get_list( conf['list_name'] )
-		list.unsubscribe( email=email, async=False )
-		self.get_logger().info("Unsubscribed %s to mailman list %s" % ( email, list.name ) )
+		if email:
+			list = self._get_list( conf['list_name'] )
+			list.unsubscribe( email=email, async=False )
+			self.get_logger().info("Unsubscribed %s to mailman list %s" % ( email, list.name ) )
 		
-class MailmanUpdateAction(MailmanAction):
-	action_name = 'Mailman update email'
+class MailmanUpdateAction( MailmanAction ):
+	action_name = 'Mailman update subscription'
 	
-	def run(self, conf, from_email=None, to_email=None ):
+	@classmethod
+	def get_arguments(cls, conf, *args, **kwargs):
+		return ( args, kwargs )
+	
+	def run(self, conf, from_email=None, to_email=None, **kwargs ):
 		"""
-		Unsubscribe from mailman list
+		Email address was updated so change subscriber
 		"""
-		list = self._get_list( conf['list_name'] )
-		list.unsubscribe( email=from_email, async=False )
-		self.get_logger().info("Unsubscribed %s to mailman list %s" % ( from_email, list.name ) )
-		list.subscribe( email=to_email, async=False )
-		self.get_logger().info("Subscribed %s to mailman list %s" % ( to_email, list.name ) )
+		if from_email != to_email and from_email is not None and to_email is not None:
+			# from/to email can be empty but not none (empty basically means unsubscribe).
+			list = self._get_list( conf['list_name'] )
+			if from_email != '':
+				list.unsubscribe( email=from_email, async=False )
+				self.get_logger().info( "Unsubscribed %s to mailman list %s" % ( from_email, list.name ) )
+			if to_email != '':
+				list.subscribe( email=to_email, async=False )
+				self.get_logger().info( "Subscribed %s to mailman list %s" % ( to_email, list.name ) )
+
 		
 
 MailmanSubscribeAction.register()

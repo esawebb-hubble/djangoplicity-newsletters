@@ -126,11 +126,15 @@ def mailman_send_unsubscribe( subscription_pk ):
 	logger = mailman_send_unsubscribe.get_logger()
 	
 	sub = Subscription.objects.get( pk=subscription_pk )
+	email = sub.subscriber.email
+	list_name = sub.list.name
+	sub.delete()
+	
 	sub.list.mailman._unsubscribe( sub.subscriber.email )
 	
-	logger.info( "Unsubscribed %s from mailman list %s" % ( sub.subscriber.email, sub.list.name ) )
+	logger.info( "Unsubscribed %s from mailman list %s" % ( email, name ) )
 	
-	sub.delete()
+	
 
 
 		
