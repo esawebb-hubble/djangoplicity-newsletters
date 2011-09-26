@@ -164,9 +164,64 @@ class List( models.Model ):
 	def _unsubscribe( self, email ):
 		"""
 		Method that will directly unsubscribe an email to this list (normally called from
-		a background task. 
+		a background task.
 		"""
 		self.mailman.unsubscribe( email )
+		
+	def get_mailman_emails(self):
+		"""
+		Get all current mailman subscribers.
+		"""
+		mailman_members = self.mailman.get_members()
+		
+		if mailman_members:
+			mailman_names, mailman_emails = zip( *mailman_members )
+			mailman_emails = set( mailman_emails )
+		else:
+			mailman_names, mailman_emails = [], set( [] )
+		
+		return mailman_emails
+
+	def update_subscribers( self, emails ):
+		"""
+		Update the list of subscribers to match a list of emails.
+		"""
+		emails = dict( [( x, 1 ) for x in emails] ) # Remove duplicates
+
+		for sub in Subscription.objects.filter( list=self ).select_related( depth=1 ):
+			if sub.subscriber.email in emails:
+				del emails[sub.subscriber.email]
+			else:
+				# Delete all subscribers not in the list
+				sub.delete()
+
+		bad_emails = set( BadEmailAddress.objects.all().values_list( 'email', flat=True ) )
+		emails = set( emails.keys() )
+		
+		# Subscribe all emails not in subscribers.
+		for email in (emails - bad_emails):
+			( subscriber, created ) = Subscriber.objects.get_or_create( email=email )
+			sub = Subscription( list=self, subscriber=subscriber )
+			sub.save()
+		
+		# Push all changes to mailman
+		self.push()
+		
+	def push( self ):
+		"""
+		Push entire list of subscribers to mailman (will overwrite anything in Mailman)
+		"""
+		mailman_emails = self.get_mailman_emails()
+		django_emails = set( self.subscribers.all().values_list( 'email', flat=True ) )
+
+		subscribe = django_emails - mailman_emails
+		unsubscribe = mailman_emails - django_emails  
+								
+		for e in subscribe:
+			self._subscribe( e )
+		
+		for e in unsubscribe:
+			self._unsubscribe( e )
 
 
 	def incoming_changes( self ):

@@ -55,11 +55,12 @@ class MailmanAction(ActionPlugin):
 			email = kwargs['email']
 		else:
 			for v in kwargs.values():
-				if hasattr(v, 'email'):
+				if hasattr( v, 'email' ):
 					email = v.email
 					break
 
-		return ([], { 'email' : email })
+		return ( [], { 'email' : email } )
+
 	
 	def _get_list(self, list_name):
 		from djangoplicity.mailinglists.models import List
@@ -112,8 +113,40 @@ class MailmanUpdateAction( MailmanAction ):
 				list.subscribe( email=to_email, async=False )
 				self.get_logger().info( "Subscribed %s to mailman list %s" % ( to_email, list.name ) )
 
-		
+
+class MailmanSyncAction( MailmanAction ):
+	action_name = 'Mailman synchronize'
+	
+	@classmethod
+	def get_arguments( cls, conf, *args, **kwargs ):
+		for v in kwargs.values():
+			if hasattr( v, 'get_emails' ) and callable( v.get_emails ):
+				module = v.__class__.__module__
+				klass = v.__class__.__name__
+				pk = v.pk
+				break
+
+		return ( [], { 'module' : module, 'klass' : klass, 'pk' : pk } )
+	
+	
+	def _get_emails( self, module, klass, pk ):
+		"""
+		Get the list of emails to synchronize
+		"""
+		m = __import__( module, globals(), locals(), [klass], -1 )
+		cls = getattr( m, klass )
+		obj = cls.objects.get( pk = pk )
+		return obj.get_emails()
+
+	def run( self, conf, module=None, klass=None, pk=None ):
+		"""
+		"""
+		emails = self._get_emails()
+		mlist = self._get_list( conf['list_name'] )
+		mlist.update_subscribers( emails )			
+
 
 MailmanSubscribeAction.register()
 MailmanUnsubscribeAction.register()
 MailmanUpdateAction.register()
+MailmanSyncAction.register()
