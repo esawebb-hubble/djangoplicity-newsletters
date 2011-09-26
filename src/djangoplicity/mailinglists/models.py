@@ -60,12 +60,6 @@ NEWSLETTERS_MAILCHIMP_APIKEY = settings.NEWSLETTERS_MAILCHIMP_APIKEY if hasattr(
 LIST_URL = 'http://www.eso.org/lists'
 
 #
-# Signals
-#
-subscription_added = Signal( providing_args=["subscription", "source" ] )
-subscription_deleted = Signal( providing_args=["list", "subscriber", "source" ] )
-
-#
 # Models
 #
 class BadEmailAddress( models.Model ):
@@ -97,47 +91,82 @@ class Subscriber( models.Model ):
 
 class List( models.Model ):
 	"""
-	List name of subscribers.
-	
-	Sync'ed with mailman.
+	Mailman list
 	"""
+	base_url = models.CharField( max_length=255 )
 	name = models.SlugField( unique=True )
 	password = models.SlugField()
 	subscribers = models.ManyToManyField( Subscriber, through='Subscription', blank=True )
-	
 	last_sync = models.DateTimeField( blank=True, null=True )
 
 	def _get_mailman( self ):
 		"""
 		Get object for manipulating mailman list.
 		"""
-		return MailmanList( name=self.name, password=self.password, main_url="http://www.eso.org/lists" )
+		return MailmanList(name=self.name, password=self.password, main_url=self.base_url)
 	mailman = property( _get_mailman )
 
 
-	def subscribe( self, subscriber, source=None ):
+	def subscribe( self, subscriber=None, email=None, async=True ):
 		"""
 		Subscribe a user to this list. 
 		"""
-		sub = Subscription( list=self, subscriber=subscriber )
+		if not subscriber:
+			if email:
+				try:
+					BadEmailAddress.objects.get(email=email)
+					raise Exception("%s is a known bad email address" % email)
+				except BadEmailAddress.DoesNotExist:
+					pass
+				
+				(subscriber, created) = Subscriber.objects.get_or_create(email=email)
+			else:
+				raise Exception("Please provide either subscriber or email address")
+
+		sub = Subscription(list=self, subscriber=subscriber)
 		sub.save()
+		
+		if async:
+			from djangoplicity.mailinglists.tasks import mailman_send_subscribe
+			mailman_send_subscribe.delay( self.name, sub.pk )
+		else:
+			self._subscribe( subscriber.email )
 
-		# Send signal to allow mailman and mailchimp to be updated
-		subscription_added.send_robust( sender=self, subscription=sub, source=source )
-
-
-	def unsubscribe( self, subscriber, source=None ):
+	def unsubscribe(self, subscriber=None, email=None, async=True ):
 		"""
 		Unsubscribe a user to this list. 
 		"""
 		try:
-			sub = Subscription.objects.get( list=self, subscriber=subscriber )
-			sub.delete()
-
-			# Send signal to allow mailman and mailchimp to be updated
-			subscription_deleted.send_robust( sender=self, list=self, subscriber=subscriber, source=source )
-		except Subscription.DoesNotExist:
-			pass
+			if subscriber:
+				sub = Subscription.objects.get( list=self, subscriber=subscriber )
+			elif email:
+				sub = Subscription.objects.get( list=self, subscriber__email=email)
+			else:
+				raise Exception("Expected either subscriber or email keyword arguments to be provided.")
+			
+			if async:
+				from djangoplicity.mailinglists.tasks import mailman_send_unsubscribe
+				mailman_send_unsubscribe.delay( sub.pk )
+			else:
+				email = sub.subscriber.email
+				sub.delete()
+				self._unsubscribe(  email )
+		except Subscription.DoesNotExist, e:
+			print e
+		
+	def _subscribe(self, email):
+		"""
+		Method that will directly subscribe an email to this list (normally called from
+		a background task.) 
+		"""
+		self.mailman.subscribe(email)
+			
+	def _unsubscribe( self, email ):
+		"""
+		Method that will directly unsubscribe an email to this list (normally called from
+		a background task. 
+		"""
+		self.mailman.unsubscribe( email ) 
 
 
 	def incoming_changes( self ):
@@ -163,30 +192,6 @@ class List( models.Model ):
 
 		return ( subscribe_emails, unsubscribe_emails, current_list_subscribers, mailman_unsubscribe_emails )
 
-
-	@classmethod
-	def subscription_added_handler( cls, sender=None, subscription=None, source=None, **kwargs ):
-		"""
-		Handler for dealing with new subscriptions.
-		"""
-		if not isinstance( source, cls ):
-			# Event was not sent from new mailman subscription, so 
-			# it must be passed on to mailman
-			from djangoplicity.mailinglists.tasks import mailman_send_subscribe
-			mailman_send_subscribe.delay( subscription.list.name, subscription.subscriber.email )
-
-
-	@classmethod
-	def subscription_deleted_handler( cls, sender, list=None, subscriber=None, source=None, **kwargs ):
-		"""
-		Handler for dealing with unsubscribes. 
-		"""
-		if not isinstance( source, cls ):
-			# Event was not sent from new mailman subscription, so 
-			# it must be passed on to mailman
-			from djangoplicity.mailinglists.tasks import mailman_send_unsubscribe
-			mailman_send_unsubscribe.delay( list.name, subscriber.email )
-
 	@classmethod
 	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
 		"""
@@ -205,9 +210,7 @@ class List( models.Model ):
 
 
 # Connect signal handlers
-subscription_added.connect( List.subscription_added_handler )
-subscription_deleted.connect( List.subscription_deleted_handler )
-post_save.connect( List.post_save_handler, sender=List )
+#post_save.connect( List.post_save_handler, sender=List )
 
 
 class Subscription( models.Model ):
@@ -457,8 +460,6 @@ class MailChimpList( models.Model ):
 
 
 # Connect signal handlers
-subscription_added.connect( MailChimpList.subscription_added_handler )
-subscription_deleted.connect( MailChimpList.subscription_deleted_handler )
 post_save.connect( MailChimpList.post_save_handler, sender=MailChimpList )
 pre_delete.connect( MailChimpList.pre_delete_handler, sender=MailChimpList )
 

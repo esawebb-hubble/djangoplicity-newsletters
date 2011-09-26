@@ -100,35 +100,37 @@ def synchronize_mailman( list_name ):
 			
 
 @task( name="mailinglists.mailman_send_subscribe", ignore_result=True )
-def mailman_send_subscribe( list_name, email ):
+def mailman_send_subscribe( subscription_pk ):
 	"""
 	Task to subscribe an email to a mailman list. Task is executed
 	when e.g. a person subscribes via e.g. mailchimp.
 	"""
-	from djangoplicity.mailinglists.models import List
+	from djangoplicity.mailinglists.models import Subscription
 	
 	logger = mailman_send_unsubscribe.get_logger()
 	
-	list = List.objects.get( name=list_name )
-	list.mailman.subscribe( email )
+	sub = Subscription.objects.get( pk=subscription_pk )
+	sub.list.mailman._subscribe( sub.subscriber.email )
 	
-	logger.info( "Subscribed %s to mailman list %s" % ( email, list_name ) )
+	logger.info( "Subscribed %s to mailman list %s" % ( sub.subscriber.email, sub.list.name ) )
 		
 	
 @task( name="mailinglists.mailman_send_unsubscribe", ignore_result=True )
-def mailman_send_unsubscribe( list_name, email ):
+def mailman_send_unsubscribe( subscription_pk ):
 	"""
 	Task to subscribe an email to a mailman list. Task is executed
 	when e.g. a person subscribes via e.g. mailchimp.
 	"""
-	from djangoplicity.mailinglists.models import List
+	from djangoplicity.mailinglists.models import Subscription
 	
 	logger = mailman_send_unsubscribe.get_logger()
 	
-	list = List.objects.get( name=list_name )
-	list.mailman.unsubscribe( email )
+	sub = Subscription.objects.get( pk=subscription_pk )
+	sub.list.mailman._unsubscribe( sub.subscriber.email )
 	
-	logger.info( "Unsubscribed %s from mailman list %s" % ( email, list_name ) )
+	logger.info( "Unsubscribed %s from mailman list %s" % ( sub.subscriber.email, sub.list.name ) )
+	
+	sub.delete()
 
 
 		

@@ -33,19 +33,18 @@
 from djangoplicity.actions.plugins import ActionPlugin
 
 
-class MailmanAction( ActionPlugin ):
+class MailmanAction(ActionPlugin):
 	"""
 	An action plugin is a configureable celery task,
 	that can be dynamically connected to events in the system.
 	"""
 	action_parameters = [ 
-		( 'listadmin_url', 'URL to the listadmin mailman page', 'str' ),
-		( 'password', 'Admin password for list', 'str' ),
+		('list_name', 'Mailman list name - must be defined in djangoplicity', 'str'),
 	]
 	abstract = True
 	
 	@classmethod
-	def get_arguments( self, *args, **kwargs ):
+	def get_arguments(cls, conf, *args, **kwargs):
 		"""
 		Parse incoming arguments. Email lookup:
 		1) if an 'email' kwarg is provided, then the value is used.
@@ -56,30 +55,54 @@ class MailmanAction( ActionPlugin ):
 			email = kwargs['email']
 		else:
 			for v in kwargs.values():
-				if hasattr( v, 'email' ):
+				if hasattr(v, 'email'):
 					email = v.email
 					break
 
-		return ( [], { 'email' : email } )
+		return ([], { 'email' : email })
+	
+	def _get_list(self, list_name):
+		from djangoplicity.mailinglists.models import List
+		return List.objects.get( name=list_name ) 
 
 
-class MailmanSubscribeAction( MailmanAction ):
+class MailmanSubscribeAction(MailmanAction):
 	action_name = 'Mailman subscribe'
 	
-	def run( self, conf, email=None ):
+	def run(self, conf, email=None):
 		"""
 		Subscribe to mailman list
 		"""
-		print "Subscribe %s to %s" % ( email, unicode( conf ) )
+		list = self._get_list( conf['list_name'] )
+		list.subscribe( email=email, async=False )
+		self.get_logger().info("Subscribed %s to mailman list %s" % ( email, list.name ) )
 		
-class MailmanUnsubscribeAction( MailmanAction ):
+		
+class MailmanUnsubscribeAction(MailmanAction):
 	action_name = 'Mailman unsubscribe'
 	
-	def run( self, conf, email=None ):
+	def run(self, conf, email=None):
 		"""
 		Unsubscribe from mailman list
 		"""
-		print "Unsubscribe %s to %s" % ( email, unicode( conf ) )
+		list = self._get_list( conf['list_name'] )
+		list.unsubscribe( email=email, async=False )
+		self.get_logger().info("Unsubscribed %s to mailman list %s" % ( email, list.name ) )
+		
+class MailmanUpdateAction(MailmanAction):
+	action_name = 'Mailman update email'
+	
+	def run(self, conf, from_email=None, to_email=None ):
+		"""
+		Unsubscribe from mailman list
+		"""
+		list = self._get_list( conf['list_name'] )
+		list.unsubscribe( email=from_email, async=False )
+		self.get_logger().info("Unsubscribed %s to mailman list %s" % ( from_email, list.name ) )
+		list.subscribe( email=to_email, async=False )
+		self.get_logger().info("Subscribed %s to mailman list %s" % ( to_email, list.name ) )
+		
 
 MailmanSubscribeAction.register()
 MailmanUnsubscribeAction.register()
+MailmanUpdateAction.register()
