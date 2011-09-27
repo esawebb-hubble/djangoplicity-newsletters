@@ -18,7 +18,7 @@ STARS@ESO
 
 {{ obj.release_date|date }}: {{ obj.description|striptags|truncatewords:50|unescape|safe }} [read more on http://www.eso.org{{ obj.get_absolute_url }}]
 {% endfor %}
-See latest Stars@ESO on http://www.eso.org/public/events/starsateso.html
+See latest Stars@ESO on http://www.eso.org/public/events/starsateso/
 
 =======
 ESOCAST
@@ -59,7 +59,7 @@ UPCOMING EVENTS
 {% for obj in data.special_events.all %}
 * {{ obj.get_dates|unescape|safe }}: {{ obj.title|striptags|unescape|safe }}
 {% endfor %}
-See more on http://www.eso.org/public/events/special-evt.html
+See more on http://www.eso.org/public/events/special-evt/
 
 ====================
 UPCOMING EXHIBITIONS
@@ -67,7 +67,7 @@ UPCOMING EXHIBITIONS
 {% for obj in data.exhibitions.all %}
 * {{ obj.get_dates|unescape|safe }}: {{ obj.title|striptags|unescape|safe }}{% if obj.get_location %}. {{ obj.get_location }}.{%endif%}
 {% endfor %}
-See more on http://www.eso.org/public/events/exhibitions.html
+See more on http://www.eso.org/public/events/exhibitions/
 
 ========================
 ESO PICTURES OF THE WEEK 
