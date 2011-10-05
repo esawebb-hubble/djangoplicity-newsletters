@@ -47,6 +47,7 @@ The newsletter system consists of the following components:
 """
 
 from datetime import datetime, timedelta
+from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
@@ -409,6 +410,9 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 
 			defaults = {
 				'base_url' : "http://%s" % Site.objects.get_current().domain,
+				'MEDIA_URL' : settings.MEDIA_URL,
+				'STATIC_URL' : settings.STATIC_URL,
+				'ARCHIVE_ROOT' : getattr( settings, "ARCHIVE_ROOT", "" ),
 				'data' : NewsletterContent.data_context( self ),
 				'editorial' : self.editorial,
 				'editorial_text' : self.editorial_text,
