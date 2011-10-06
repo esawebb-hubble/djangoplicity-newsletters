@@ -423,6 +423,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 				'unsubscribe_link' : '', # Will be provided by the mailer plugin
 				'preferences_link' : '', # Will be provided by the mailer plugin 
 				'browser_link' : '', # Will be provided by the mailer plugin
+				'now' : datetime.now(),
 			}
 			defaults.update( extra_ctx )
 			ctx = Context( defaults )

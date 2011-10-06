@@ -1,0 +1,7 @@
+=========================
+New on {{title}}
+=========================
+{% for obj in newon %}
+*{{ obj.title|safe }}*
+{{ obj.link }}
+{% endfor %}

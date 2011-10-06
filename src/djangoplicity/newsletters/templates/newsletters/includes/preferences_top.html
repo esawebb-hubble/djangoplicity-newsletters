@@ -1,0 +1,9 @@
+{% if unsubscribe_link or preferences_link or browser_link %} 
+<tr> 
+  <td colspan="2" style="color: #505050;font-family: Helvetica, Arial;font-size: 10px;line-height: 100%; text-align:center;">
+	{% if unsubscribe_link %}<a href="{{unsubscribe_link}}">Unsubscribe</a>{% endif %}
+	{% if preferences_link %}{% if unsubscribe_link %} | {%endif%}<a href="{{preferences_link}}">Subscription preferences</a>{% endif %}
+	{% if browser_link and enable_sharing %}{% if unsubscribe_link or preferences_link %} | {%endif%} <a href="{{browser_link}}">View in browser</a>{% endif %}
+	</td> 
+</tr> 
+{% endif %}

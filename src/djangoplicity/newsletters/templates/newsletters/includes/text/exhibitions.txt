@@ -1,0 +1,8 @@
+{% load djangoplicity_text_utils %}{% if exhibitions %}====================
+Upcoming exhibitions
+====================
+{% for obj in exhibitions %}
+* {{ obj.get_dates|unescape|safe }}: {{ obj.title|striptags|unescape|safe }}{% if obj.get_location %}. {{ obj.get_location }}.{%endif%}
+{% endfor %}
+See more on {{base_url}}{{events_url}}
+{% endif%}
