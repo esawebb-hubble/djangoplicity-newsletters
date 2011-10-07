@@ -128,7 +128,6 @@ def unsubscribe_event( request, list, fired_at, **kwargs ):
 		params = _get_parameters( request ),
 		**kwargs
 	)
-	print "test"
 	return HttpResponse( "" )
 
 def profile_event( request, list, fired_at, **kwargs ):
@@ -236,7 +235,7 @@ def mailchimp_webhook( request, require_secure=False ):
 		if not request.is_secure():
 			if require_secure:
 				logger.debug( "[Webhook] Not SSL request" )
-				raise Http404
+				return HttpResponse( "" )
 
 		# Get token
 		try:
@@ -247,17 +246,17 @@ def mailchimp_webhook( request, require_secure=False ):
 
 			if t is None:
 				logger.debug( "[Webhook] Token %s not found" % token )
-				raise Http404
+				return HttpResponse( "" )
 		except KeyError:
 			logger.debug( "[Webhook] No 'token' GET parameter" )
-			raise Http404
+			return HttpResponse( "" )
 
 		ip = request.META['REMOTE_ADDR']
 		user_agent = request.META.get( 'HTTP_USER_AGENT', '' )
 
 		if user_agent != 'MailChimp.com':
 			logger.debug( "[Webhook] User-agent not MailChimp.com - was %s" % user_agent )
-			raise Http404
+			return HttpResponse( "" )
 
 		try:
 			# Check expected request type
@@ -296,6 +295,6 @@ def mailchimp_webhook( request, require_secure=False ):
 		return view( request, list, fired_at, ip=ip, user_agent=user_agent, )
 	except WebHookError, e:
 		logger.debug( "[Webhook] %s" % unicode( e ) )
-		return HttpResponse( "ERROR" )
+		return HttpResponse( "" )
 
 

@@ -330,7 +330,7 @@ def webhooks( list_id=None ):
 			# Create access token
 			token = MailChimpListToken.create( l )
 			hookurl = "%s?%s" % ( baseurl, urlencode( token.hook_params() ) )
-			actions = { 'subscribe' : True, 'unsubscribe' : True, 'upemail' : True, 'cleaned' : True, 'profile' : False }
+			actions = { 'subscribe' : True, 'unsubscribe' : True, 'upemail' : True, 'cleaned' : True, 'profile' : True, 'campaign' : True,  }
 
 			# Install hook in MailChimp
 			res = l.connection.listWebhookAdd( id=l.list_id, url=hookurl, actions=actions, sources={ 'user' : True, 'admin' : True, 'api' : False, } )
