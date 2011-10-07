@@ -57,7 +57,6 @@ uuidmod._uuid_generate_random = None
 # Settings
 #
 NEWSLETTERS_MAILCHIMP_APIKEY = settings.NEWSLETTERS_MAILCHIMP_APIKEY if hasattr( settings, 'NEWSLETTERS_MAILCHIMP_APIKEY' ) else ''
-LIST_URL = 'http://www.eso.org/lists'
 
 #
 # Models
@@ -89,6 +88,7 @@ class Subscriber( models.Model ):
 	class Meta:
 		ordering = ( 'email', )
 
+
 class List( models.Model ):
 	"""
 	Mailman list
@@ -105,7 +105,6 @@ class List( models.Model ):
 		"""
 		return MailmanList(name=self.name, password=self.password, main_url=self.base_url)
 	mailman = property( _get_mailman )
-
 
 	def subscribe( self, subscriber=None, email=None, async=True ):
 		"""
@@ -223,48 +222,44 @@ class List( models.Model ):
 				self._unsubscribe( e )
 
 
-	def incoming_changes( self ):
-		"""
-		Get differences between mailman and djangoplicity list.
-		"""
-		mailman_members = self.mailman.get_members()
-
-		if mailman_members:
-			mailman_names, mailman_emails = zip( *mailman_members )
-			mailman_emails = set( mailman_emails )
-		else:
-			mailman_names, mailman_emails = [], set( [] )
-
-		current_list_subscribers = self.subscribers.all()
-		current_emails = set( [s.email for s in current_list_subscribers] )
-
-		bad_emails = set( [x.email for x in BadEmailAddress.objects.all()] )
-		mailman_unsubscribe_emails = mailman_emails & bad_emails # Remove all mailman emails that has been detected as bad emails.
-
-		subscribe_emails = (mailman_emails - current_emails) - mailman_unsubscribe_emails
-		unsubscribe_emails = ( current_emails - mailman_emails ) | ( current_emails & mailman_unsubscribe_emails )
-
-		return ( subscribe_emails, unsubscribe_emails, current_list_subscribers, mailman_unsubscribe_emails )
-
-	@classmethod
-	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
-		"""
-		Start task to setup get subscribers from mailman
-		"""
-		from djangoplicity.mailinglists.tasks import synchronize_mailman
-
-		if created and not raw:
-			synchronize_mailman.delay( list_name=instance.name )
+#	def incoming_changes( self ):
+#		"""
+#		Get differences between mailman and djangoplicity list.
+#		"""
+#		mailman_members = self.mailman.get_members()
+#
+#		if mailman_members:
+#			mailman_names, mailman_emails = zip( *mailman_members )
+#			mailman_emails = set( mailman_emails )
+#		else:
+#			mailman_names, mailman_emails = [], set( [] )
+#
+#		current_list_subscribers = self.subscribers.all()
+#		current_emails = set( [s.email for s in current_list_subscribers] )
+#
+#		bad_emails = set( [x.email for x in BadEmailAddress.objects.all()] )
+#		mailman_unsubscribe_emails = mailman_emails & bad_emails # Remove all mailman emails that has been detected as bad emails.
+#
+#		subscribe_emails = (mailman_emails - current_emails) - mailman_unsubscribe_emails
+#		unsubscribe_emails = ( current_emails - mailman_emails ) | ( current_emails & mailman_unsubscribe_emails )
+#
+#		return ( subscribe_emails, unsubscribe_emails, current_list_subscribers, mailman_unsubscribe_emails )
+#
+#	@classmethod
+#	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
+#		"""
+#		Start task to setup get subscribers from mailman
+#		"""
+#		from djangoplicity.mailinglists.tasks import synchronize_mailman
+#
+#		if created and not raw:
+#			synchronize_mailman.delay( list_name=instance.name )
 
 	def __unicode__( self ):
 		return self.name
 
 	class Meta:
 		ordering = ( 'name', )
-
-
-# Connect signal handlers
-#post_save.connect( List.post_save_handler, sender=List )
 
 
 class Subscription( models.Model ):
@@ -296,8 +291,8 @@ class MailChimpList( models.Model ):
 	list_id = models.CharField( unique=True, max_length=50 )
 
 	synchronize = models.BooleanField( default=False )
-	sources = models.ManyToManyField( List, through='MailChimpSourceList' )
-	subscriber_excludes = models.ManyToManyField( Subscriber, through='MailChimpSubscriberExclude' )
+	#sources = models.ManyToManyField( List, through='MailChimpSourceList' )
+	#subscriber_excludes = models.ManyToManyField( Subscriber, through='MailChimpSubscriberExclude' )
 
 	# Model properties replicated from MailChimp
 	name = models.CharField( max_length=255, blank=True )
@@ -354,11 +349,11 @@ class MailChimpList( models.Model ):
 		return MailSnake( self.api_key )
 	connection = property( _get_connection )
 
-	def default_lists( self ):
-		"""
-		Get the default lists associated with this mailchimp list. 
-		"""
-		return self.sources.filter( mailchimpsourcelist__default=True )
+#	def default_lists( self ):
+#		"""
+#		Get the default lists associated with this mailchimp list. 
+#		"""
+#		return self.sources.filter( mailchimpsourcelist__default=True )
 
 	def save( self, *args, **kwargs ):
 		"""
@@ -373,13 +368,13 @@ class MailChimpList( models.Model ):
 				self.error = unicode( e )
 		super( MailChimpList, self ).save( *args, **kwargs )
 
-	def get_subscribers( self ):
-		""" Get source lists subscribers  """
-		return Subscriber.objects.exclude( pk__in=self.subscriber_excludes.all() ).filter( subscription__list__in=self.sources.all() ).distinct()
-
-	def get_subscriptions( self ):
-		""" Get source list subscriptions """
-		return Subscription.objects.filter( list__in=self.sources.all() ).exclude( subscriber__in=self.subscriber_excludes.all() )
+#	def get_subscribers( self ):
+#		""" Get source lists subscribers  """
+#		return Subscriber.objects.exclude( pk__in=self.subscriber_excludes.all() ).filter( subscription__list__in=self.sources.all() ).distinct()
+#
+#	def get_subscriptions( self ):
+#		""" Get source list subscriptions """
+#		return Subscription.objects.filter( list__in=self.sources.all() ).exclude( subscriber__in=self.subscriber_excludes.all() )
 
 	def fetch_info( self ):
 		"""
@@ -451,42 +446,42 @@ class MailChimpList( models.Model ):
 		return { 'total' : grand_total, 'data' : data }
 
 
-	def outgoing_changes( self ):
-		"""
-		"""
-		self.fetch_info()
-		res = self._list_all_members( 'subscribed' )
-
-		mailchimp_subscribers = set( [x['email'] for x in res['data']] )
-		current_subscribers = set( [x.email for x in self.get_subscribers()] )
-
-		subscribe_emails = current_subscribers - mailchimp_subscribers
-		unsubscribe_emails = mailchimp_subscribers - current_subscribers
-
-		return ( subscribe_emails, unsubscribe_emails )
-
-
-	@classmethod
-	def subscription_added_handler( cls, sender=None, subscription=None, source=None, **kwargs ):
-		"""
-		Handler for dealing with new subscriptions.
-		"""
-		if not isinstance( source, cls ):
-			# Event was not sent from new MailChimp subscription, so 
-			# it must be passed on to MailChimp
-			from djangoplicity.mailinglists.tasks import mailchimp_send_subscribe
-			mailchimp_send_subscribe.delay( subscription.list.name, subscription.subscriber )
-
-	@classmethod
-	def subscription_deleted_handler( cls, sender=None, list=None, subscriber=None, source=None, **kwargs ):
-		"""
-		Handler for dealing with unsubscribes. 
-		"""
-		if not isinstance( source, cls ):
-			# Event was not sent from new MailChimp subscription, so 
-			# it must be passed on to MailChimp
-			from djangoplicity.mailinglists.tasks import mailchimp_send_unsubscribe
-			mailchimp_send_unsubscribe.delay( list.name, subscriber )
+#	def outgoing_changes( self ):
+#		"""
+#		"""
+#		self.fetch_info()
+#		res = self._list_all_members( 'subscribed' )
+#
+#		mailchimp_subscribers = set( [x['email'] for x in res['data']] )
+#		current_subscribers = set( [x.email for x in self.get_subscribers()] )
+#
+#		subscribe_emails = current_subscribers - mailchimp_subscribers
+#		unsubscribe_emails = mailchimp_subscribers - current_subscribers
+#
+#		return ( subscribe_emails, unsubscribe_emails )
+#
+#
+#	@classmethod
+#	def subscription_added_handler( cls, sender=None, subscription=None, source=None, **kwargs ):
+#		"""
+#		Handler for dealing with new subscriptions.
+#		"""
+#		if not isinstance( source, cls ):
+#			# Event was not sent from new MailChimp subscription, so 
+#			# it must be passed on to MailChimp
+#			from djangoplicity.mailinglists.tasks import mailchimp_send_subscribe
+#			mailchimp_send_subscribe.delay( subscription.list.name, subscription.subscriber )
+#
+#	@classmethod
+#	def subscription_deleted_handler( cls, sender=None, list=None, subscriber=None, source=None, **kwargs ):
+#		"""
+#		Handler for dealing with unsubscribes. 
+#		"""
+#		if not isinstance( source, cls ):
+#			# Event was not sent from new MailChimp subscription, so 
+#			# it must be passed on to MailChimp
+#			from djangoplicity.mailinglists.tasks import mailchimp_send_unsubscribe
+#			mailchimp_send_unsubscribe.delay( list.name, subscriber )
 
 	@classmethod
 	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
@@ -518,57 +513,57 @@ post_save.connect( MailChimpList.post_save_handler, sender=MailChimpList )
 pre_delete.connect( MailChimpList.pre_delete_handler, sender=MailChimpList )
 
 
-class MailChimpSubscriberExclude( models.Model ):
-	"""
-	Model to track subscribers which should be exclude from certain 
-	MailChimp lists (usually due to unsubscribing from the newsletter).
-	"""
-	mailchimplist = models.ForeignKey( MailChimpList )
-	subscriber = models.ForeignKey( Subscriber )
-
-	class Meta:
-		unique_together = ( 'mailchimplist', 'subscriber' )
-
-
-class MailChimpSourceList( models.Model ):
-	"""
-	Source lists for mailchimp lists (i.e which lists
-	the MailChimp lists should be generated from).
-	
-	The default list will receive all subscriptions made
-	in MailChimp. 
-	"""
-	mailchimplist = models.ForeignKey( MailChimpList )
-	list = models.ForeignKey( List )
-	default = models.BooleanField( default=False )
-
-	@classmethod
-	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
-		"""
-		A relation was created between mailman and mailchimp list 
-		"""
-		#print "MailChimpSourceList.post_save_handler"
-		if created and not raw:
-			from djangoplicity.mailinglists.tasks import synchronize_mailchimplist
-			synchronize_mailchimplist( instance.mailchimplist.list_id )
-
-
-	@classmethod
-	def post_delete_handler( cls, sender=None, instance=None, **kwargs ):
-		"""
-		A relation between mailman and mailchimp list was removed. 
-		"""
-		from djangoplicity.mailinglists.tasks import synchronize_mailchimplist
-		synchronize_mailchimplist( instance.mailchimplist.list_id )
-		# TODO: call .delay instead
-
-
-	class Meta:
-		unique_together = ( 'mailchimplist', 'list' )
-
-# Connect signal handlers
-post_save.connect( MailChimpSourceList.post_save_handler, sender=MailChimpSourceList )
-post_delete.connect( MailChimpSourceList.post_delete_handler, sender=MailChimpSourceList )
+#class MailChimpSubscriberExclude( models.Model ):
+#	"""
+#	Model to track subscribers which should be exclude from certain 
+#	MailChimp lists (usually due to unsubscribing from the newsletter).
+#	"""
+#	mailchimplist = models.ForeignKey( MailChimpList )
+#	subscriber = models.ForeignKey( Subscriber )
+#
+#	class Meta:
+#		unique_together = ( 'mailchimplist', 'subscriber' )
+#
+#
+#class MailChimpSourceList( models.Model ):
+#	"""
+#	Source lists for mailchimp lists (i.e which lists
+#	the MailChimp lists should be generated from).
+#	
+#	The default list will receive all subscriptions made
+#	in MailChimp. 
+#	"""
+#	mailchimplist = models.ForeignKey( MailChimpList )
+#	list = models.ForeignKey( List )
+#	default = models.BooleanField( default=False )
+#
+#	@classmethod
+#	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
+#		"""
+#		A relation was created between mailman and mailchimp list 
+#		"""
+#		#print "MailChimpSourceList.post_save_handler"
+#		if created and not raw:
+#			from djangoplicity.mailinglists.tasks import synchronize_mailchimplist
+#			synchronize_mailchimplist( instance.mailchimplist.list_id )
+#
+#
+#	@classmethod
+#	def post_delete_handler( cls, sender=None, instance=None, **kwargs ):
+#		"""
+#		A relation between mailman and mailchimp list was removed. 
+#		"""
+#		from djangoplicity.mailinglists.tasks import synchronize_mailchimplist
+#		synchronize_mailchimplist( instance.mailchimplist.list_id )
+#		# TODO: call .delay instead
+#
+#
+#	class Meta:
+#		unique_together = ( 'mailchimplist', 'list' )
+#
+## Connect signal handlers
+#post_save.connect( MailChimpSourceList.post_save_handler, sender=MailChimpSourceList )
+#post_delete.connect( MailChimpSourceList.post_delete_handler, sender=MailChimpSourceList )
 
 class MailChimpListToken( models.Model ):
 	"""

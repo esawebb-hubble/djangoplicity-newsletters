@@ -36,11 +36,32 @@ from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 
 from djangoplicity.mailinglists.models import MailChimpListToken, MailChimpList, Subscriber
-from djangoplicity.mailinglists.tasks import mailchimp_subscribe, mailchimp_unsubscribe, mailchimp_upemail, mailchimp_cleaned
+from djangoplicity.mailinglists.tasks import mailchimp_subscribe, mailchimp_unsubscribe, mailchimp_upemail, mailchimp_cleaned, mailchimp_profile, mailchimp_campaign 
 from django.http import Http404, HttpResponse
+
+import re
+import logging
+
+logger = logging.getLogger( 'djangoplicity' )
+
+datapattern = re.compile( "^data(\[([a-z_]+)\]|\[merges\]\[([a-z_A-Z]+)\])$" )
+mergespattern = re.compile( "^data" )
 
 class WebHookError( Exception ):
 	pass
+
+def _get_parameters( request ):
+	"""
+	Extract parameters from webhook request
+	"""
+	tmp = {}
+	for k, v in request.POST.items():
+		m = datapattern.match( k )
+		if m:
+			key = m.group( 3 ) or m.group( 2 )
+			tmp[key] = v
+	return tmp
+
 
 def subscribe_event( request, list, fired_at, **kwargs ):
 	"""
@@ -57,7 +78,6 @@ def subscribe_event( request, list, fired_at, **kwargs ):
 	"data[ip_opt]": "10.20.10.30", 
 	"data[ip_signup]": "10.20.10.30"
 	
-	
 	exists on default list:
 	- do nothing
 	
@@ -69,14 +89,14 @@ def subscribe_event( request, list, fired_at, **kwargs ):
 	- subscribe to default mailman list
 	"""
 	mailchimp_subscribe.delay( 
-		list=list.pk,
-		fired_at=fired_at,
-		email=request.POST['data[email]'],
+		list = list.pk,
+		fired_at = fired_at,
+		params = _get_parameters( request ),
 		**kwargs
 	)
 	return HttpResponse( "" )
 
-	
+
 def unsubscribe_event( request, list, fired_at, **kwargs ):
 	"""
 	"type": "unsubscribe", 
@@ -103,13 +123,14 @@ def unsubscribe_event( request, list, fired_at, **kwargs ):
 	- subscribe to default mailman list
 	"""
 	mailchimp_unsubscribe.delay( 
-		list=list.pk,
-		fired_at=fired_at,
-		email=request.POST['data[email]'],
+		list = list.pk,
+		fired_at = fired_at,
+		params = _get_parameters( request ),
 		**kwargs
 	)
+	print "test"
 	return HttpResponse( "" )
-	
+
 def profile_event( request, list, fired_at, **kwargs ):
 	"""
 	"type": "profile", 
@@ -124,8 +145,14 @@ def profile_event( request, list, fired_at, **kwargs ):
 	"data[merges][INTERESTS]": "Group1,Group2", 
 	"data[ip_opt]": "10.20.10.30"
 	"""
+	mailchimp_profile.delay( 
+		list = list.pk,
+		fired_at = fired_at,
+		params = _get_parameters( request ),
+		**kwargs
+	)
 	return HttpResponse( "" )
-	
+
 def upemail_event( request, list, fired_at, **kwargs ):
 	"""
 	"type": "upemail", 
@@ -136,10 +163,9 @@ def upemail_event( request, list, fired_at, **kwargs ):
 	"data[old_email]": "api+old@mailchimp.com"
 	"""
 	mailchimp_upemail.delay( 
-		list=list.pk,
-		fired_at=fired_at,
-		new_email=request.POST['data[new_email]'],
-		old_email=request.POST['data[old_email]'],
+		list = list.pk,
+		fired_at = fired_at,
+		params = _get_parameters( request ),
 		**kwargs
 	)
 	return HttpResponse( "" )
@@ -154,9 +180,27 @@ def cleaned_event( request, list, fired_at, **kwargs ):
 	"data[email]": "api+cleaned@mailchimp.com"
 	"""
 	mailchimp_cleaned.delay( 
-		list=list.pk,
-		fired_at=fired_at,
-		email=request.POST['data[email]'],
+		list = list.pk,
+		fired_at = fired_at,
+		params = _get_parameters( request ),
+		**kwargs
+	)
+	return HttpResponse( "" )
+
+def campaign_event( request, list, fired_at, **kwargs ):
+	"""
+	"type": "campaign", 
+	"fired_at": "2009-03-26 21:31:21", 
+	"data[id]": "5aa2102003",
+	"data[subject]": "Test Campaign Subject", 
+	"data[status]": "sent",
+	"data[reason]": "", 
+	"data[list_id]": "a6b5da105
+	"""
+	mailchimp_campaign.delay( 
+		list = list.pk,
+		fired_at = fired_at,
+		params = _get_parameters( request ),
 		**kwargs
 	)
 	return HttpResponse( "" )
@@ -167,6 +211,8 @@ EVENT_HANDLERS = {
 	'unsubscribe' : unsubscribe_event,
 	'upemail' : upemail_event,
 	'cleaned' : cleaned_event,
+	'profile' : profile_event,
+	'campaign' : campaign_event,
 }
 
 def mailchimp_webhook( request, require_secure=False ):
@@ -189,62 +235,67 @@ def mailchimp_webhook( request, require_secure=False ):
 	try:
 		if not request.is_secure():
 			if require_secure:
+				logger.debug( "[Webhook] Not SSL request" )
 				raise Http404
-	
+
 		# Get token
 		try:
 			token = request.GET['token']
-			
+
 			# Check token
 			t = MailChimpListToken.get_token( token )
 
 			if t is None:
+				logger.debug( "[Webhook] Token %s not found" % token )
 				raise Http404
 		except KeyError:
+			logger.debug( "[Webhook] No 'token' GET parameter" )
 			raise Http404
-		
+
 		ip = request.META['REMOTE_ADDR']
 		user_agent = request.META.get( 'HTTP_USER_AGENT', '' )
-		
+
 		if user_agent != 'MailChimp.com':
+			logger.debug( "[Webhook] User-agent not MailChimp.com - was %s" % user_agent )
 			raise Http404
-		
+
 		try:
 			# Check expected request type
 			if request.method != "POST":
-				raise WebHookError()
-		
+				raise WebHookError( "Not a POST request" )
+
 			# Get parameters
 			type = request.POST['type']
 			fired_at = request.POST['fired_at']
 			list_id = request.POST['data[list_id]']
 		except KeyError:
-			raise WebHookError()
-		
+			raise WebHookError( "Parameters missing" )
+
 		# Check webhook type 
-		if type not in ['subscribe', 'unsubscribe', 'profile', 'upemail', 'cleaned']:
-			raise WebHookError()
-		
+		if type not in ['subscribe', 'unsubscribe', 'profile', 'upemail', 'cleaned', 'campaign']:
+			raise WebHookError( "Unknown webhook type %s" % type )
+
 		# Check if list exists
 		try:
 			list = MailChimpList.objects.get( list_id=list_id )
 		except MailChimpList.DoesNotExist:
-			raise WebHookError()
-		
+			raise WebHookError( "List %s does not exists" % list_id )
+
 		# Validate token for list
 		if not t.validate_token( list ):
-			raise WebHookError()
-		
+			raise WebHookError( "Token invalid" )
+
 		# Get event handler
 		try:
 			view = EVENT_HANDLERS[type]
 		except KeyError:
-			raise WebHookError()
-		
+			raise WebHookError( "Internal error - no event handler defined for %s." % type )
+
 		# Pass to event handler for processing.
+		logger.debug( " [Webhook] Request accepted" )
 		return view( request, list, fired_at, ip=ip, user_agent=user_agent, )
 	except WebHookError, e:
+		logger.debug( "[Webhook] %s" % unicode( e ) )
 		return HttpResponse( "ERROR" )
 
 
-		

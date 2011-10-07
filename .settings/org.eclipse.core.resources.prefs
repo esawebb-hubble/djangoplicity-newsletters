@@ -1,6 +1,7 @@
-#Thu Oct 06 14:41:19 CEST 2011
+#Fri Oct 07 14:14:24 CEST 2011
 eclipse.preferences.version=1
 encoding//src/djangoplicity/__init__.py=utf-8
+encoding//src/djangoplicity/mailinglists/__init__.py=utf-8
 encoding//src/djangoplicity/mailinglists/admin.py=utf-8
 encoding//src/djangoplicity/mailinglists/exceptions.py=utf-8
 encoding//src/djangoplicity/mailinglists/mailman.py=utf-8
@@ -13,7 +14,6 @@ encoding//src/djangoplicity/mailinglists/tasks/mailchimp.py=utf-8
 encoding//src/djangoplicity/mailinglists/tasks/mailman.py=utf-8
 encoding//src/djangoplicity/mailinglists/tests.py=utf-8
 encoding//src/djangoplicity/mailinglists/urls.py=utf-8
-encoding//src/djangoplicity/mailinglists/utils.py=utf-8
 encoding//src/djangoplicity/mailinglists/views.py=utf-8
 encoding//src/djangoplicity/newsletters/__init__.py=utf-8
 encoding//src/djangoplicity/newsletters/admin.py=utf-8

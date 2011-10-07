@@ -32,8 +32,8 @@
 
 from django.contrib import admin
 from django.utils.translation import ugettext as _
-from djangoplicity.mailinglists.models import BadEmailAddress, Subscriber, Subscription, List, MailChimpList, MailChimpSourceList, MailChimpListToken, MailChimpSubscriberExclude
-from djangoplicity.mailinglists.tasks import synchronize_mailman
+from djangoplicity.mailinglists.models import BadEmailAddress, Subscriber, Subscription, List, MailChimpList, MailChimpListToken# MailChimpSourceList, , MailChimpSubscriberExclude
+#from djangoplicity.mailinglists.tasks import synchronize_mailman
 
 class SubscriptionInlineAdmin( admin.TabularInline ):
 	model = Subscription
@@ -67,20 +67,20 @@ class ListAdmin( admin.ModelAdmin ):
 	
 	def action_sync( self, request, queryset ):
 		for obj in queryset:
-			synchronize_mailman.delay( obj.name )
+			pass #synchronize_mailman.delay( obj.name )
 		self.message_user( request, "Started synchronization of mailman lists %s." % ", ".join( [l.name for l in queryset] ) )
 	action_sync.short_description = "Synchronize lists"
 
 
-class MailChimpSourceListInlineAdmin( admin.TabularInline ):
-	model = MailChimpSourceList
-	extra = 0
+#class MailChimpSourceListInlineAdmin( admin.TabularInline ):
+#	model = MailChimpSourceList
+#	extra = 0
 	
 class MailChimpListAdmin( admin.ModelAdmin ):
 	list_display = ['list_id', 'admin_url', 'name','default_from_name', 'default_from_email', 'email_type_option', 'member_count', 'open_rate', 'click_rate', 'connected','last_sync',]
 	list_filter = ['use_awesomebar','email_type_option','last_sync','connected',]
 	search_fields = ['api_key','list_id','name','web_id','default_from_name', 'default_from_email', 'email_type_option','default_subject']
-	inlines = [MailChimpSourceListInlineAdmin]
+	#inlines = [MailChimpSourceListInlineAdmin]
 	fieldsets = (
 		( 
 			None, 
@@ -163,7 +163,7 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 		'last_sync',
 	]
 	
-	actions = ['action_update_info']
+	actions = ['action_update_info','action_install_webhooks']
 	
 	def admin_url( self, obj ):
 		url = obj.get_admin_url()
@@ -181,19 +181,29 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 		self.message_user( request, "Updating statistics from lists %s." % ", ".join( [l.name for l in queryset] ) )
 	action_update_info.short_description = "Update statistics from MailChimp"
 	
-
-
-class MailChimpSourceListAdmin( admin.ModelAdmin ):
-	list_display = ['list', 'default']
-	list_editable = ['default',]
-	list_filter = ['list', 'mailchimplist', 'default']
-	search_fields = ['list__name', 'mailchimplist__name']
+	def action_install_webhooks( self, request, queryset ):
+		"""
+		Action to request webhooks to be installed in MailChimp.
+		"""
+		from djangoplicity.mailinglists.tasks import webhooks
+		for obj in queryset:
+			webhooks.delay( list_id=obj.list_id )
+		self.message_user( request, "Installing webhooks for lists %s." % ", ".join( [l.name for l in queryset] ) )
+	action_install_webhooks.short_description = "Install webhooks"
 	
-class MailChimpSubscriberExcludeAdmin( admin.ModelAdmin ):
-	list_display = ['subscriber', 'mailchimplist', ]
-	list_filter = ['mailchimplist', ]
-	raw_id_fields = ['subscriber']
-	search_fields = ['subscriber__email', 'mailchimplist__name']
+
+
+#class MailChimpSourceListAdmin( admin.ModelAdmin ):
+#	list_display = ['list', 'default']
+#	list_editable = ['default',]
+#	list_filter = ['list', 'mailchimplist', 'default']
+#	search_fields = ['list__name', 'mailchimplist__name']
+#	
+#class MailChimpSubscriberExcludeAdmin( admin.ModelAdmin ):
+#	list_display = ['subscriber', 'mailchimplist', ]
+#	list_filter = ['mailchimplist', ]
+#	raw_id_fields = ['subscriber']
+#	search_fields = ['subscriber__email', 'mailchimplist__name']
 
 class BadEmailAddressAdmin( admin.ModelAdmin ):
 	list_display = ['email', 'timestamp', ]
@@ -221,8 +231,8 @@ def register_with_admin( admin_site ):
 	admin_site.register( Subscription, SubscriptionAdmin )
 	admin_site.register( List, ListAdmin )
 	admin_site.register( MailChimpList, MailChimpListAdmin )
-	admin_site.register( MailChimpSourceList, MailChimpSourceListAdmin )
-	admin_site.register( MailChimpSubscriberExclude, MailChimpSubscriberExcludeAdmin )
+	#admin_site.register( MailChimpSourceList, MailChimpSourceListAdmin )
+	#admin_site.register( MailChimpSubscriberExclude, MailChimpSubscriberExcludeAdmin )
 	admin_site.register( BadEmailAddress, BadEmailAddressAdmin )
 	admin_site.register( MailChimpListToken, MailChimpListTokenAdmin )
 	
