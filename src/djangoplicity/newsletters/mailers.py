@@ -158,7 +158,12 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		
 		from djangoplicity.mailinglists.models import MailChimpList
 		self.ml = MailChimpList.objects.get( list_id=list_id )
-
+		
+	def _chop( self, value, limit ):
+		if len(value) >= limit-2:
+			return "%s..." % value[:limit-5]
+		else:
+			return value
 	
 	def _update_campaign( self, nl, campaign_id ):
 		"""
@@ -168,11 +173,12 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		
 		if 'total' in campaigns and campaigns['total'] > 0:
 			vals = []
-			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'subject', value = nl.subject[:150] ) )
-			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'from_email', value = nl.from_email ) )
-			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'from_name', value = nl.from_name ) )
-			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'title', value = nl.subject[:100] ) )
-			vals.append( self.ml.connection.campaignUpdate( cid = campaign_id, name = 'content', value = { 'html' : nl.html, 'text' : nl.text } ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='subject', value=self._chop( nl.subject, 150 ) ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_email', value=nl.from_email ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_name', value=nl.from_name ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='title', value=self._chop( nl.subject, 100 ) ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='content', value={ 'html' : nl.html, 'text' : nl.text } ) )
+
 			if False in vals:
 				raise Exception( "Could update campaign" )
 			return ( campaign_id, False )
@@ -187,11 +193,11 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			type = 'regular',
 			options = {
 				'list_id' : self.ml.list_id,
-				'subject' : nl.subject[:150],
+				'subject' : self._chop( nl.subject, 150 ),
 				'from_email' : nl.from_email,
 				'from_name' : nl.from_name,
 				'tracking' : { 'opens' : True, 'html_clicks' : True, 'text_clicks' : False },
-				'title' : nl.subject[:100],
+				'title' : self._chop( nl.subject, 100 ),
 				'authenticate' : True,
 				'auto_footer' : False,
 				'inline_css' : True,

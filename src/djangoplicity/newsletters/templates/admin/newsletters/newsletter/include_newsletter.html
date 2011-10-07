@@ -9,7 +9,7 @@
 <fieldset class="module aligned">
 <h2>Header</h2>
 <div class="form-row"><label>From</label><span>{{original.from_name}} &lt;{{original.from_email}}&gt;</span></div>
-<div class="form-row"><label>Subject</label><span>{{original.subject}}</span></div>
+<div class="form-row"><label>Subject</label><span>{{original.subject|safe}}</span></div>
 </fieldset>
 
 <fieldset class="module">
