@@ -375,7 +375,7 @@ def webhooks( list_id=None ):
 # MailChimp synchronize members
 # =============================
 @task( name="mailinglists.mailchimplist_fetch_info", ignore_result=True )
-def mailchimplist_fetch_info( list_id ):
+def mailchimplist_fetch_info( list_id=None ):
 	"""
 	Celery task to fetch info from MailChimp and store it locally.
 	"""
@@ -391,7 +391,7 @@ def mailchimplist_fetch_info( list_id ):
 			lists = MailChimpList.objects.filter( synchronize=True )
 		
 		for chimplist in lists: 
-			logger.info( "Fetching info for mailchimp list %s" % list_id )
+			logger.info( "Fetching info for mailchimp list %s" % chimplist.list_id )
 			chimplist.fetch_info()
 			chimplist.save()
 	except MailChimpList.DoesNotExist:
