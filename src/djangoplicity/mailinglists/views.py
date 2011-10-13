@@ -37,15 +37,13 @@ from django.conf import settings
 
 from djangoplicity.mailinglists.models import MailChimpListToken, MailChimpList, Subscriber
 from djangoplicity.mailinglists.tasks import mailchimp_subscribe, mailchimp_unsubscribe, mailchimp_upemail, mailchimp_cleaned, mailchimp_profile, mailchimp_campaign 
+from djangoplicity.mailinglists.utils import DataQueryParser
 from django.http import Http404, HttpResponse
 
 import re
 import logging
 
 logger = logging.getLogger( 'djangoplicity' )
-
-datapattern = re.compile( "^data(\[([a-z_]+)\]|\[merges\]\[([a-z_A-Z]+)\])$" )
-mergespattern = re.compile( "^data" )
 
 class WebHookError( Exception ):
 	pass
@@ -54,13 +52,7 @@ def _get_parameters( request ):
 	"""
 	Extract parameters from webhook request
 	"""
-	tmp = {}
-	for k, v in request.POST.items():
-		m = datapattern.match( k )
-		if m:
-			key = m.group( 3 ) or m.group( 2 )
-			tmp[key] = v
-	return tmp
+	return DataQueryParser.parse( request.POST )
 
 
 def subscribe_event( request, list, fired_at, **kwargs ):
