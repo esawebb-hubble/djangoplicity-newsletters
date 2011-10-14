@@ -35,6 +35,8 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
+from django.db import models
+from django.utils.encoding import smart_unicode
 from urllib import urlencode
 from djangoplicity.mailinglists.models import  MailChimpList#, MailChimpSubscriberExclude
 
@@ -51,132 +53,131 @@ def _log_webhook_action( logger, ip, user_agent, action, list, message ):
 	"""
 	logger.info( "Webhook %s action; list %s: %s; IP: %s User Agent: %s" % ( action, list, message, ip, user_agent ) )
 	
+def _object_identifier( obj ):
+	if isinstance( obj, models.Model ):
+		return ( smart_unicode( obj._meta ), smart_unicode( obj._get_pk_val(), strings_only=True ) )
+	else:
+		return ( None, None )
+	
+def _get_list( list_pk ):
+	return MailChimpList.objects.get( pk = list_pk )
+
 
 @task( name="mailinglists.mailchimp_subscribe", ignore_result=True )
 def mailchimp_subscribe( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
 	"""
 	User subscribed via MailChimp.
 	
-	- Email will be subscribed to the default lists and removed
-	  from exclude list, as well as bad addresses list.  
+	- Remove from bad address if on the list and dispatch actions.
 	"""
 	logger = mailchimp_subscribe.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'subscribe', list, "" )
+	
+	#
+	# Deregister bad email address if exists.
+	#
+	from djangoplicity.mailinglists.models import BadEmailAddress
+	email = params.get( 'email', '' )
 
-#	from djangoplicity.mailinglists.models import Subscriber, MailChimpList, MailChimpSubscriberExclude, BadEmailAddress
-#
-#	mailchimplist = MailChimpList.objects.get( pk=list )
-#	sub, created = Subscriber.objects.get_or_create( email=email )
-#
-#	if mailchimplist.synchronize:  
-#		for list in mailchimplist.default_lists():
-#			list.subscribe( sub, source=mailchimplist )
-#
-#	# Remove from exclude list 
-#	try:
-#		exclude = MailChimpSubscriberExclude.objects.get( mailchimplist=mailchimplist, subscriber=sub )
-#		exclude.delete()
-#	except MailChimpSubscriberExclude.DoesNotExist:
-#		pass
-#
-#	# Remove from bad address list.
-#	try:
-#		badaddress = BadEmailAddress.objects.get( email=sub.email )
-#		badaddress.delete()
-#		
-#		# TODO: Problem, address is on bad address list AND on 
-#		# several mailman lists. If the mailman lists feed into
-#		# other newsletters, he will start receiving more newsletters.
-#		#
-#		# if an address in on the bad address list, it should not be on any
-#		# mailman lists.
-#	except BadEmailAddress.DoesNotExist:
-#		pass
+	if email:
+		try:
+			BadEmailAddress.objects.get( email=email ).delete()
+		except BadEmailAddress.DoesNotExist:
+			pass
+	
+	from djangoplicity.mailinglists.models import MailChimpEventAction
+	
+	list = _get_list( list )
+	
+	if 'merges' in params:
+		obj = list.get_object_from_mergevars( params['merges'] )
+		kwargs = list.parse_merge_vars( params['merges'] )
+		if obj:
+			kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
+	
+		for a in MailChimpEventAction.get_actions( list, on_event='on_subscribed' ):
+			a.dispatch( **kwargs )
 
 
 @task( name="mailinglists.mailchimp_unsubscribe", ignore_result=True )
 def mailchimp_unsubscribe( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
 	"""
-	User unsubscribed via MailChimp.
+	Email was unsubscribed from list.
 	
-	- Email will be unsubscribed from all default lists
-	- Email will also be added to the exclude list, to prevent
-	  being subscribed via secondary lists. User can only get on the list
-	  by explicitly subscribing again.
-	  
-	  Since the user unsubscribed, we don't want to risk, that by adding him
-	  to a secondary list in the future he/she starts receiving the newsletters 
-	  again (hence, the email is added to the exclude list).
+	1) Dispatch actions.
 	"""
 	logger = mailchimp_unsubscribe.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'unsubscribe', list, "" )
+	
+	from djangoplicity.mailinglists.models import MailChimpEventAction
+	
+	list = _get_list( list )
+	obj = list.get_object_from_mergevars( params['merges'] )
+	kwargs = list.parse_merge_vars( params['merges'] )
+	kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
 
-#	from djangoplicity.mailinglists.models import Subscriber, Subscription, MailChimpList, MailChimpSubscriberExclude
-#
-#	# Get mail chimp list and subscriber
-#	mailchimplist = MailChimpList.objects.get( pk=list )
-#	
-#	(sub,created) = Subscriber.objects.get_or_create( email=email )
-#		
-#	if not created:
-#		if mailchimplist.synchronize:
-#			# Unsubscribe from all default lists (only unsubscribe if the user actually have a subscription)
-#			for s in Subscription.objects.filter( list__in=mailchimplist.default_lists(), subscriber=sub ).select_related( 'list' ):
-#				s.list.unsubscribe( s.subscriber, source=mailchimplist )
-#	else:
-#		logger.warning( 'Cannot unsubscribe %s from %s - subscriber does not exist' % ( email, mailchimplist.name ) )
-#
-#	# Exclude subscriber from being put on the list again, unless explicitly subscribing again.
-#	exclude_obj, created = MailChimpSubscriberExclude.objects.get_or_create( mailchimplist=mailchimplist, subscriber=sub )
-
+	for a in MailChimpEventAction.get_actions( list, on_event='on_unsubscribe' ):
+		a.dispatch( **kwargs )
+		
 
 @task( name="mailinglists.mailchimp_cleaned", ignore_result=True )
 def mailchimp_cleaned( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
 	"""
-	User was removed from MailChimp list, since email was invalid.
+	Email was removed from MailChimp list because it was invalid.
 	
-	- Add to bad address list
-	- Unsubscribe from all lists the user is on.
-	- Delete subscriber.
+	- Register bad email address and dispatch actions. If list is linked, then
+	  get the object.
 	"""
 	logger = mailchimp_cleaned.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'cleaned', list, "" )
+	
+	#
+	# Register bad email address
+	#
+	from djangoplicity.mailinglists.models import BadEmailAddress
+	
+	email = params.get( 'email', '' )
+	
+	# Exclude subscriber from being put any list again, unless explicitly subscribing again.
+	if email:
+		badaddress, created = BadEmailAddress.objects.get_or_create( email=email )
+	
+	#
+	# Dispatch actions
+	#
+	from djangoplicity.mailinglists.models import MailChimpEventAction
+	
+	list = _get_list( list )	
+	kwargs = { 'email' : email }
+	if list.content_type and list.primary_key_field:
+		# List is connected, so retrieve member info via email address so we can determine
+		# the object id
+		try:
+			obj = list.get_object_from_mergevars( list.get_member_info( email=email )['merges'] )
+		except Exception:
+			obj = None
+		kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
 
-#	from djangoplicity.mailinglists.models import Subscriber, Subscription, MailChimpList, MailChimpSubscriberExclude, BadEmailAddress
-#	
-#	# Exclude subscriber from being put any list again, unless explicitly subscribing again.
-#	badaddress, created = BadEmailAddress.objects.get_or_create( email=email )
-#
-#	try:
-#		sub = Subscriber.objects.get( email=email )
-#	except Subscriber.DoesNotExist:
-#		logger.warning( 'Subscriber %s was not found' % email )
-#		return
-#
-#	# Unsubscribe from all lists
-#	for s in Subscription.objects.filter( subscriber=sub ).select_related( 'list' ):
-#		s.list.unsubscribe( s.subscriber, source=mailchimplist )
-#	
-#	# Delete subscriber	
-#	sub.delete()
+	for a in MailChimpEventAction.get_actions( list, on_event='on_cleaned' ):
+		a.dispatch( **kwargs )
 	
 
 
 @task( name="mailinglists.mailchimp_upemail", ignore_result=True )
 def mailchimp_upemail( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
 	"""
-	User updated his her email address. First unsubscribe the old email, then 
-	subscribe the new.
-	
-	# Perhaps change on other lists?
+	User updated his her email address.
 	"""
 	logger = mailchimp_upemail.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'upemail', list, "" )
+	
+	from djangoplicity.mailinglists.models import MailChimpEventAction
+	
+	list = _get_list( list )
+	
+	for a in MailChimpEventAction.get_actions( list, on_event='on_upemail' ):
+		a.dispatch( **params )
 
-	# TODO: change email address on all lists - requires proper logging.
-	# Ensure old email address is no longer put on list.
-	#mailchimp_unsubscribe( list=list, fired_at=fired_at, email=old_email )
-	#mailchimp_subscribe( list=list, fired_at=fired_at, email=new_email )
 	
 @task( name="mailinglists.mailchimp_profile", ignore_result=True )
 def mailchimp_profile( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
@@ -188,11 +189,16 @@ def mailchimp_profile( list=None, fired_at=None, params={}, ip=None, user_agent=
 	"""
 	logger = mailchimp_profile.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'profile', list, "" )
+	
+	from djangoplicity.mailinglists.models import MailChimpEventAction
+		
+	list = _get_list( list )
+	obj = list.get_object_from_mergevars( params['merges'] )
+	kwargs = list.parse_merge_vars( params['merges'] )
+	kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
 
-	# TODO: change email address on all lists - requires proper logging.
-	# Ensure old email address is no longer put on list.
-	#mailchimp_unsubscribe( list=list, fired_at=fired_at, email=old_email )
-	#mailchimp_subscribe( list=list, fired_at=fired_at, email=new_email )
+	for a in MailChimpEventAction.get_actions( list, on_event='on_profile' ):
+		a.dispatch( **kwargs )
 		
 		
 @task( name="mailinglists.mailchimp_campaign", ignore_result=True )
@@ -203,20 +209,11 @@ def mailchimp_campaign( list=None, fired_at=None, params={}, ip=None, user_agent
 	logger = mailchimp_campaign.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'campaign', list, "" )
 	
-#	try:
-#		connection = MailSnake( api_key )
-#
-#		# Get list of all hooks
-#		res = connection.listWebhooks( id=list_id )
-#
-#		if 'code' in res:
-#			raise MailChimpError( response=res )
-#
-#		# Delete all hooks
-#		for hook in res:
-#			connection.listWebhookDel( id=list_id, url=hook['url'] )
-#	except MailChimpList.DoesNotExist:
-#		logger.warn( "List with list id %s does not exists" % list_id )
+	from djangoplicity.mailinglists.models import MailChimpEventAction
+	
+	for a in MailChimpEventAction.get_actions( list, on_event='on_campaign' ):
+		a.dispatch( **params )
+	
 
 # ===================
 # Mailman event tasks
@@ -456,5 +453,3 @@ def synchronize_mailchimplist( list_id ):
 	if len( unsubscribe_emails ) > 0:
 		emails = list( unsubscribe_emails )
 		res = chimplist.connection.listBatchUnsubscribe( id=chimplist.list_id, emails=emails, delete=True, send_goodbye=False, send_notify=False )
-
-

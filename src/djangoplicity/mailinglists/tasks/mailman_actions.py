@@ -30,8 +30,9 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+from django.db import models
+from django.utils.encoding import smart_unicode
 from djangoplicity.actions.plugins import ActionPlugin
-
 
 class MailmanAction(ActionPlugin):
 	"""
@@ -99,10 +100,12 @@ class MailmanUpdateAction( MailmanAction ):
 	def get_arguments(cls, conf, *args, **kwargs):
 		return ( args, kwargs )
 	
-	def run(self, conf, from_email=None, to_email=None, **kwargs ):
+	def run(self, conf, changes={}, **kwargs ):
 		"""
 		Email address was updated so change subscriber
 		"""
+		from_email, to_email = changes['email']
+
 		if from_email != to_email and from_email is not None and to_email is not None:
 			# from/to email can be empty but not none (empty basically means unsubscribe).
 			list = self._get_list( conf['list_name'] )
@@ -122,32 +125,32 @@ class MailmanSyncAction( MailmanAction ):
 	
 	@classmethod
 	def get_arguments( cls, conf, *args, **kwargs ):
+		model_identifier = None
+		pk = None
 		for v in kwargs.values():
-			if hasattr( v, 'get_emails' ) and callable( v.get_emails ):
-				module = v.__class__.__module__
-				klass = v.__class__.__name__
-				pk = v.pk
+			if isinstance( v, models.Model ) and hasattr( v, 'get_emails' ) and callable( v.get_emails ):
+				model_identifier = smart_unicode( v._meta )
+				pk = smart_unicode( v._get_pk_val(), strings_only=True )
 				break
-
-		return ( [], { 'module' : module, 'klass' : klass, 'pk' : pk } )
+		return ( [], { 'model_identifier' : model_identifier, 'pk' : pk } )
 	
 	
-	def _get_emails( self, module, klass, pk ):
+	def _get_emails( self, model_identifier, pk ):
 		"""
 		Get the list of emails to synchronize
 		"""
-		m = __import__( module, globals(), locals(), [klass], -1 )
-		cls = getattr( m, klass )
-		obj = cls.objects.get( pk = pk )
+		cls = models.get_model( *model_identifier.split( "." ) )
+		obj = cls.objects.get( pk=pk )
 		return obj.get_emails()
 
-	def run( self, conf, module=None, klass=None, pk=None ):
+	def run( self, conf, model_identifier=None, pk=None ):
 		"""
 		"""
-		emails = self._get_emails()
-		mlist = self._get_list( conf['list_name'] )
-		mlist.update_subscribers( emails )
-		mlist.push( remove_existing=conf['remove_existing'] )
+		if model_identifier and pk:
+			emails = self._get_emails( model_identifier, pk )
+			mlist = self._get_list( conf['list_name'] )
+			mlist.update_subscribers( emails )
+			mlist.push( remove_existing=conf['remove_existing'] )
 
 
 

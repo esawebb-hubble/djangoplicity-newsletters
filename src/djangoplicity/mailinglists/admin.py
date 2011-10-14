@@ -7,16 +7,16 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
+#	* Redistributions of source code must retain the above copyright
+#	  notice, this list of conditions and the following disclaimer.
 #
-#    * Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions and the following disclaimer in the
-#      documentation and/or other materials provided with the distribution.
+#	* Redistributions in binary form must reproduce the above copyright
+#	  notice, this list of conditions and the following disclaimer in the
+#	  documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
-#      of its contributors may be used to endorse or promote products derived
-#      from this software without specific prior written permission.
+#	* Neither the name of the European Southern Observatory nor the names 
+#	  of its contributors may be used to endorse or promote products derived
+#	  from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY ESO ``AS IS'' AND ANY EXPRESS OR IMPLIED
 # WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -30,13 +30,41 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+from django import forms
 from django.contrib import admin
 from django.utils.translation import ugettext as _
-from djangoplicity.mailinglists.models import BadEmailAddress, Subscriber, Subscription, List, MailChimpList, MailChimpListToken# MailChimpSourceList, , MailChimpSubscriberExclude
-#from djangoplicity.mailinglists.tasks import synchronize_mailman
+from djangoplicity.mailinglists.models import BadEmailAddress, Subscriber, \
+	Subscription, List, MailChimpList, MailChimpListToken, MailChimpMergeVar, \
+	MergeVarMapping, MailChimpEventAction, MailChimpGrouping
+
+class MailChimpListForm( forms.ModelForm ):
+	def __init__( self, *args, **kwargs ):
+		super( MailChimpListForm, self ).__init__( *args, **kwargs )
+		if 'initial' in kwargs:
+			self.fields['primary_key_field'].queryset = MailChimpMergeVar.objects.filter( list=kwargs['initial'].id, public=False )
 
 class SubscriptionInlineAdmin( admin.TabularInline ):
 	model = Subscription
+	extra = 0
+	
+class MailChimpMergeVarInlineAdmin( admin.TabularInline ):
+	model = MailChimpMergeVar
+	extra = 0
+	max_num = 0
+	readonly_fields = ['name', 'tag', 'required', 'field_type', 'public', 'show', 'default', 'size', ]
+	can_delete = False
+	fields = ['name', 'tag', 'required', 'field_type', 'public', 'show', 'default', 'size', ]
+	
+class MailChimpGroupingInlineAdmin( admin.TabularInline ):
+	model = MailChimpGrouping
+	extra = 0
+	max_num = 0
+	readonly_fields = ['name', 'option', ]
+	can_delete = False
+	fields = ['name', 'option', ]
+	
+class MergeVarMappingInlineAdmin( admin.TabularInline ):
+	model = MergeVarMapping
 	extra = 0
 	
 class SubscriberAdmin( admin.ModelAdmin ):
@@ -77,10 +105,11 @@ class ListAdmin( admin.ModelAdmin ):
 #	extra = 0
 	
 class MailChimpListAdmin( admin.ModelAdmin ):
+	form = MailChimpListForm
 	list_display = ['list_id', 'admin_url', 'name','default_from_name', 'default_from_email', 'email_type_option', 'member_count', 'open_rate', 'click_rate', 'connected','last_sync',]
 	list_filter = ['use_awesomebar','email_type_option','last_sync','connected',]
 	search_fields = ['api_key','list_id','name','web_id','default_from_name', 'default_from_email', 'email_type_option','default_subject']
-	#inlines = [MailChimpSourceListInlineAdmin]
+	inlines = [MailChimpMergeVarInlineAdmin, MailChimpGroupingInlineAdmin, MergeVarMappingInlineAdmin]
 	fieldsets = (
 		( 
 			None, 
@@ -132,6 +161,16 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 				'fields' : (
 					'connected',
 					'last_sync',
+				),
+				'classes': ( 'collapse', ),
+			}
+		),
+		( 
+			'Model mapping', 
+			{
+				'fields' : (
+					'content_type',
+					'primary_key_field',
 				),
 				'classes': ( 'collapse', ),
 			}
@@ -192,19 +231,11 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 	action_install_webhooks.short_description = "Install webhooks"
 	
 
-
-#class MailChimpSourceListAdmin( admin.ModelAdmin ):
-#	list_display = ['list', 'default']
-#	list_editable = ['default',]
-#	list_filter = ['list', 'mailchimplist', 'default']
-#	search_fields = ['list__name', 'mailchimplist__name']
-#	
-#class MailChimpSubscriberExcludeAdmin( admin.ModelAdmin ):
-#	list_display = ['subscriber', 'mailchimplist', ]
-#	list_filter = ['mailchimplist', ]
-#	raw_id_fields = ['subscriber']
-#	search_fields = ['subscriber__email', 'mailchimplist__name']
-
+class MailChimpEventActionAdmin( admin.ModelAdmin ):
+	list_display = ['model_object', 'on_event', 'action', ]
+	list_filter = [ 'on_event', 'action', 'model_object', ]
+	search_fields = ['action__name', 'on_event']
+	
 class BadEmailAddressAdmin( admin.ModelAdmin ):
 	list_display = ['email', 'timestamp', ]
 	list_filter = ['timestamp', ]
@@ -235,6 +266,8 @@ def register_with_admin( admin_site ):
 	#admin_site.register( MailChimpSubscriberExclude, MailChimpSubscriberExcludeAdmin )
 	admin_site.register( BadEmailAddress, BadEmailAddressAdmin )
 	admin_site.register( MailChimpListToken, MailChimpListTokenAdmin )
+	admin_site.register( MailChimpEventAction, MailChimpEventActionAdmin )
+	
 	
 	
 		
