@@ -166,10 +166,12 @@ class MailChimpUpdateAction( MailChimpAction ):
 						list.unsubscribe( before, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], async=False )
 						self.get_logger().info( "Unsubscribed email address '%s' from MailChimp list %s" % ( before, list.name ) )
 					else:
+						
 						merge_vars = list.create_merge_vars( obj, changes=changes )
 						list.update_profile( before, after, merge_vars=merge_vars, async=False )
 						self.get_logger().info( "Changed email address from '%s' to '%s' on MailChimp list %s" % ( before, after, list.name ) )
 			else:
+				# Email was not updated - other parts was changed 
 				merge_vars = list.create_merge_vars( obj, changes=changes )
 				list.update_profile( obj.email, obj.email, merge_vars=merge_vars, async=False )
 				self.get_logger().info( "Updated profile of subscriber with email address '%s' on MailChimp list %s" % ( obj.email, list.name ) )

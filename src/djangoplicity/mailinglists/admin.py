@@ -40,8 +40,8 @@ from djangoplicity.mailinglists.models import BadEmailAddress, Subscriber, \
 class MailChimpListForm( forms.ModelForm ):
 	def __init__( self, *args, **kwargs ):
 		super( MailChimpListForm, self ).__init__( *args, **kwargs )
-		if 'initial' in kwargs:
-			self.fields['primary_key_field'].queryset = MailChimpMergeVar.objects.filter( list=kwargs['initial'].id, public=False )
+		if 'primary_key_field' in self.fields and 'instance' in kwargs:
+			self.fields['primary_key_field'].queryset = MailChimpMergeVar.objects.filter( list=kwargs['instance'].id, public=False )
 
 class SubscriptionInlineAdmin( admin.TabularInline ):
 	model = Subscription

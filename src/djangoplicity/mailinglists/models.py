@@ -62,6 +62,15 @@ uuidmod._uuid_generate_random = None
 #
 NEWSLETTERS_MAILCHIMP_APIKEY = settings.NEWSLETTERS_MAILCHIMP_APIKEY if hasattr( settings, 'NEWSLETTERS_MAILCHIMP_APIKEY' ) else ''
 
+def _object_identifier( obj ):
+	"""
+	Return an objects identifier for a model object (e.g. contacts.contact:2579)
+	"""
+	if isinstance( obj, models.Model ):
+		return "%s:%s" % ( smart_unicode( obj._meta ), smart_unicode( obj.pk, strings_only=True ) )
+	else:
+		return ""
+
 #
 # Models
 #
@@ -372,12 +381,10 @@ class MailChimpList( models.Model ):
 		Given MERGE VAR parameters, map it to field values.
 		"""
 		mapping = {}
-		
+
 		if self.primary_key_field and self.content_type:
-			
 			for m in MergeVarMapping.objects.filter( list=self ).select_related():
 				mapping.update( dict( m.parse_merge_var( params ) ) )
-
 		return mapping
 
 	def create_merge_vars( self, obj, changes=None ):
@@ -412,6 +419,19 @@ class MailChimpList( models.Model ):
 
 		return merge_vars
 
+	def get_object_from_identifier( self, object_identifier ):
+		"""
+		"""
+		model_identifier, pk = object_identifier.split( ":" )
+		app_label, model_name = model_identifier.split( "." )
+
+		if app_label == self.content_type.app_label and model_name == self.content_type.model:
+			Model = models.get_model( app_label, model_name )
+			return Model.objects.get( pk=pk )
+
+		return None
+
+
 	def get_object_from_mergevars( self, params ):
 		"""
 		If list is linked with a django model (i.e content_type and primary_key_field is set), then this method
@@ -422,15 +442,23 @@ class MailChimpList( models.Model ):
 			pk_tag = self.primary_key_field.tag
 
 			if pk_tag in params and params[pk_tag]:
-				# Ensure pk_tag is in merge vars and it's non-empty.  
-				model_identifier, pk = params[pk_tag].split( ":" )
-				app_label, model_name = model_identifier.split( "." )
-
-				if app_label == self.content_type.app_label and model_name == self.content_type.model:
-					Model = models.get_model( app_label, model_name )
-					return Model.objects.get( pk=pk )
+				# Ensure pk_tag is in merge vars and it's non-empty.
+				return self.get_object_from_identifier( params[pk_tag] )
 		return None
 
+	def get_object_from_exportvars( self, data ):
+		"""
+		If list is linked with a django model (i.e content_type and primary_key_field is set), then this method
+		will retrieve the model object 
+		"""
+		# get object_identifier from params, and extract dictionary mapping
+		if self.primary_key_field and self.content_type:
+			pk_name = self.primary_key_field.name
+
+			if pk_name in data and data[pk_name]:
+				# Ensure pk_tag is in merge vars and it's non-empty.
+				return self.get_object_from_identifier( data[pk_name] )
+		return None
 
 	def subscribe( self, email, merge_vars={}, email_type='html', double_optin=True, send_welcome=False, async=True ):
 		"""
@@ -647,6 +675,131 @@ class MailChimpList( models.Model ):
 				return res['data'][0]
 		return {}
 
+	def synchronize_links( self, create_missing=False ):
+		"""
+		Will link each mail chimp subscriber with a model object.
+		"""
+		if self.content_type and self.primary_key_field:
+			# Get list info
+			mapping = MergeVarMapping.objects.filter( list=self ).select_related()
+			email_field_name = None
+			for m in self.get_merge_vars():
+				if m.tag == 'EMAIL':
+					email_field_name = m.name
+					break
+
+			if not email_field_name:
+				return
+
+			# Iterate over members
+			batch = []
+
+			for data in self.export_members():
+				if self.primary_key_field.name in data and data[self.primary_key_field.name]:
+					obj = self.get_object_from_exportvars( data )
+					if obj is not None:
+						# Link exists so continue
+						continue
+
+				#
+				# No link exists - find or create object
+				#
+				objdict = self.parse_export_vars( data, mapping=mapping )
+
+				Model = self.content_type.model_class()
+				if create_missing:
+					obj = Model.find_or_create_object( **objdict )
+				else:
+					obj = Model.find_object( **objdict )
+
+				if obj:
+					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag : _object_identifier( obj ), } ) #'EMAIL_TYPE' : data['EMAIL_TYPE'],
+				elif data[self.primary_key_field.name] != '':
+					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag : '', } ) #'EMAIL_TYPE' : data['EMAIL_TYPE'],
+
+
+				# Send updates in batches of 200	
+				if len( batch ) >= 200:
+					self.connection.listBatchSubscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
+					batch = []
+
+			# Send the last batch
+			if len( batch ) > 0:
+				self.connection.listBatchSubscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
+				
+
+
+	def parse_export_vars( self, data, mapping=None ):
+		"""
+		"""
+		if mapping is None:
+			mapping = MergeVarMapping.objects.filter( list=self ).select_related()
+
+		mdict = {}
+		for m in mapping:
+			try:
+				if m.merge_var.field_type == 'address':
+					if data[m.merge_var.name]:
+						mdict.update( dict( zip( ['addr1', 'addr2', 'city', 'state', 'zip', 'country'], data[m.merge_var.name].split( "  " ) ) ) )
+				else:
+					mdict[m.field] = data[m.merge_var.name]
+			except KeyError:
+				pass
+
+		return mdict
+
+
+	def export_members( self, status=None, since=None ):
+		"""
+		Export all MailChimp members via the export API.
+		"""
+		import urllib
+		import urllib2
+		import json
+
+		url = 'https://%s.api.mailchimp.com/export/1.0/list/' % self.mailchimp_dc()
+		params = { 'apikey' : self.api_key, 'id' : self.list_id }
+		if status in ['subscribed', 'unsubscribed', 'cleaned']:
+			params['status'] = status
+		if since:
+			params['since'] = since
+
+		post_data = urllib.urlencode( params )
+		headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+		request = urllib2.Request( url, post_data, headers )
+		response = urllib2.urlopen( request )
+
+		# Read the first line (the header)
+		header = json.loads( response.next() )
+		# Make a generator expression which converts each line to dictionary with the header as keys
+		return ( dict( zip( header, json.loads( x ) ) ) for x in response )
+
+	def export_modelfields( self, status=None, since=None ):
+		"""
+		Get a list of dictionaries where each key is corresponding to a model field of the related model for the list.
+		
+		This method is quite heavy compared to export_members() method.
+		"""
+		if self.primary_key_field and self.content_type:
+			members = []
+			mappings = MergeVarMapping.objects.filter( list=self ).select_related()
+
+			for m in self.export_members( status=status, since=since ):
+				mdict = {}
+				for mapp in mappings:
+					try:
+						if mapp.merge_var.field_type == 'address':
+							if m[mapp.merge_var.name]:
+								mdict.update( dict( zip( ['addr1', 'addr2', 'city', 'state', 'zip', 'country'], m[mapp.merge_var.name].split( "  " ) ) ) )
+						else:
+							mdict[mapp.field] = m[mapp.merge_var.name]
+					except KeyError:
+						pass
+				members.append( mdict )
+
+			return members
+		else:
+			return None
 
 	def _list_all_members( self, status ):
 		"""
@@ -766,7 +919,8 @@ class MergeVarMapping( models.Model ):
 		else:
 			raise Exception( "Address type merge vars must specify 5 elements." )
 
-	def parse_merge_var( self, params ):
+
+	def parse_merge_var( self, params, addr_oneline=False ):
 		"""
 		"""
 		tag = self.merge_var.tag
@@ -780,11 +934,11 @@ class MergeVarMapping( models.Model ):
 			try:
 				res = {}
 				fields = self._field_list()
-				
+
 				for mc_f, dj_f in fields:
-					res[dj_f] = val[mc_f] if dj_f not in res else (res[dj_f] + "  " + val[mc_f] if val[mc_f] else res[dj_f]) 
-				return res.items() 
-			except KeyError,e:
+					res[dj_f] = val[mc_f] if dj_f not in res else ( res[dj_f] + "  " + val[mc_f] if val[mc_f] else res[dj_f] )
+				return res.items()
+			except KeyError, e:
 				return []
 		else:
 			return [( self.field, val )]
