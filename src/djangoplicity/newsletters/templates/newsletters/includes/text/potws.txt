@@ -1,0 +1,9 @@
+{% load djangoplicity_text_utils djangoplicity_datetime %}===============================
+{{org}} Pictures of the Week
+===============================
+{% for obj in potws %}
+*{{ obj.image.title|safe }}*
+
+{{ obj.release_date|date }}: {{ obj.image.description|striptags|truncatewords:50|unescape|safe }} [read more on {{base_url}}{{ obj.get_absolute_url }}]
+{% endfor %}
+See latest {{org}} Pictures of the Week on {{base_url}}{% url potw_defaultquery %}
