@@ -890,7 +890,10 @@ class MailChimpMergeVar( models.Model ):
 	choices = models.TextField( blank=True )
 
 	def __unicode__( self ):
-		return self.name if self.field_type != 'address' else "%s (addr1,addr2,city,state,zip,country)" % self.name
+		return "%s: %s" % ( self.list, self.name if self.field_type != 'address' else "%s (addr1,addr2,city,state,zip,country)" % self.name )
+	
+	class Meta:
+		ordering = ['list', 'name']
 
 class MailChimpGrouping( models.Model ):
 	"""
