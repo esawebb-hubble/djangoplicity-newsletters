@@ -649,13 +649,17 @@ class MailChimpList( models.Model ):
 
 				# Try to get Groupings
 				pks = []
-				for v in self.connection.listInterestGroupings( id=self.list_id ):
-					for g in v['groups']:
-						( obj, created ) = MailChimpGrouping.objects.get_or_create( list=self, group_id=v['id'], option=g['name'] )
-						if obj.name != v['name']:
-							obj.name = v['name']
-							obj.save()
-						pks.append( obj.pk )
+				try:
+					for v in self.connection.listInterestGroupings( id=self.list_id ):
+						for g in v['groups']:
+							( obj, created ) = MailChimpGrouping.objects.get_or_create( list=self, group_id=v['id'], option=g['name'] )
+							if obj.name != v['name']:
+								obj.name = v['name']
+								obj.save()
+							pks.append( obj.pk )
+				except TypeError:
+					# listInterestGroupings will return a dict on error, that in turn will result in a TypeError when trying to be used in the for-loop. 
+					pass
 
 				MailChimpGrouping.objects.filter( list=self ).exclude( pk__in=pks ).delete()
 			else:
