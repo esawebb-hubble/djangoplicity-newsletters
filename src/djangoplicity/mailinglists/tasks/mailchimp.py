@@ -62,6 +62,16 @@ def _object_identifier( obj ):
 def _get_list( list_pk ):
 	return MailChimpList.objects.get( pk = list_pk )
 
+def keys2str( kwargs ):
+	"""
+	Convert the keys of a dictionary into string keys.
+	"""
+	newkwargs = {}
+	for k, v in kwargs.items():
+		newkwargs[str( k )] = v
+	return newkwargs
+
+
 
 @task( name="mailinglists.mailchimp_subscribe", ignore_result=True )
 def mailchimp_subscribe( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
@@ -96,7 +106,7 @@ def mailchimp_subscribe( list=None, fired_at=None, params={}, ip=None, user_agen
 			kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
 	
 		for a in MailChimpEventAction.get_actions( list, on_event='on_subscribed' ):
-			a.dispatch( **kwargs )
+			a.dispatch( **keys2str(kwargs) )
 
 
 @task( name="mailinglists.mailchimp_unsubscribe", ignore_result=True )
@@ -117,7 +127,7 @@ def mailchimp_unsubscribe( list=None, fired_at=None, params={}, ip=None, user_ag
 	kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
 
 	for a in MailChimpEventAction.get_actions( list, on_event='on_unsubscribe' ):
-		a.dispatch( **kwargs )
+		a.dispatch( **keys2str(kwargs) )
 		
 
 @task( name="mailinglists.mailchimp_cleaned", ignore_result=True )
@@ -159,7 +169,7 @@ def mailchimp_cleaned( list=None, fired_at=None, params={}, ip=None, user_agent=
 		kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
 
 	for a in MailChimpEventAction.get_actions( list, on_event='on_cleaned' ):
-		a.dispatch( **kwargs )
+		a.dispatch( **keys2str(kwargs) )
 	
 
 
@@ -176,7 +186,7 @@ def mailchimp_upemail( list=None, fired_at=None, params={}, ip=None, user_agent=
 	list = _get_list( list )
 	
 	for a in MailChimpEventAction.get_actions( list, on_event='on_upemail' ):
-		a.dispatch( **params )
+		a.dispatch( **keys2str(params) )
 
 	
 @task( name="mailinglists.mailchimp_profile", ignore_result=True )
@@ -198,7 +208,7 @@ def mailchimp_profile( list=None, fired_at=None, params={}, ip=None, user_agent=
 	kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
 
 	for a in MailChimpEventAction.get_actions( list, on_event='on_profile' ):
-		a.dispatch( **kwargs )
+		a.dispatch( **keys2str(kwargs) )
 		
 		
 @task( name="mailinglists.mailchimp_campaign", ignore_result=True )
@@ -212,7 +222,7 @@ def mailchimp_campaign( list=None, fired_at=None, params={}, ip=None, user_agent
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 	
 	for a in MailChimpEventAction.get_actions( list, on_event='on_campaign' ):
-		a.dispatch( **params )
+		a.dispatch( **keys2str(params) )
 	
 
 # ===================
