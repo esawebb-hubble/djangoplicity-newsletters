@@ -91,11 +91,12 @@ class MailChimpSubscribeAction( MailChimpAction ):
 		"""
 		if model_identifier and pk:
 			obj = self._get_object( model_identifier, pk )
-			list = self._get_list( conf['list_id'] )
-			merge_vars = list.create_merge_vars( obj )
+			mlist = self._get_list( conf['list_id'] )
+			merge_vars = mlist.create_merge_vars( obj )
 
-			list.subscribe( obj.email, merge_vars=merge_vars, double_optin=conf['double_optin'], send_welcome=conf['send_welcome'], async=False )
-			self.get_logger().info( "Subscribed %s to MailChimp list %s" % ( obj.email, list.name ) )
+			mlist.subscribe( obj.email, merge_vars=merge_vars, double_optin=conf['double_optin'], send_welcome=conf['send_welcome'], async=False )
+			self.get_logger().info( "Subscribed %s to MailChimp list %s" % ( obj.email, mlist.name ) )
+			
 
 
 

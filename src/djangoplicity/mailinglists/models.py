@@ -48,7 +48,7 @@ from djangoplicity.actions.models import Action, EventAction
 from djangoplicity.mailinglists.exceptions import MailChimpError
 from djangoplicity.mailinglists.mailman import MailmanList
 from mailsnake import MailSnake
-from urllib import urlencode
+from urllib import urlencode, quote
 from urllib2 import HTTPError, URLError
 import hashlib
 import uuid as uuidmod
@@ -990,10 +990,9 @@ class MergeVarMapping( models.Model ):
 			except AttributeError:
 				pass
 
-		if field_type in ['text','dropdown','radio','phone','url','imageurl','zip']:
-			val = urlencode(val)
-			
-
+		if val and field_type in ['text', 'dropdown', 'radio', 'phone', 'url', 'imageurl', 'zip']:
+			val = quote( unicode( val ).encode( "utf8" ) ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
+	
 		return ( self.merge_var.tag, val )
 
 	def __unicode__( self ):
