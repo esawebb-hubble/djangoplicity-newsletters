@@ -393,7 +393,7 @@ class MailChimpList( models.Model ):
 		must have the same content type as defined in content_type field. Hence
 		both content_type and primiary_key_field must be specified for the list.
 		
-		The mapping from model object field ot MERGE VAR is defined by MergeVarMapping model.
+		The mapping from model object field to MERGE VAR is defined by MergeVarMapping model.
 		
 		If the MERGE VAR dictionary should only contain updates, you need to pass a ``changes''
 		dictionary with model field names as keys and 2-tuples as values. The 2-tuples should contain
@@ -989,6 +989,10 @@ class MergeVarMapping( models.Model ):
 					val = getattr( obj, self.field )
 			except AttributeError:
 				pass
+
+		if field_type in ['text','dropdown','radio','phone','url','imageurl','zip']:
+			val = urlencode(val)
+			
 
 		return ( self.merge_var.tag, val )
 
