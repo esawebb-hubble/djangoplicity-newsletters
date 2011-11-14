@@ -419,16 +419,24 @@ class MailChimpList( models.Model ):
 
 		return merge_vars
 
-	def get_object_from_identifier( self, object_identifier ):
+	def get_modelpk_from_identifier( self, object_identifier ):
 		"""
 		"""
 		model_identifier, pk = object_identifier.split( ":" )
 		app_label, model_name = model_identifier.split( "." )
 
 		if app_label == self.content_type.app_label and model_name == self.content_type.model:
+			return ( app_label, model_name, pk )
+		return None
+
+	def get_object_from_identifier( self, object_identifier ):
+		"""
+		"""
+		val = self.get_modelpk_from_identifier( object_identifier )
+		if val:
+			app_label, model_name, pk = val
 			Model = models.get_model( app_label, model_name )
 			return Model.objects.get( pk=pk )
-
 		return None
 
 
@@ -790,6 +798,11 @@ class MailChimpList( models.Model ):
 
 			for m in self.export_members( status=status, since=since ):
 				mdict = {}
+				
+				# Primary key
+				if self.primary_key_field.name in m:
+					mdict['pk'] = m[self.primary_key_field.name]
+				
 				for mapp in mappings:
 					try:
 						if mapp.merge_var.field_type == 'address':
