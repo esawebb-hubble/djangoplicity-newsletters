@@ -57,6 +57,9 @@ class MailerPlugin():
 	def schedule( self, newsletter, delivery ):
 		raise NotImplementedError
 	
+	def unschedule( self, newsletter ):
+		raise NotImplementedError
+	
 	@classmethod
 	def get_class_path( cls ):
 		return "%s.%s" % ( cls.__module__, cls.__name__ )

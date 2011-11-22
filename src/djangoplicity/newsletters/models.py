@@ -60,7 +60,7 @@ from djangoplicity import archives
 from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 	MailmanMailerPlugin
 from djangoplicity.newsletters.tasks import send_newsletter, \
-	send_newsletter_test
+	send_newsletter_test, schedule_newsletter, unschedule_newsletter
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 import traceback
 from tinymce import models as tinymce_models
@@ -323,7 +323,8 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	# Status
 	type = models.ForeignKey( NewsletterType )
 	frozen = models.BooleanField( default=False )
-	send = models.DateTimeField( blank=True, null=True )
+	scheduled = models.BooleanField( default=False )
+	send = models.DateTimeField( verbose_name='Sent', blank=True, null=True )
 
 	# Auto generation support
 	start_date = models.DateTimeField( blank=True, null=True )
@@ -342,12 +343,44 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	editorial = tinymce_models.HTMLField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
+	def _schedule( self, delivery ):
+		"""
+		"""
+		if self.scheduled:
+			self._unschedule()
+		
+		if not self.scheduled:
+			self.send = self.release_date
+				
+			for m in self.type.mailers.all():
+				m.schedule( self, delivery )
+			
+			self.frozen = True
+			self.scheduled = True
+			self.save()
+		else:
+			raise Exception( "Newsletter have already been sent." if not self.scheduled else "Newsletter is scheduled for delivery. To send now, you must first unschedule the newsletter." )
+	
+	
+	def _unschedule( self ):
+		"""
+		"""
+		if self.scheduled and not self.send:
+			for m in self.type.mailers.all():
+				m.unschedule( self )
+			
+			self.frozen = False
+			self.scheduled = False
+			self.save()
+		else:
+			raise Exception( "Newsletter have already been sent." if not self.scheduled else "Newsletter is scheduled for delivery. To send now, you must first unschedule the newsletter." )
+	
 	def _send_now( self ):
 		"""
 		Function that does the actual work. Is called from 
 		the task send_newsletter
 		"""
-		if self.send is None:
+		if self.send is None and not self.scheduled:
 			self.send = datetime.now()
 				
 			for m in self.type.mailers.all():
@@ -356,7 +389,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			self.frozen = True
 			self.save()
 		else:
-			raise Exception( "Newsletter have already been sent." )
+			raise Exception( "Newsletter have already been sent." if not self.scheduled else "Newsletter is scheduled for delivery. To send now, you must first unschedule the newsletter." )
 		
 	def _send_test( self, emails ):
 		"""
@@ -365,6 +398,18 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 		"""
 		for m in self.type.mailers.all():
 			m.send_test( self, emails )
+	
+	def schedule( self, delivery ):
+		"""
+		Schedule a newsletter for delivery.
+		"""
+		schedule_newsletter.delay( self.pk, delivery )
+		
+	def unschedule( self ):
+		"""
+		Schedule a newsletter for delivery.
+		"""
+		unschedule_newsletter.delay( self.pk )
 			
 	def send_now( self ):
 		"""

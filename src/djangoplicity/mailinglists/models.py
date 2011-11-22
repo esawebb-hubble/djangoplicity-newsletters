@@ -234,40 +234,6 @@ class List( models.Model ):
 			for e in unsubscribe:
 				self._unsubscribe( e )
 
-
-#	def incoming_changes( self ):
-#		"""
-#		Get differences between mailman and djangoplicity list.
-#		"""
-#		mailman_members = self.mailman.get_members()
-#
-#		if mailman_members:
-#			mailman_names, mailman_emails = zip( *mailman_members )
-#			mailman_emails = set( mailman_emails )
-#		else:
-#			mailman_names, mailman_emails = [], set( [] )
-#
-#		current_list_subscribers = self.subscribers.all()
-#		current_emails = set( [s.email for s in current_list_subscribers] )
-#
-#		bad_emails = set( [x.email for x in BadEmailAddress.objects.all()] )
-#		mailman_unsubscribe_emails = mailman_emails & bad_emails # Remove all mailman emails that has been detected as bad emails.
-#
-#		subscribe_emails = (mailman_emails - current_emails) - mailman_unsubscribe_emails
-#		unsubscribe_emails = ( current_emails - mailman_emails ) | ( current_emails & mailman_unsubscribe_emails )
-#
-#		return ( subscribe_emails, unsubscribe_emails, current_list_subscribers, mailman_unsubscribe_emails )
-#
-#	@classmethod
-#	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
-#		"""
-#		Start task to setup get subscribers from mailman
-#		"""
-#		from djangoplicity.mailinglists.tasks import synchronize_mailman
-#
-#		if created and not raw:
-#			synchronize_mailman.delay( list_name=instance.name )
-
 	def __unicode__( self ):
 		return self.name
 
@@ -338,7 +304,6 @@ class MailChimpList( models.Model ):
 	# Model link
 	content_type = models.ForeignKey( ContentType, null=True, blank=True, help_text="Select the content type of objects that subscribers on this list can be linked with." )
 	primary_key_field = models.ForeignKey( 'MailChimpMergeVar', blank=True, null=True )
-
 
 	def mailchimp_dc( self ):
 		"""

@@ -70,7 +70,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		( 
 			None, 
 			{
-				'fields' : ( 'type', 'release_date', 'published', 'frozen', 'send', 'last_modified' ),
+				'fields' : ( 'type', 'release_date', 'published', 'frozen', 'send', 'scheduled', 'last_modified' ),
 			}
 		),
 		( 
@@ -104,6 +104,8 @@ class NewsletterAdmin( admin.ModelAdmin ):
 			( r'^(?P<pk>[0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ) ),
+			( r'^(?P<pk>[0-9]+)/schedule/$', self.admin_site.admin_view( self.schedule_newsletter_view ) ),
+			( r'^(?P<pk>[0-9]+)/unschedule/$', self.admin_site.admin_view( self.unschedule_newsletter_view ) ),
 			( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ) ),
 		)
 		return extra_urls + urls
@@ -218,6 +220,22 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		nl.render( {}, store=False )
 		
 		return self._render_admin_view( request, "admin/newsletters/newsletter/send_now_form.html", ctx )
+	
+	def schedule_newsletter_view( self, request, pk=None ):
+		"""
+		View HTML version of newsletter
+		"""
+		newsletter = get_object_or_404( Newsletter, pk=pk )
+		data = newsletter.render( {}, store=False )
+		return HttpResponse( data['html'], mimetype="text/html" )
+	
+	def unschedule_newsletter_view( self, request, pk=None ):
+		"""
+		View HTML version of newsletter
+		"""
+		newsletter = get_object_or_404( Newsletter, pk=pk )
+		data = newsletter.render( {}, store=False )
+		return HttpResponse( data['html'], mimetype="text/html" )
 		
 	def _render_admin_view( self, request, template, context ):
 		"""

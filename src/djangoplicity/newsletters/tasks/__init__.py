@@ -62,4 +62,33 @@ def send_newsletter_test( newsletter_pk, emails ):
 	
 	nl._send_test( emails )
 	
-		
+
+@task( name="newsletters.schedule_newsletter", ignore_result=True )
+def schedule_newsletter( newsletter_pk, delivery ):
+	"""
+	Task to schedule a newsletter for delivery.  
+	"""
+	from djangoplicity.newsletters.models import Newsletter
+	
+	logger = schedule_newsletter.get_logger()
+	
+	nl = Newsletter.objects.get( pk = newsletter_pk )
+	
+	logger.info("Scheduling newsletter %s" % newsletter_pk)
+	
+	nl._schedule( delivery )
+	
+@task( name="newsletters.unschedule_newsletter", ignore_result=True )
+def unschedule_newsletter( newsletter_pk ):
+	"""
+	Task to unschedule a newsletter for delivery.
+	"""
+	from djangoplicity.newsletters.models import Newsletter
+	
+	logger = unschedule_newsletter.get_logger()
+	
+	nl = Newsletter.objects.get( pk = newsletter_pk )
+	
+	logger.info("Unscheduling newsletter %s" % newsletter_pk)
+	
+	nl._unschedule()		
