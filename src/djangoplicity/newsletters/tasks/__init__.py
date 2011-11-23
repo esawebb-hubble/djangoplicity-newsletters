@@ -32,13 +32,6 @@
 
 from celery.task import task
 
-@task( name="newsletters.check_scheduled_tasks", ignore_result=True )
-def check_scheduled_tasks():
-	"""
-	"""
-	pass
-	
-
 @task( name="newsletters.send_scheduled_newsletter", ignore_result=True )
 def send_scheduled_newsletter( newsletter_pk ):
 	"""

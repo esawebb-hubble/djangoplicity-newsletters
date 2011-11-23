@@ -1,4 +1,4 @@
-#Tue Nov 15 09:54:10 CET 2011
+#Wed Nov 23 13:49:29 CET 2011
 eclipse.preferences.version=1
 encoding//src/djangoplicity/__init__.py=utf-8
 encoding//src/djangoplicity/mailinglists/__init__.py=utf-8
@@ -35,6 +35,7 @@ encoding//src/djangoplicity/newsletters/migrations/0007_auto__chg_field_newslett
 encoding//src/djangoplicity/newsletters/migrations/0008_auto__add_field_newslettercontent_id__chg_field_newslettercontent_obje.py=utf-8
 encoding//src/djangoplicity/newsletters/migrations/0011_auto__chg_field_datasourceordering_name__del_field_newslettercontent_c.py=utf-8
 encoding//src/djangoplicity/newsletters/migrations/0019_auto__chg_field_newsletter_editorial.py=utf-8
+encoding//src/djangoplicity/newsletters/migrations/0020_auto__add_field_newsletter_scheduled.py=utf-8
 encoding//src/djangoplicity/newsletters/models.py=utf-8
 encoding//src/djangoplicity/newsletters/tasks/__init__.py=utf-8
 encoding//src/djangoplicity/newsletters/templates/newsletters/includes/text/press_release.txt=UTF-8

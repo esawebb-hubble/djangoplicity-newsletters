@@ -118,6 +118,25 @@ class Mailer( models.Model ):
 		"""
 		return dict( [( p.name, p.get_value() ) for p in MailerParameter.objects.filter( mailer=self ) ] )
 
+	
+	def on_scheduled( self, newsletter ):
+		"""
+		"""
+		try:
+			plugin = self.get_plugin()
+			return plugin.on_scheduled( newsletter )
+		except Exception, e:
+			pass
+		
+	def on_unscheduled( self, newsletter ):
+		"""
+		"""
+		try:
+			plugin = self.get_plugin()
+			return plugin.on_unscheduled( newsletter )
+		except Exception, e:
+			pass
+		
 	def send_now( self, newsletter ):
 		"""
 		Send newsletter now via this mailer
@@ -378,7 +397,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 				m.on_unscheduled( self )
 			
 			self.scheduled = False
-			self.self.scheduled_task_id = ""
+			self.scheduled_task_id = ""
 			self.save()
 		else:
 			raise Exception( "Newsletter has already been sent." if self.send else "Newsletter is not scheduled for sending." )
