@@ -30,6 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+from datetime import datetime, timedelta
 from django.conf.urls.defaults import patterns
 from django.contrib import admin
 from django.core.urlresolvers import reverse
@@ -65,12 +66,12 @@ class NewsletterAdmin( admin.ModelAdmin ):
 	list_editable = ['from_name', 'from_email', 'subject', ]
 	list_filter = ['type', 'last_modified', 'published']
 	search_fields = ['from_name', 'from_email', 'subject', 'html', 'text']
-	readonly_fields = ['last_modified', 'send', ]
+	readonly_fields = ['last_modified', 'send', 'scheduled' ]
 	fieldsets = (
 		( 
 			None, 
 			{
-				'fields' : ( 'type', 'release_date', 'published', 'frozen', 'send', 'scheduled', 'last_modified' ),
+				'fields' : ( 'type', ('release_date', 'scheduled'), 'published', 'frozen', 'send', 'last_modified' ),
 			}
 		),
 		( 
@@ -225,17 +226,66 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		"""
 		View HTML version of newsletter
 		"""
-		newsletter = get_object_or_404( Newsletter, pk=pk )
-		data = newsletter.render( {}, store=False )
-		return HttpResponse( data['html'], mimetype="text/html" )
+		from djangoplicity.newsletters.forms import ScheduleNewsletterForm
+		
+		nl = get_object_or_404( Newsletter, pk=pk )
+		
+		if request.method == "POST":
+			form = ScheduleNewsletterForm( request.POST )
+			if form.is_valid():
+				schedule = form.cleaned_data['schedule']
+				if schedule:
+					nl.schedule()
+					self.message_user( request, _( "Newsletter schedule to be sent at %s." % nl.release_date ) )
+					return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
+				
+			if 'schedule' not in form.errors:
+				form.errors['schedule'] = []
+			form.errors['schedule'].append( "Please check-mark the box to schedule the newsletter for being sent." )
+		else:
+			form = ScheduleNewsletterForm()
+			
+		ctx = {
+			'title': _( '%s: Schedule for sending' ) % force_unicode( self.model._meta.verbose_name ).title(),
+			'adminform': form,
+			'original' : nl,
+			'is_past' : datetime.now() + timedelta(minutes=2) >= nl.release_date
+		}
+		
+		nl.render( {}, store=False )
+		
+		return self._render_admin_view( request, "admin/newsletters/newsletter/schedule_form.html", ctx )
 	
 	def unschedule_newsletter_view( self, request, pk=None ):
 		"""
 		View HTML version of newsletter
 		"""
-		newsletter = get_object_or_404( Newsletter, pk=pk )
-		data = newsletter.render( {}, store=False )
-		return HttpResponse( data['html'], mimetype="text/html" )
+		from djangoplicity.newsletters.forms import UnscheduleNewsletterForm
+		
+		nl = get_object_or_404( Newsletter, pk=pk )
+		
+		if request.method == "POST":
+			form = UnscheduleNewsletterForm( request.POST )
+			if form.is_valid():
+				cancel_schedule = form.cleaned_data['cancel_schedule']
+				if cancel_schedule:
+					nl.unschedule()
+					self.message_user( request, _( "Cancelling schedule for newsletter." ) )
+					return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
+				
+			if 'cancel_schedule' not in form.errors:
+				form.errors['cancel_schedule'] = []
+			form.errors['cancel_schedule'].append( "Please check-mark the box to cancel schedule for newsletter." )
+		else:
+			form = UnscheduleNewsletterForm()
+			
+		ctx = {
+			'title': _( '%s: Cancel schedule' ) % force_unicode( self.model._meta.verbose_name ).title(),
+			'adminform': form,
+			'original' : nl,
+		}
+		
+		return self._render_admin_view( request, "admin/newsletters/newsletter/unschedule_form.html", ctx )
 		
 	def _render_admin_view( self, request, template, context ):
 		"""

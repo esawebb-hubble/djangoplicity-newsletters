@@ -36,10 +36,12 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
 {% else %}{% if original.scheduled %}
 <fieldset class="module" style="background-color: #FFC; ">
 <div class="form-row">
-<p>Newsletter is scheduled for sending on {{original.release_date}}.</p>
-<p>Send newsletter now? Please first <a href="../unschedule/">cancel the current schedule</a> for this newsletter.</p>
+<p>Newsletter is already scheduled for sending on {{original.release_date}}.</p>
+<p>Reschedule newsletter to a different time? Please first <a href="../unschedule/">cancel the current schedule</a> for this newsletter.</p>
 </div>
 </fieldset>
+{% else %}{% if is_past %}
+<p class="errornote">Release date {{original.release_date}} is in the past. Please change to a future date, or alternatively <a href="../send_now/">send now</a>.</p>
 {% else %}
 <form action="." method="post" id="{{ opts.module_name }}_form">{% csrf_token %}{% block form_top %}{% endblock %}
 <div>
@@ -53,8 +55,13 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
 
 <fieldset class="module" style="background-color: #FFC; ">
 <div class="form-row">
-<p>You are about to send the newsletter shown below. Please check carefully before sending.</p>
+<p>You are about to <strong>schedule</strong> the newsletter shown below for sending. Please check carefully before sending.</p>
 </div>
+</fieldset>
+
+<fieldset class="module">
+<h2>Schedule</h2>
+<div class="form-row">Newsletter will be sent on: <h3 align="center">{{ original.release_date }}</h3></div>
 </fieldset>
 
 {% include "admin/newsletters/newsletter/include_newsletter.html" %}
@@ -71,9 +78,9 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
 
 {% load i18n %}
 <div class="submit-row" {% if is_popup %}style="overflow: auto;"{% endif %}>
-<input type="submit" value="{% trans 'Send now!' %}" class="default" name="_generate" {{ onclick_attrib }}/>
+<input type="submit" value="{% trans 'Schedule newsletter' %}" class="default" name="_generate" {{ onclick_attrib }}/>
 </div>
 
 </div>
 </form></div>
-{% endif %}{% endif %}{% endblock %}
+{% endif %}{% endif %}{% endif %}{% endblock %}

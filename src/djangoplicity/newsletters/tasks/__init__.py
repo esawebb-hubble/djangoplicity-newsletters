@@ -32,6 +32,29 @@
 
 from celery.task import task
 
+@task( name="newsletters.check_scheduled_tasks", ignore_result=True )
+def check_scheduled_tasks():
+	"""
+	"""
+	pass
+	
+
+@task( name="newsletters.send_scheduled_newsletter", ignore_result=True )
+def send_scheduled_newsletter( newsletter_pk ):
+	"""
+	Task to start sending a scheduled newsletter   
+	"""
+	from djangoplicity.newsletters.models import Newsletter
+	
+	logger = send_scheduled_newsletter.get_logger()
+	
+	nl = Newsletter.objects.get( pk = newsletter_pk )
+	
+	logger.info("Starting to send scheduled newsletter %s" % newsletter_pk)
+	
+	nl._send()
+
+
 @task( name="newsletters.send_newsletter", ignore_result=True )
 def send_newsletter( newsletter_pk ):
 	"""
@@ -64,7 +87,7 @@ def send_newsletter_test( newsletter_pk, emails ):
 	
 
 @task( name="newsletters.schedule_newsletter", ignore_result=True )
-def schedule_newsletter( newsletter_pk, delivery ):
+def schedule_newsletter( newsletter_pk ):
 	"""
 	Task to schedule a newsletter for delivery.  
 	"""
@@ -76,7 +99,7 @@ def schedule_newsletter( newsletter_pk, delivery ):
 	
 	logger.info("Scheduling newsletter %s" % newsletter_pk)
 	
-	nl._schedule( delivery )
+	nl._schedule()
 	
 @task( name="newsletters.unschedule_newsletter", ignore_result=True )
 def unschedule_newsletter( newsletter_pk ):

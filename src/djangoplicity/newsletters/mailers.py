@@ -45,6 +45,26 @@ class MailerPlugin():
 	def __init__( self, params ):
 		pass
 	
+	def on_scheduled( self, newsletter ):
+		"""
+		Mailer plugins are notified when a newsletter is scheduled
+		for sending. This allows plugins to do any preparations
+		prior to sending if needed.
+		
+		NOTE: The mailer plugins should NOT use their own scheduling 
+		feature. send_now() will be called the right time to for all mailers
+		to send the newsletter.
+		"""
+		pass
+	
+	def on_unscheduled( self, newsletter ):
+		"""
+		Mailer plugins are notified when a newsletter is unscheduled
+		for sending. This allows plugins to do any cleanup needed when
+		a scheduled newsletter is cancelled.
+		"""
+		pass
+	
 	def send_now( self, newsletter ):
 		"""
 		When invoked this method should send the newsletter immediately
@@ -52,12 +72,6 @@ class MailerPlugin():
 		raise NotImplementedError
 	
 	def send_test( self, newsletter, emails ):
-		raise NotImplementedError
-	
-	def schedule( self, newsletter, delivery ):
-		raise NotImplementedError
-	
-	def unschedule( self, newsletter ):
 		raise NotImplementedError
 	
 	@classmethod
@@ -96,6 +110,7 @@ class EmailMailerPlugin( MailerPlugin ):
 		msg = EmailMultiAlternatives( data['subject'], data['text'], from_email, emails )
 		msg.attach_alternative( data['html'], "text/html" )
 		msg.send()
+
 
 	def send_now( self, newsletter ):
 		self._send( newsletter, self._to_emails )
@@ -240,6 +255,12 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			'browser_link' : '*|ARCHIVE|*' if self.enable_browser_link else '',
 			'is_mailchimp_mailer' : True,
 		}
+
+	def on_scheduled( self, newsletter ):
+		"""
+		Notification that a newsletter was scheduled for sending.
+		"""
+		info = self._upload_newsletter( newsletter )
 
 	def send_now( self, newsletter ):
 		"""

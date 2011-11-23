@@ -7,16 +7,16 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
+#	* Redistributions of source code must retain the above copyright
+#	  notice, this list of conditions and the following disclaimer.
 #
-#    * Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions and the following disclaimer in the
-#      documentation and/or other materials provided with the distribution.
+#	* Redistributions in binary form must reproduce the above copyright
+#	  notice, this list of conditions and the following disclaimer in the
+#	  documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
-#      of its contributors may be used to endorse or promote products derived
-#      from this software without specific prior written permission.
+#	* Neither the name of the European Southern Observatory nor the names 
+#	  of its contributors may be used to endorse or promote products derived
+#	  from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY ESO ``AS IS'' AND ANY EXPRESS OR IMPLIED
 # WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -36,9 +36,9 @@ Data models for the newsletter system.
 The newsletter system consists of the following components:
 
  * Newsletter types which are used to define:
-    *) where to send the newsletter
-    *) how to render the newsletter
-    *) how to select content for the newsletter (auto-generation support)
+	*) where to send the newsletter
+	*) how to render the newsletter
+	*) how to select content for the newsletter (auto-generation support)
  * Mailer plug-in system that allow sending a newsletter
    via different channels (e.g. via mailchimp, standard email or mailman list).
    The mailer plug-in system can be extended with the users own mailer plug-ins.
@@ -60,10 +60,11 @@ from djangoplicity import archives
 from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 	MailmanMailerPlugin
 from djangoplicity.newsletters.tasks import send_newsletter, \
-	send_newsletter_test, schedule_newsletter, unschedule_newsletter
+	send_newsletter_test, schedule_newsletter, unschedule_newsletter, \
+	send_scheduled_newsletter
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
-import traceback
 from tinymce import models as tinymce_models
+import traceback
 
 
 #SPLIT_TEST = ( 
@@ -324,6 +325,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	type = models.ForeignKey( NewsletterType )
 	frozen = models.BooleanField( default=False )
 	scheduled = models.BooleanField( default=False )
+	scheduled_task_id = models.CharField( max_length=64, blank=True )
 	send = models.DateTimeField( verbose_name='Sent', blank=True, null=True )
 
 	# Auto generation support
@@ -343,44 +345,59 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	editorial = tinymce_models.HTMLField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
-	def _schedule( self, delivery ):
+	def _schedule( self ):
 		"""
 		"""
-		if self.scheduled:
-			self._unschedule()
-		
-		if not self.scheduled:
-			self.send = self.release_date
-				
-			for m in self.type.mailers.all():
-				m.schedule( self, delivery )
+		if self.scheduled or self.send:
+			raise Exception( "Newsletter has already been sent." if not self.scheduled else "Newsletter is scheduled for sending." )
+		else:
+			if datetime.now() + timedelta( minutes=2 ) >= self.release_date:
+				raise Exception("Cannot schedule newsletter to be sent in the past.")
 			
-			self.frozen = True
+			for m in self.type.mailers.all():
+				m.on_scheduled( self )
+				
+			res = send_scheduled_newsletter.apply_async( args=[ self.pk ], eta=self.release_date )
+			
+			self.scheduled_task_id = res.task_id 
 			self.scheduled = True
 			self.save()
-		else:
-			raise Exception( "Newsletter have already been sent." if not self.scheduled else "Newsletter is scheduled for delivery. To send now, you must first unschedule the newsletter." )
-	
-	
+		
 	def _unschedule( self ):
 		"""
 		"""
 		if self.scheduled and not self.send:
-			for m in self.type.mailers.all():
-				m.unschedule( self )
+			from celery.task.control import revoke
 			
-			self.frozen = False
+			if not self.scheduled_task_id:
+				raise Exception("Scheduled task ID does not exist. Cannot cancel sending.")
+			
+			revoke( self.scheduled_task_id )
+			
+			for m in self.type.mailers.all():
+				m.on_unscheduled( self )
+			
 			self.scheduled = False
+			self.self.scheduled_task_id = ""
 			self.save()
 		else:
-			raise Exception( "Newsletter have already been sent." if not self.scheduled else "Newsletter is scheduled for delivery. To send now, you must first unschedule the newsletter." )
+			raise Exception( "Newsletter has already been sent." if self.send else "Newsletter is not scheduled for sending." )
 	
 	def _send_now( self ):
 		"""
 		Function that does the actual work. Is called from 
 		the task send_newsletter
 		"""
-		if self.send is None and not self.scheduled:
+		if not self.scheduled:
+			self.send()
+		else:
+			raise Exception( "Newsletter is scheduled for sending. To send now, you must first cancel the current schedule." )
+		
+	def _send( self ):
+		"""
+		Send newsletter
+		"""
+		if self.send is None:
 			self.send = datetime.now()
 				
 			for m in self.type.mailers.all():
@@ -389,7 +406,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			self.frozen = True
 			self.save()
 		else:
-			raise Exception( "Newsletter have already been sent." if not self.scheduled else "Newsletter is scheduled for delivery. To send now, you must first unschedule the newsletter." )
+			raise Exception("Newsletter has already been sent.")
 		
 	def _send_test( self, emails ):
 		"""
@@ -399,17 +416,19 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 		for m in self.type.mailers.all():
 			m.send_test( self, emails )
 	
-	def schedule( self, delivery ):
+	def schedule( self ):
 		"""
-		Schedule a newsletter for delivery.
+		Schedule a newsletter for sending.
 		"""
-		schedule_newsletter.delay( self.pk, delivery )
+		if not self.send and not self.scheduled:
+			schedule_newsletter.delay( self.pk )
 		
 	def unschedule( self ):
 		"""
-		Schedule a newsletter for delivery.
+		Cancel current schedule for newsletter
 		"""
-		unschedule_newsletter.delay( self.pk )
+		if self.scheduled:
+			unschedule_newsletter.delay( self.pk )
 			
 	def send_now( self ):
 		"""
@@ -419,7 +438,8 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 		Note each mailer will render the newsletter, since subscription
 		links etc might change depending on the mailer.
 		"""
-		send_newsletter.delay( self.pk )
+		if not self.send and not self.scheduled:
+			send_newsletter.delay( self.pk )
 
 	def send_test( self, emails ):
 		"""

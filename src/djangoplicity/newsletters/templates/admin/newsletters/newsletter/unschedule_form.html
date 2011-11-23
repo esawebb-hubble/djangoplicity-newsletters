@@ -33,11 +33,11 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
 <p>Newsletter have already been sent.</p>
 </div>
 </fieldset>
-{% else %}{% if original.scheduled %}
+{% else %}{% if not original.scheduled %}
 <fieldset class="module" style="background-color: #FFC; ">
 <div class="form-row">
-<p>Newsletter is scheduled for sending on {{original.release_date}}.</p>
-<p>Send newsletter now? Please first <a href="../unschedule/">cancel the current schedule</a> for this newsletter.</p>
+<p>Newsletter is already scheduled for sending on {{original.release_date}}.</p>
+<p>Reschedule newsletter to a different time? Please first <a href="../unschedule/">cancel the current schedule</a> for this newsletter.</p>
 </div>
 </fieldset>
 {% else %}
@@ -51,13 +51,16 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
     {{ adminform.non_field_errors }}
 {% endif %}
 
-<fieldset class="module" style="background-color: #FFC; ">
-<div class="form-row">
-<p>You are about to send the newsletter shown below. Please check carefully before sending.</p>
-</div>
+<fieldset class="module">
+<h2>Current schedule</h2>
+<div class="form-row">Newsletter is scheduled to be sent in {{ original.release_date|timeuntil }} on: <h3 align="center">{{ original.release_date }}</h3></div>
 </fieldset>
 
-{% include "admin/newsletters/newsletter/include_newsletter.html" %}
+<fieldset class="module aligned">
+<h2>Newsletter</h2>
+<div class="form-row"><label>From</label><span>{{original.from_name}} &lt;{{original.from_email}}&gt;</span></div>
+<div class="form-row"><label>Subject</label><span>{{original.subject|safe}}</span></div>
+</fieldset>
 
 <fieldset class="module aligned">
 {% for f in adminform %}
@@ -71,7 +74,7 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
 
 {% load i18n %}
 <div class="submit-row" {% if is_popup %}style="overflow: auto;"{% endif %}>
-<input type="submit" value="{% trans 'Send now!' %}" class="default" name="_generate" {{ onclick_attrib }}/>
+<input type="submit" value="{% trans 'Cancel schedule' %}" class="default" name="_generate" {{ onclick_attrib }}/>
 </div>
 
 </div>

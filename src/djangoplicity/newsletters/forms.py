@@ -92,3 +92,16 @@ class SendNewsletterForm( forms.Form ):
 	"""
 	send_now = forms.BooleanField()
 
+class ScheduleNewsletterForm( forms.Form ):
+	"""
+	Admin form for requesting confirmation to 
+	schedule newsletter for sending.
+	"""
+	schedule = forms.BooleanField( label="Schedule newsletter for sending" )
+	
+class UnscheduleNewsletterForm( forms.Form ):
+	"""
+	Admin form for requesting confirmation to 
+	cancel an already scheduled newsletter.
+	"""
+	cancel_schedule = forms.BooleanField()
