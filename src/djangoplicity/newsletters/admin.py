@@ -30,6 +30,14 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+"""
+Administration interface for Newsletters. The major extra views includes:
+
+  * Generation of newsletters.
+  * Viewing HTML/text versions of newsletters
+  * Scheduling of newsletters.
+"""
+
 from datetime import datetime, timedelta
 from django.conf.urls.defaults import patterns
 from django.contrib import admin
@@ -303,11 +311,6 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		return render_to_response( template, defaults, context_instance=RequestContext( request ) )
 
 	
-		
-
-
-	
-
 class NewsletterTypeAdmin( admin.ModelAdmin ):
 	list_display = ['name', 'default_from_name', 'default_from_email', 'sharing', 'archive' ]
 	list_editable = ['default_from_name', 'default_from_email', 'sharing', 'archive']
@@ -363,6 +366,5 @@ def register_with_admin( admin_site ):
 	admin_site.register( MailerLog, MailerLogAdmin )
 	
 
-		
 # Register with default admin site	
 register_with_admin( admin.site )

@@ -30,19 +30,59 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from django.core.mail import EmailMultiAlternatives
+"""
+MailerPlugin
+============
+A Newsletter can be sent to many different distribution lists via Mailers. By default 
+a NewsletterType must have at least one associated Mailer for a newsletter to be sent 
+anywhere. A Mailer is defined by an admin who specifies which MailerPlugin to use, 
+and any configuration values required by the MailerPlugin.
 
-class CampaignUploadError( Exception ):
-	pass
+Currently the following MailerPlugins implementations are available:
+
+  * Email - send the newsletter to a specific a list of email address.
+  * Mailman list - send the newsletter to a mailman address, including unsubscribe and
+  	subscription preferences links in the text.
+  * MailChimp - send newsletter via MailChimp API.
+ 
+A MailerPlugin must as a minimum support the following methods/properties:
+
+  * ``name'' - Human readable name for the MailerPlugin
+  * ``send_test( newsletter, emails )'' - Send a test version of the newsletters to the specified 
+    list of email addresses
+  * ``send_now( newsletter )'' - Send the newsletter for real.
+  
+Newsletters going to mailing lists must normally include instructions on how to unsubscribe. 
+Since this differs from list to list, the newsletters sent to different lists cannot be 
+identical. The method ``get_mailer_context'' allows the MailerPlugin to provide extra context
+variables to the Newsletter template when being rendered. By default the following variables
+are available:
+
+  * ``unsubscribe_link''
+  * ``preferences_link'' 
+  * ``browser_link'' 
+
+Each mailer plugin can override the ``get_mailer_context'' to provide their own context
+variables for the templates.
+
+The MailerPlugin should also specify names and types of any parameters that an admin
+user may need to specify - e.g. the Mailman plugin needs the list's info URL to be specified.
+"""
+
+from django.core.mail import EmailMultiAlternatives
 
 class MailerPlugin():
 	"""
-	Interface for mailer implementations
+	Interface for mailer implementations.
 	"""
 	name = ''
 	parameters = []
 	
 	def __init__( self, params ):
+		"""
+		Any parameters defined in ``MailerPlugin.parameters'' will be passed to the plugin via
+		the params. The values of these parameters are configurable via the admin interface.
+		"""
 		pass
 	
 	def on_scheduled( self, newsletter ):
@@ -72,6 +112,10 @@ class MailerPlugin():
 		raise NotImplementedError
 	
 	def send_test( self, newsletter, emails ):
+		"""
+		When invoked this method should send a test version of the newsletter
+		to the provided list of email addresses.
+		"""
 		raise NotImplementedError
 	
 	@classmethod
@@ -90,6 +134,13 @@ class EmailMailerPlugin( MailerPlugin ):
 	"""
 	Mailer implementation that will send the newsletter to a predefined
 	list of email addresses (which could be e.g. a mailing list). 
+	
+	It does however not included any unsubscribe links or similar. The class
+	can be used as base class for other MailerPlugins that works by sending 
+	an email. Typically the derived class would just need to specifiy
+	``name'', ``parameters'', ``__init__'' and ``'get_mailer_context()'.
+	
+	See MailmanMailerPlugin for an example. 
 	"""
 	name = 'Standard mailer'
 	parameters = [ ( 'emails', 'Comma separated list of emails to send to.', 'str' ) ]
@@ -102,7 +153,7 @@ class EmailMailerPlugin( MailerPlugin ):
 
 	def _send( self, newsletter, emails ):
 		"""
-		Send combined html and plain text email.
+		Send combined HTML and plain text email.
 		"""
 		data = newsletter.render( self.get_mailer_context(), store=False )
 		
@@ -128,6 +179,10 @@ class EmailMailerPlugin( MailerPlugin ):
 		
 	
 class MailmanMailerPlugin( EmailMailerPlugin ):
+	"""
+	Mailer implementation that sends a newsletter to an email address (usually a Mailman list), 
+	and includes a unsubscribe and preferences link specified by the admin user.
+	"""
 	name = 'Mailman mailer'
 	parameters = [ 
 		( 'emails', 'Comma separated list of mailman list emails to send to.', 'str' ),
@@ -155,8 +210,17 @@ class MailmanMailerPlugin( EmailMailerPlugin ):
 		
 class MailChimpMailerPlugin( MailerPlugin ):
 	"""
-	Mailer implementation that will send the newsletter to a predefined
-	list of email addresses (which could be e.g. a mailing list). 
+	Mailer implementation that will send the newsletter via MailChimp.
+	It requires that the djangoplicity.mailinglists application has also been
+	installed and that the MailChimp list have been defined.
+	
+	MailChimp have some length limits on subjects (150 chars) and campaign titles (100) so
+	the plugin will chop off the values if they are too long. 
+	
+	HTML link tracking and opens tracking are enabled and is currently not configurable.
+	
+	When a newsletter is scheduled for sending it will be uploaded immediately to MailChimp, 
+	however just before sending it will be uploaded again.  
 	"""
 	name = 'MailChimp mailer'
 	parameters = [ 
@@ -178,6 +242,10 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		self.ml = MailChimpList.objects.get( list_id=list_id )
 		
 	def _chop( self, value, limit ):
+		"""
+		Chop off parts of a string if needed to ensure
+		its smaller than a maximum length.
+		"""
 		if len(value) >= limit-2:
 			return "%s..." % value[:limit-5]
 		else:
@@ -185,7 +253,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 	
 	def _update_campaign( self, nl, campaign_id ):
 		"""
-		Update an existing campaign in MailChimp
+		Update an existing campaign in MailChimp.
 		"""
 		campaigns = self.ml.connection.campaigns( filters={ 'list_id' : self.ml.list_id, 'campaign_id' : campaign_id } )
 		
@@ -230,7 +298,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 	
 	def _upload_newsletter( self, newsletter ):
 		"""
-		Send combined html and plain text email.
+		Uploadd a newsletter into MailChimp, and record the MailChimp campaign id. 
 		"""
 		from djangoplicity.newsletters.models import MailChimpCampaign
 		
@@ -250,7 +318,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 	
 	def get_mailer_context(self):
 		return {
-			'unsubscribe_link' : '*|UNSUB|*',
+			'unsubscribe_link' : '*|UNSUB|*', # MailChimp will automatically replace the tag *|...|*-tags with a lists unsubscribe link etc. 
 			'preferences_link' : '*|UPDATE_PROFILE|*', 
 			'browser_link' : '*|ARCHIVE|*' if self.enable_browser_link else '',
 			'is_mailchimp_mailer' : True,

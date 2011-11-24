@@ -31,7 +31,9 @@
 #
 
 """
-Djangoplicity Newsletter
+Forms used in the admin interface for asking for email addresses to send
+test newsletters to, and for confirmation to prevent accidentially sending
+a newsletter. 
 """
 
 from django import forms

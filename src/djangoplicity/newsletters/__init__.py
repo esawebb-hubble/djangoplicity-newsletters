@@ -32,4 +32,9 @@
 
 """
 Djangoplicity Newsletter
+========================
+This applications allows sending and generating newsletter from existing content
+already defined in other models in django.
+
+The application depends on django-tinymce to provide a TinyMCE editor for HTML text.
 """

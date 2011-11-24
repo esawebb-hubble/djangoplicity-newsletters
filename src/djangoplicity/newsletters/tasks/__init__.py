@@ -30,13 +30,27 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+"""
+The celery tasks defined here are all wrapping features defined in the models.
+
+"""
+
 from celery.task import task
 
 @task( name="newsletters.send_scheduled_newsletter", ignore_result=True )
 def send_scheduled_newsletter( newsletter_pk ):
 	"""
 	Task to start sending a scheduled newsletter - this task should normally
-	be invoked with the eta keyword argument (e.g apply_async( pk, eta=.. ))   
+	be invoked with the eta keyword argument (e.g apply_async( pk, eta=.. ))
+	
+	The task will be revoked if the schedule is cancelled via the admin 
+	interface.
+	
+	Notes:
+	- A task with eta/countdown will survive if workers are restarted.
+	- The eta/countdown argument only ensures that the task will be
+	  run after the defined time. If workers are overloaded it might be
+	  delayed.    
 	"""
 	from djangoplicity.newsletters.models import Newsletter
 	

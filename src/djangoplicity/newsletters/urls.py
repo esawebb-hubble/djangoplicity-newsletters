@@ -31,14 +31,9 @@
 #
 
 from django.conf.urls.defaults import patterns
-#from djangoplicity.newsletters.views import newsletters_detail, newsletter_liverender
 
 """
-URL config for overwriting the default change view of the reports module.
-See notes in views.py for usage guide.
+All extra views are currently defined in admin.py
 """
 
-urlpatterns = patterns( '',
-    #( r'^main/$', newsletters_detail ),
-    #( r'^render/(?P<pk>[\d]+)/$', newsletter_liverender ),
-)
+urlpatterns = patterns( '', )
