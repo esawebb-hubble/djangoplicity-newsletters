@@ -35,7 +35,8 @@ from celery.task import task
 @task( name="newsletters.send_scheduled_newsletter", ignore_result=True )
 def send_scheduled_newsletter( newsletter_pk ):
 	"""
-	Task to start sending a scheduled newsletter   
+	Task to start sending a scheduled newsletter - this task should normally
+	be invoked with the eta keyword argument (e.g apply_async( pk, eta=.. ))   
 	"""
 	from djangoplicity.newsletters.models import Newsletter
 	

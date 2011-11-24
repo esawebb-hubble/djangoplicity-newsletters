@@ -121,6 +121,7 @@ class Mailer( models.Model ):
 	
 	def on_scheduled( self, newsletter ):
 		"""
+		Notification that the given newsletter was scheduled for sending
 		"""
 		try:
 			plugin = self.get_plugin()
@@ -130,6 +131,8 @@ class Mailer( models.Model ):
 		
 	def on_unscheduled( self, newsletter ):
 		"""
+		Notification that the scheduled newsletter was 
+		cancelled.
 		"""
 		try:
 			plugin = self.get_plugin()

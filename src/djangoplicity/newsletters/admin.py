@@ -224,7 +224,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 	
 	def schedule_newsletter_view( self, request, pk=None ):
 		"""
-		View HTML version of newsletter
+		Schedule a newsletter for sending.
 		"""
 		from djangoplicity.newsletters.forms import ScheduleNewsletterForm
 		
@@ -258,7 +258,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 	
 	def unschedule_newsletter_view( self, request, pk=None ):
 		"""
-		View HTML version of newsletter
+		Cancel a scheduled newsletter.
 		"""
 		from djangoplicity.newsletters.forms import UnscheduleNewsletterForm
 		
