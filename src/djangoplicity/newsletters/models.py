@@ -411,7 +411,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 		the task send_newsletter
 		"""
 		if not self.scheduled:
-			self.send()
+			self._send()
 		else:
 			raise Exception( "Newsletter is scheduled for sending. To send now, you must first cancel the current schedule." )
 		
