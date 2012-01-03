@@ -32,7 +32,6 @@
 
 """
 The celery tasks defined here are all wrapping features defined in the models.
-
 """
 
 from celery.task import task

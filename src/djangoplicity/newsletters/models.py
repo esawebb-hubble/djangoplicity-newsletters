@@ -31,19 +31,19 @@
 #
 
 """
-Data models for the newsletter system.
-
 The newsletter system consists of the following components:
 
  * Newsletter types which are used to define:
-	*) where to send the newsletter
-	*) how to render the newsletter
-	*) how to select content for the newsletter (auto-generation support)
+	* where to send the newsletter
+	* how to render the newsletter
+	* how to select content for the newsletter (auto-generation support)
  * Mailer plug-in system that allow sending a newsletter
    via different channels (e.g. via mailchimp, standard email or mailman list).
    The mailer plug-in system can be extended with the users own mailer plug-ins.
  * Newsletter generation component, that can integrate content from any django
    model into the newsletter. 
+   
+----
 """
 
 from datetime import datetime, timedelta

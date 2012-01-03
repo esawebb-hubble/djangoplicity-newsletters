@@ -73,10 +73,10 @@ See more on http://www.eso.org/public/events/exhibitions/
 ESO PICTURES OF THE WEEK 
 ========================
 
-* {{ data.potw.release_date|date }}: {{ data.potw.image.title|safe }}
+* {{ data.potw.release_date|date }}: {% if data.potw.image %}{{ data.potw.image.title|safe }}{% endif %}{% if data.potw.comparison %}{{ data.potw.comparison.title|safe }}{% endif %}
 http://www.eso.org{{ data.potw.get_absolute_url }}
 {% for obj in data.footer_potws.all %}
-* {{ obj.release_date|date }}: {{ obj.image.title|safe }}
+* {{ obj.release_date|date }}: {% if obj.image %}{{ obj.image.title|safe }}{% endif %}{% if obj.comparison %}{{ obj.comparison.title|safe }}{% endif %}
 http://www.eso.org{{ obj.get_absolute_url }}
 {% endfor %}
 See more on http://www.eso.org/public/images/potw/

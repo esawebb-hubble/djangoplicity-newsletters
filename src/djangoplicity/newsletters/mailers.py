@@ -31,8 +31,6 @@
 #
 
 """
-MailerPlugin
-============
 A Newsletter can be sent to many different distribution lists via Mailers. By default 
 a NewsletterType must have at least one associated Mailer for a newsletter to be sent 
 anywhere. A Mailer is defined by an admin who specifies which MailerPlugin to use, 
@@ -67,6 +65,8 @@ variables for the templates.
 
 The MailerPlugin should also specify names and types of any parameters that an admin
 user may need to specify - e.g. the Mailman plugin needs the list's info URL to be specified.
+
+----
 """
 
 from django.core.mail import EmailMultiAlternatives
@@ -91,9 +91,11 @@ class MailerPlugin():
 		for sending. This allows plugins to do any preparations
 		prior to sending if needed.
 		
-		NOTE: The mailer plugins should NOT use their own scheduling 
-		feature. send_now() will be called the right time to for all mailers
-		to send the newsletter.
+		.. note:: 
+		
+			The mailer plugins should NOT use their own scheduling 
+			feature. send_now() will be called the right time to for all mailers
+			to send the newsletter.
 		"""
 		pass
 	
