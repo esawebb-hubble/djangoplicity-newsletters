@@ -34,14 +34,6 @@
 This applications allows sending and generating newsletter from existing content
 already defined in other models in django.
 
-The application depends on django-tinymce to provide a TinyMCE editor for HTML text.
-
-Features
---------
-  * Automatic generation of newsletters
-  * 
-
-**Authors:**
- * Lars Holm Nielsen <lnielsen@eso.org>
- * Luis Clara Gomes <lcgomes@eso.org>
+The application depends on django-tinymce to provide a TinyMCE editor for HTML text, 
+as well as Django contenttypes.
 """

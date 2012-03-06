@@ -66,23 +66,11 @@ from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 from tinymce import models as tinymce_models
 import traceback
 
-
-#SPLIT_TEST = ( 
-#	( '', 'Disabled' ),
-#	( 'from_name', 'From' ),
-#	( 'subject', 'Subject' ),
-# )
-#
-#SPLIT_TEST_WINNER = ( 
-#	( 'opens', 'Opens' ),
-#	( 'clicks', 'Clicks' ),
-# )
-
 class Mailer( models.Model ):
 	"""
 	Model for defining mailers. A newsletter type can define several mailers to use
 	when sending a newsletter (e.g. send newsletter via mailchimp and two other mail-man
-	mailing lists. Each mailer defines the plug-in to use parameters for each plugin.
+	mailing lists). Each mailer defines the plug-in to use parameters for each plugin.
 	"""
 	_plugins = {}
 
@@ -247,7 +235,9 @@ post_save.connect( Mailer.post_save_handler, sender=Mailer )
 
 class MailerParameter( models.Model ):
 	"""
-	Parameter for a mailer (e.g. mailchimp list id, or list of email addresses
+	Parameter for a mailer (e.g. mailchimp list id, or list of email addresses).
+	
+	The mail parameters are automatically created by  
 	"""
 	mailer = models.ForeignKey( Mailer )
 	name = models.SlugField( max_length=255, unique=False )

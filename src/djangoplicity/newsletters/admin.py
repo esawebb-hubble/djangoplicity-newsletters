@@ -107,6 +107,11 @@ class NewsletterAdmin( admin.ModelAdmin ):
 #    }
 	
 	def get_urls( self ):
+		"""
+		Define extra URLS for newsletter admin.
+		
+		See https://docs.djangoproject.com/en/1.3/ref/contrib/admin/#django.contrib.admin.ModelAdmin.get_urls
+		"""
 		urls = super( NewsletterAdmin, self ).get_urls()
 		extra_urls = patterns( '',
 			( r'^(?P<pk>[0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ) ),

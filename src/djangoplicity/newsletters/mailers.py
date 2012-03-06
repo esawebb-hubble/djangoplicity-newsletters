@@ -65,6 +65,7 @@ variables for the templates.
 
 The MailerPlugin should also specify names and types of any parameters that an admin
 user may need to specify - e.g. the Mailman plugin needs the list's info URL to be specified.
+The parameters are stored in MailerParameter, and are automatically created by the Mailer model.
 
 ----
 """
