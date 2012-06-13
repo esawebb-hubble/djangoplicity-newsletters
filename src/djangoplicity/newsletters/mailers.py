@@ -269,7 +269,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='content', value={ 'html' : nl.html, 'text' : nl.text } ) )
 
 			if False in vals:
-				raise Exception( "Could update campaign" )
+				raise Exception( "Couldn't update campaign" )
 			return ( campaign_id, False )
 		else:
 			return ( self._create_campaign( nl ), True )
@@ -297,6 +297,9 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				'text' : nl.text,
 			}
 		 )
+
+		if 'error' in val:
+			raise Exception("MailChimp could not create the campaign, error %d: '%s'." % (val['code'], val['error']))
 		return val
 	
 	def _upload_newsletter( self, newsletter ):
