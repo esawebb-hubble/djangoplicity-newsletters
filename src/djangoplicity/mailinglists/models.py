@@ -557,11 +557,11 @@ class MailChimpList( models.Model ):
 		if self.list_id and self.api_key and not self.web_id:
 			try:
 				self.fetch_info()
+				self.save()
 			except MailChimpError, e:
 				self.connected = False
 				self.last_sync = datetime.now()
 				self.error = unicode( e )
-				self.save()
 
 	def fetch_info( self ):
 		"""
