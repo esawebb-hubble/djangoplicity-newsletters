@@ -553,6 +553,7 @@ class MailChimpList( models.Model ):
 		"""
 		Save instance (and sync info from MailChimp if it hasn't been done before).
 		"""
+		super( MailChimpList, self ).save( *args, **kwargs )
 		if self.list_id and self.api_key and not self.web_id:
 			try:
 				self.fetch_info()
@@ -560,7 +561,7 @@ class MailChimpList( models.Model ):
 				self.connected = False
 				self.last_sync = datetime.now()
 				self.error = unicode( e )
-		super( MailChimpList, self ).save( *args, **kwargs )
+				self.save()
 
 	def fetch_info( self ):
 		"""
@@ -597,7 +598,6 @@ class MailChimpList( models.Model ):
 				self.last_sync = datetime.now()
 				self.connected = True
 				self.error = ""
-
 
 				# Try to get Merge Vars
 				pks = []
