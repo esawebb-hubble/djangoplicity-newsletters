@@ -50,7 +50,7 @@ from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
-	MailerParameter, Mailer, MailerLog
+	MailerParameter, Mailer, MailerLog, LocalNewsletter, Language
 from tinymce.widgets import TinyMCE
 
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
@@ -68,6 +68,14 @@ class MailerParameterInlineAdmin( admin.TabularInline ):
 class NewsletterContentInlineAdmin( admin.TabularInline ):
 	model = NewsletterContent
 	extra = 0
+
+class LocalNewsletterInlineAdmin( admin.TabularInline ):
+	fields = ['lang', 'scheduled', 'view']
+	readonly_fields = ['lang', 'view']
+	can_delete = False
+	extra = 0
+	max_num = 0
+	model = LocalNewsletter
 
 class NewsletterAdmin( admin.ModelAdmin ):
 	list_display = [ 'id', 'subject', 'type', 'from_name', 'from_email', 'release_date','published','last_modified']
@@ -101,7 +109,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 			}
 		),
 	)
-	inlines = [NewsletterContentInlineAdmin]
+	inlines = [NewsletterContentInlineAdmin, LocalNewsletterInlineAdmin]
 #	formfield_overrides = {
 #        models.TextField: {'widget': TinyMCE( attrs={'cols': 80, 'rows': 20}, )},
 #    }
@@ -116,6 +124,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		extra_urls = patterns( '',
 			( r'^(?P<pk>[0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
+			( r'^(?P<pk>[0-9]+)/html/(?P<lang>[-a-z]+)$', self.admin_site.admin_view( self.html_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/schedule/$', self.admin_site.admin_view( self.schedule_newsletter_view ) ),
@@ -124,11 +133,14 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		)
 		return extra_urls + urls
 	
-	def html_newsletter_view( self, request, pk=None ):
+	def html_newsletter_view( self, request, pk=None, lang=None ):
 		"""
 		View HTML version of newsletter
 		"""
-		newsletter = get_object_or_404( Newsletter, pk=pk )
+		if lang:
+			newsletter = get_object_or_404( LocalNewsletter, lang=lang, newsletter__pk=pk )
+		else:
+			newsletter = get_object_or_404( Newsletter, pk=pk )
 		data = newsletter.render( {}, store=False )
 		return HttpResponse( data['html'], mimetype="text/html" )
 	
@@ -172,7 +184,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 					{
 						'title': _( 'Generate %s' ) % force_unicode( self.model._meta.verbose_name ),
 						'adminform': form,
-	        		},
+					},
 				)
 		
 	def send_newsletter_test_view( self, request, pk=None ):
@@ -333,7 +345,7 @@ class NewsletterDataSourceAdmin( admin.ModelAdmin ):
 	list_editable = ['type', 'title', 'content_type', 'list' ]
 	list_filter = ['list', 'type', 'content_type', ]
 	search_fields = ['name', 'title' ]
-	
+
 class DataSourceSelectorAdmin( admin.ModelAdmin ):
 	list_display = [ 'id', 'name', 'filter', 'field', 'match', 'value', 'type' ]
 	list_editable = ['name', 'filter', 'field', 'match', 'value', 'type' ]
@@ -361,6 +373,8 @@ class MailerLogAdmin( admin.ModelAdmin ):
 	def has_add_permission( self, request ):
 		return False
 
+class LanguageAdmin( admin.ModelAdmin ):
+	list_display = [ 'lang' ]
 	
 def register_with_admin( admin_site ):
 	admin_site.register( NewsletterType, NewsletterTypeAdmin )
@@ -369,6 +383,7 @@ def register_with_admin( admin_site ):
 	admin_site.register( DataSourceSelector, DataSourceSelectorAdmin )
 	admin_site.register( Mailer, MailerAdmin )
 	admin_site.register( MailerLog, MailerLogAdmin )
+	admin_site.register( Language, LanguageAdmin )
 	
 
 # Register with default admin site	
