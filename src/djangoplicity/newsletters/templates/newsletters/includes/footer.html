@@ -12,9 +12,9 @@
                                                             <div style="color: #707070;font-family: Helvetica, Arial;font-size: 10px;line-height: 125%;text-align: center;background-color:#292929; padding-top:5px;padding-bottom:0px;padding-left:0px;padding-right:0px;">
                                                             	{% if footer_potws %}
                                                                 {% for obj in footer_potws %}{% if obj.image %}
-                                                                <a href="{{base_url}}{{obj.image.get_absolute_url}}"><img style="border:0px;margin:2px;" src="{{base_url}}{{MEDIA_URL}}{{ARCHIVE_ROOT}}/images/wallpaperthumbs/{{obj.image.id}}.jpg" alt="{{obj.image.title}}"></img></a>&nbsp;
+																<a href="{{base_url}}{{obj.image.get_absolute_url}}"><img style="border:0px;margin:2px;" src="{{base_url}}{{obj.image.resource_wallpaperthumbs.url}}" alt="{{obj.image.title}}"></img></a>&nbsp;
                                                                 {% endif %}{% if obj.comparison %}
-                                                                <a href="{{base_url}}{{obj.comparison.get_absolute_url}}"><img style="border:0px;margin:2px;" src="{{base_url}}{{MEDIA_URL}}{{ARCHIVE_ROOT}}/images/wallpaperthumbs/{{obj.comparison.id}}.jpg" alt="{{obj.comparison.title}}"></img></a>&nbsp;{% endif %}
+																<a href="{{base_url}}{{obj.comparison.get_absolute_url}}"><img style="border:0px;margin:2px;" src="{{base_url}}{{obj.comparison.resource_wallpaperthumbs.url}}" alt="{{obj.comparison.title}}"></img></a>&nbsp;{% endif %}
                                                                 {% endfor %}
                                                                 <div style="font-size:16px;color:white; padding-top: 5px;"><a href="{{potw_feed_url}}"><img border="0" src="{{base_url}}{{MEDIA_URL}}djangoplicity/images/rssicon.png"></a>&nbsp;<a style="font-size:16px;color:white;text-decoration:none;" href="{{base_url}}{% url potw_defaultquery %}">{{ org }} Pictures of the Week</a>
                                                                 <hr size="1" style="color: #bbbbbb; background-color: #bbbbbb; border: 0; height: 1px;" /> 
