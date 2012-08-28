@@ -36,8 +36,7 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
 {% else %}{% if not original.scheduled %}
 <fieldset class="module" style="background-color: #FFC; ">
 <div class="form-row">
-<p>Newsletter is already scheduled for sending on {{original.release_date}}.</p>
-<p>Reschedule newsletter to a different time? Please first <a href="../unschedule/">cancel the current schedule</a> for this newsletter.</p>
+<p>Newsletter is not already unscheduled</p>
 </div>
 </fieldset>
 {% else %}

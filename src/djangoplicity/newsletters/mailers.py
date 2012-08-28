@@ -258,6 +258,9 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		"""
 		Update an existing campaign in MailChimp.
 		"""
+
+		self._check_languages(nl)
+
 		campaigns = self.ml.connection.campaigns( filters={ 'list_id' : self.ml.list_id, 'campaign_id' : campaign_id } )
 		
 		if 'total' in campaigns and campaigns['total'] > 0:
@@ -278,6 +281,9 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		"""
 		Create a new campaign in MailChimp
 		"""
+
+		self._check_languages(nl)
+
 		val = self.ml.connection.campaignCreate(
 			type = 'regular',
 			options = {
@@ -304,10 +310,12 @@ class MailChimpMailerPlugin( MailerPlugin ):
 	
 	def _upload_newsletter( self, newsletter ):
 		"""
-		Uploadd a newsletter into MailChimp, and record the MailChimp campaign id. 
+		Upload a newsletter into MailChimp, and record the MailChimp campaign id. 
 		"""
 		from djangoplicity.newsletters.models import MailChimpCampaign
-		
+
+		self._check_languages(newsletter)
+
 		newsletter.render( self.get_mailer_context() )
 		
 		( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter, list_id=self.ml.list_id )
@@ -319,9 +327,41 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		else:
 			info.campaign_id = self._create_campaign( newsletter )
 			info.save()
-		
+
 		return info
-	
+
+	def _check_languages ( self, newsletter ):
+		"""
+		Check that the newsletter languages (if any) match the Mailchimp list's
+		"""
+
+		# Get a list of the newsletter's languages:
+		nl_languages = newsletter.type.languages.all()
+		# Convert from code (e.g.: es-cl) to full name (e.g.: Spanish/Chile)
+		nl_languages = [ str(lang) for lang in nl_languages ]
+		
+		# Get a list of the Mailchimp list's languages:
+		mc_languages = []
+		groups = self.ml.connection.listInterestGroupings(id=self.ml.list_id)
+		#  'groups' will be a list on success, or a dict on error:
+		if isinstance(groups, dict) and 'error' in groups:
+			raise Exception(groups['error'])
+		for group in groups:
+			if group['name'] == 'Preferred language':
+				for g in group['groups']:
+					mc_languages.append(g['name'])
+
+		# Check that languages are identical on both sides:
+		for lang in nl_languages:
+			if lang not in mc_languages:
+				raise Exception("Language '%s' missing in MailChimp 'Preferred language' group for list '%s'" 
+						% (lang, self.ml.list_id))
+		for lang in mc_languages:
+			if lang not in nl_languages:
+				raise Exception("Language '%s' missing in list's '%s' languages" 
+						% (lang, newsletter.type.name))
+
+
 	def get_mailer_context(self):
 		return {
 			'unsubscribe_link' : '*|UNSUB|*', # MailChimp will automatically replace the tag *|...|*-tags with a lists unsubscribe link etc. 

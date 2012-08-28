@@ -113,22 +113,16 @@ class Mailer( models.Model ):
 		"""
 		Notification that the given newsletter was scheduled for sending
 		"""
-		try:
-			plugin = self.get_plugin()
-			return plugin.on_scheduled( newsletter )
-		except Exception, e:
-			pass
+		plugin = self.get_plugin()
+		return plugin.on_scheduled( newsletter )
 		
 	def on_unscheduled( self, newsletter ):
 		"""
 		Notification that the scheduled newsletter was 
 		cancelled.
 		"""
-		try:
-			plugin = self.get_plugin()
-			return plugin.on_unscheduled( newsletter )
-		except Exception, e:
-			pass
+		plugin = self.get_plugin()
+		return plugin.on_unscheduled( newsletter )
 		
 	def send_now( self, newsletter ):
 		"""
@@ -382,7 +376,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 		else:
 			if datetime.now() + timedelta( minutes=2 ) >= self.release_date:
 				raise Exception("Cannot schedule newsletter to be sent in the past.")
-			
+
 			for m in self.type.mailers.all():
 				m.on_scheduled( self )
 				
@@ -615,13 +609,6 @@ class NewsletterContent( models.Model ):
 				except modelcls.DoesNotExist:
 					data = None
 
-			if hasattr(data, 'lang'):
-				data_lang = data.lang
-			else:
-				data_lang = ''
-			print ' ** ', data_lang
-			print data
-
 			# Data can be either a list or a unique element
 			# so we turn it in a list:
 			if not datasrc.list:
@@ -658,8 +645,6 @@ class NewsletterContent( models.Model ):
 						data.append(d)
 					else:
 						data = d
-
-			print data
 			ctx[datasrc.name] = data
 
 		return ctx
