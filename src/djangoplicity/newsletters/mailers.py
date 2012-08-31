@@ -249,12 +249,16 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		Chop off parts of a string if needed to ensure
 		its smaller than a maximum length.
 		"""
+		#  Encode the string to utf otherwise Mailchimp might complain
+		#  about the length of special characters, 
+		#  i.e.: Mailchimp counts '\xc3' as 4 characters instead of one
+		value = value.encode('utf-8')
 		if len(value) >= limit-2:
 			return "%s..." % value[:limit-5]
 		else:
 			return value
 	
-	def _update_campaign( self, nl, campaign_id ):
+	def _update_campaign( self, nl, campaign_id, lang ):
 		"""
 		Update an existing campaign in MailChimp.
 		"""
@@ -262,47 +266,101 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		self._check_languages(nl)
 
 		campaigns = self.ml.connection.campaigns( filters={ 'list_id' : self.ml.list_id, 'campaign_id' : campaign_id } )
+
+		if lang:
+			# Fetch the local version of the newsletter
+			# for the given language
+			local = nl.get_local_version(lang)
+			if not local:
+				raise Exception('Can\'t find Local newsletter for Newsletter %d for language ""' % (nl.id, lang))
+
+			#  Add the mailer_context to the newsletter:
+			local.render( self.get_mailer_context() )
+
+			# Set the variables accordingly:
+			subject = local.subject
+			from_email = local.newsletter.from_email
+			from_name = local.newsletter.from_name
+			html = local.html
+			text = local.text
+		else:
+			#  Add the mailer_context to the newsletter:
+			nl.render( self.get_mailer_context() )
+
+			subject = nl.subject
+			from_email = nl.from_email
+			from_name = nl.from_name
+			html = nl.html
+			text = nl.text
 		
+		# Total is the number of campaigns matching the query (should only ever
+		# be 1 or 0 as we filter on campaign_id)
 		if 'total' in campaigns and campaigns['total'] > 0:
 			vals = []
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='subject', value=self._chop( nl.subject, 150 ) ) )
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_email', value=nl.from_email ) )
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_name', value=nl.from_name ) )
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='title', value=self._chop( nl.subject, 100 ) ) )
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='content', value={ 'html' : nl.html, 'text' : nl.text } ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='subject', value=self._chop( subject, 150 ) ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_email', value=from_email ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_name', value=from_name ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='title', value=self._chop( subject, 100 ) ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='content', value={ 'html' : html, 'text' : text } ) )
 
 			if False in vals:
 				raise Exception( "Couldn't update campaign" )
 			return ( campaign_id, False )
 		else:
-			return ( self._create_campaign( nl ), True )
+			return ( self._create_campaign( nl, lang ), True )
 
-	def _create_campaign( self, nl ):
+	def _create_campaign( self, nl, lang ):
 		"""
 		Create a new campaign in MailChimp
 		"""
 
 		self._check_languages(nl)
 
+		if lang:
+			# Fetch the local version of the newsletter
+			# for the given language
+			local = nl.get_local_version(lang)
+			if not local:
+				raise Exception('Can\'t find Local newsletter for Newsletter %d for language ""' % (nl.id, lang))
+
+			#  Add the mailer_context to the newsletter:
+			local.render( self.get_mailer_context() )
+
+			# Set the variables accordingly:
+			subject = local.subject
+			from_email = local.newsletter.from_email
+			from_name = local.newsletter.from_name
+			html = local.html
+			text = local.text
+		else:
+			#  Add the mailer_context to the newsletter:
+			nl.render( self.get_mailer_context() )
+
+			subject = nl.subject
+			from_email = nl.from_email
+			from_name = nl.from_name
+			html = nl.html
+			text = nl.text
+
 		val = self.ml.connection.campaignCreate(
 			type = 'regular',
 			options = {
 				'list_id' : self.ml.list_id,
-				'subject' : self._chop( nl.subject, 150 ),
-				'from_email' : nl.from_email,
-				'from_name' : nl.from_name,
+				'subject' : self._chop( subject, 150 ),
+				'from_email' : from_email,
+				'from_name' : from_name,
 				'tracking' : { 'opens' : True, 'html_clicks' : True, 'text_clicks' : False },
-				'title' : self._chop( nl.subject, 100 ),
+				'title' : self._chop( subject, 100 ),
 				'authenticate' : True,
 				'auto_footer' : False,
 				'inline_css' : True,
 				'fb_comments' : True,
 			},
 			content = {
-				'html' : nl.html,
-				'text' : nl.text,
+				'html' : html,
+				'text' : text,
 			}
-		 )
+		)
 
 		if 'error' in val:
 			raise Exception("MailChimp could not create the campaign, error %d: '%s'." % (val['code'], val['error']))
@@ -310,25 +368,29 @@ class MailChimpMailerPlugin( MailerPlugin ):
 	
 	def _upload_newsletter( self, newsletter ):
 		"""
-		Upload a newsletter into MailChimp, and record the MailChimp campaign id. 
+		Upload a newsletter (and localised version if any) into MailChimp, and
+		record the MailChimp campaign id.
 		"""
 		from djangoplicity.newsletters.models import MailChimpCampaign
 
 		self._check_languages(newsletter)
 
-		newsletter.render( self.get_mailer_context() )
+		# Get a list of languages for the newsletters, starting with an empty
+		# string for the original version
+		languages = ['', ]
+		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 		
-		( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter, list_id=self.ml.list_id )
-		
-		if not created and info.campaign_id:
-			( info.campaign_id, touched ) = self._update_campaign( newsletter, info.campaign_id )
-			if touched:
+		for language in languages:
+			( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter, 
+									list_id=self.ml.list_id, lang=language )
+			
+			if not created and info.campaign_id:
+				( info.campaign_id, touched ) = self._update_campaign( newsletter, info.campaign_id, language )
+				if touched:
+					info.save()
+			else:
+				info.campaign_id = self._create_campaign( newsletter, language )
 				info.save()
-		else:
-			info.campaign_id = self._create_campaign( newsletter )
-			info.save()
-
-		return info
 
 	def _check_languages ( self, newsletter ):
 		"""
@@ -374,13 +436,13 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		"""
 		Notification that a newsletter was scheduled for sending.
 		"""
-		info = self._upload_newsletter( newsletter )
+		self._upload_newsletter( newsletter )
 
 	def send_now( self, newsletter ):
 		"""
 		Send newsletter now.
 		"""
-		info = self._upload_newsletter( newsletter )
+		self._upload_newsletter( newsletter )
 		if not self.ml.connection.campaignSendNow( cid=info.campaign_id ):
 			raise Exception("MailChimp could not send newsletter.")
 
@@ -388,7 +450,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		"""
 		Send a test email for this newsletter
 		"""
-		info = self._upload_newsletter( newsletter )
+		self._upload_newsletter( newsletter )
 		if not self.ml.connection.campaignSendTest( cid=info.campaign_id, test_emails=emails ):
 			raise Exception("MailChimp could not send test email.")
 

@@ -550,10 +550,19 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			self.render( {} )
 
 			for local in LocalNewsletter.objects.filter(newsletter=self):
-				print 'Saving', local
 				local.save()
 
 		return super( Newsletter, self ).save( *args, **kwargs )
+
+	def get_local_version( self, language ):
+		"""
+		Return local version of the newsletter matching language
+		or None
+		"""
+		try:
+			return LocalNewsletter.objects.get( newsletter=self, lang=language )
+		except LocalNewsletter.DoesNotExist:
+			return None
 
 	def __unicode__( self ):
 		return self.subject
@@ -948,9 +957,10 @@ class MailChimpCampaign( models.Model ):
 	newsletter = models.ForeignKey( Newsletter )
 	list_id = models.CharField( max_length=50 )
 	campaign_id = models.CharField( max_length=50 )
+	lang = models.CharField( max_length=5, choices=settings.LANGUAGES, default='' )
 	
 	class Meta:
-		unique_together = ['newsletter', 'list_id']
+		unique_together = ['newsletter', 'list_id', 'lang']
 
 #
 # Register default mailer interfaces
