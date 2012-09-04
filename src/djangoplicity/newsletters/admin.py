@@ -48,9 +48,12 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
+from djangoplicity.contrib import admin as dpadmin
+from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
+	TranslationDuplicateAdmin, ArchiveAdmin
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
-	MailerParameter, Mailer, MailerLog, LocalNewsletter, Language
+	MailerParameter, Mailer, MailerLog, LocalNewsletter, Language, NewsletterProxy
 from tinymce.widgets import TinyMCE
 
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
@@ -375,6 +378,19 @@ class MailerLogAdmin( admin.ModelAdmin ):
 
 class LanguageAdmin( admin.ModelAdmin ):
 	list_display = [ 'lang' ]
+
+class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, TranslationDuplicateAdmin, ArchiveAdmin ):
+    list_display = ( 'id', 'subject' )
+    search_fields = NewsletterAdmin.search_fields
+    fieldsets = (
+                    ( 'Language', {'fields': ( 'lang', 'source', 'translation_ready', ) } ),
+                    ( None, {'fields': ( 'id', ) } ),
+                    ( 'Newsletter', {'fields': ( 'subject', 'editorial', 'editorial_text', ), } ),
+                )
+    ordering = NewsletterAdmin.ordering
+    raw_id_fields = ( 'source', )
+    readonly_fields = ( 'id', )
+    inlines = []
 	
 def register_with_admin( admin_site ):
 	admin_site.register( NewsletterType, NewsletterTypeAdmin )
@@ -384,6 +400,7 @@ def register_with_admin( admin_site ):
 	admin_site.register( Mailer, MailerAdmin )
 	admin_site.register( MailerLog, MailerLogAdmin )
 	admin_site.register( Language, LanguageAdmin )
+	admin_site.register( NewsletterProxy, NewsletterProxyAdmin )
 	
 
 # Register with default admin site	

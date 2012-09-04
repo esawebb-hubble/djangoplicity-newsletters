@@ -58,11 +58,13 @@ from django.utils.functional import lazy
 from django.utils.translation import ugettext as _
 from djangoplicity import archives
 from djangoplicity.archives.contrib.admin.defaults import view_link
+from djangoplicity.archives.translation import TranslationProxyMixin
 from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 	MailmanMailerPlugin
 from djangoplicity.newsletters.tasks import send_newsletter, \
 	send_newsletter_test, schedule_newsletter, unschedule_newsletter, \
 	send_scheduled_newsletter
+from djangoplicity.translation.models import TranslationModel
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 from tinymce import models as tinymce_models
 import traceback
@@ -267,7 +269,6 @@ class MailerParameter( models.Model ):
 
 class MailerLog( models.Model ):
 	"""
-	Logging o
 	"""
 	timestamp = models.DateTimeField( auto_now_add=True )
 	success = models.BooleanField( default=True )
@@ -339,10 +340,12 @@ class NewsletterType( models.Model ):
 		ordering = ['name']
 
 
-class Newsletter( archives.ArchiveModel, models.Model ):
+class Newsletter( archives.ArchiveModel, TranslationModel ):
 	"""
 	A definition of a newsletter.
 	"""
+
+	id = models.SlugField( primary_key=True )
 	
 	# Status
 	type = models.ForeignKey( NewsletterType )
@@ -539,7 +542,7 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 	def save( self, *args, **kwargs ):
 		"""
 		"""
-		if not self.frozen:
+		if self.is_source() and not self.frozen:
 			if self.from_name == '':
 				self.from_name = self.type.default_from_name
 			if self.from_email == '':
@@ -551,6 +554,10 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 
 			for local in LocalNewsletter.objects.filter(newsletter=self):
 				local.save()
+
+		elif self.is_translation():
+			if self.editorial_text == '' and self.editorial:
+				self.editorial_text = defaultfilters.striptags( unescape( defaultfilters.safe( self.editorial ) ) )
 
 		return super( Newsletter, self ).save( *args, **kwargs )
 
@@ -578,6 +585,42 @@ class Newsletter( archives.ArchiveModel, models.Model ):
 			last_modified = True
 			created = True
 			published = True
+
+	class Translation:
+		fields = ['subject', 'editorial', 'editorial_text', ]
+		excludes = []
+
+# ========================================================================
+# Translation proxy model
+# ========================================================================
+
+class NewsletterProxy( Newsletter, TranslationProxyMixin ):
+    """
+    Image proxy model for creating admin only to edit
+    translated objects.
+    """
+    objects = Newsletter.translation_objects
+
+    def clean( self ):
+        # Note: For some reason it's not possible to
+        # to define clean/validate_unique in TranslationProxyMixin
+        # so we have to do this trick, where we add the methods and
+        # call into translation proxy micin.
+        self.id_clean()
+
+    def validate_unique( self, exclude=None ):
+        self.id_validate_unique( exclude=exclude )
+
+    class Meta:
+        proxy = True
+        verbose_name = _('Newsletter translation')
+        app_label = 'newsletters'
+
+    class Archive:
+        class Meta:
+#            rename_pk = ('media_image','id')
+            rename_fks = []
+
 
 
 class NewsletterContent( models.Model ):
@@ -806,6 +849,7 @@ class LocalNewsletter( models.Model ):
 	"""
 	Local version of a newsletter
 	"""
+
 	newsletter = models.ForeignKey( Newsletter )
 
 	# Status
@@ -850,14 +894,25 @@ class LocalNewsletter( models.Model ):
 			t_text = Template( self.newsletter.type.text_template )
 			t_subject = Template( self.newsletter.type.subject_template )
 
+			# Look for translated editorial and editorial_text (if any)
+			try:
+				trans = self.newsletter.translations.get(lang=self.lang)
+				editorial = trans.editorial
+				editorial_text = trans.editorial_text
+			except Newsletter.DoesNotExist:
+				editorial = self.newsletter.editorial
+				editorial_text = self.newsletter.editorial_text
+
+			print editorial
+
 			defaults = {
 				'base_url' : "http://%s" % Site.objects.get_current().domain,
 				'MEDIA_URL' : settings.MEDIA_URL,
 				'STATIC_URL' : settings.STATIC_URL,
 				'ARCHIVE_ROOT' : getattr( settings, "ARCHIVE_ROOT", "" ),
 				'data' : NewsletterContent.data_context( self.newsletter, lang=self.lang ),
-				'editorial' : self.editorial,
-				'editorial_text' : self.editorial_text,
+				'editorial' : editorial,
+				'editorial_text' : editorial_text,
 				'enable_sharing' : self.newsletter.type.sharing,
 				'enable_archive' : self.newsletter.type.archive,
 				'release_date' : self.newsletter.release_date,
