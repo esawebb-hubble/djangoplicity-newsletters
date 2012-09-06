@@ -313,8 +313,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 			# Set the variables accordingly:
 			subject = local.subject
-			from_email = local.newsletter.from_email
-			from_name = local.newsletter.from_name
+			from_email = local.source.from_email
+			from_name = local.source.from_name
 			html = local.html
 			text = local.text
 		else:
@@ -362,8 +362,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 			# Set the variables accordingly:
 			subject = local.subject
-			from_email = local.newsletter.from_email
-			from_name = local.newsletter.from_name
+			from_email = local.source.from_email
+			from_name = local.source.from_name
 			html = local.html
 			text = local.text
 		else:
@@ -415,13 +415,13 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 		
 		for language in languages:
-			# Only upload scheduled local newsletters
+			# Only upload ready translations
 			if language:
 				local = newsletter.get_local_version(language)
 				if not local:
 					raise Exception('Can\'t find Local newsletter for Newsletter %d for language ""' % (newsletter.id, language))
 
-				if not local.scheduled:
+				if not local.translation_ready:
 					continue
 
 			( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter, 
@@ -495,13 +495,13 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 
 		for language in languages:
-			# Check if the translation is scheduled:
+			# Check if the translation is ready:
 			if language:
 				local = newsletter.get_local_version(language)
 				if not local:
 					raise Exception('Can\'t find Local newsletter for Newsletter %d for language ""' % (newsletter.id, language))
 
-				if not local.scheduled:
+				if not local.translation_ready:
 					continue
 
 			# Fetch the MailChimpCampaign for the given language

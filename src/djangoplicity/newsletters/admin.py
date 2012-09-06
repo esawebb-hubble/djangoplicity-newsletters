@@ -400,7 +400,7 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	max_num = 0
 	can_delete = False
 	form = NewsletterProxyInlineForm
-	fields = ['lang', 'subject', 'translation_ready', 'view']
+	fields = ['lang', 'id', 'subject', 'translation_ready', 'view']
 	readonly_fields = ['lang', 'view']
 	
 NewsletterAdmin.inlines += [NewsletterProxyInlineAdmin]
