@@ -43,6 +43,7 @@ from django.conf.urls.defaults import patterns
 from django.contrib import admin
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.forms import ModelForm
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -53,7 +54,7 @@ from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
 	TranslationDuplicateAdmin, ArchiveAdmin
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
-	MailerParameter, Mailer, MailerLog, LocalNewsletter, Language, NewsletterProxy
+	MailerParameter, Mailer, MailerLog, Language, NewsletterProxy
 from tinymce.widgets import TinyMCE
 
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
@@ -71,14 +72,6 @@ class MailerParameterInlineAdmin( admin.TabularInline ):
 class NewsletterContentInlineAdmin( admin.TabularInline ):
 	model = NewsletterContent
 	extra = 0
-
-class LocalNewsletterInlineAdmin( admin.TabularInline ):
-	fields = ['lang', 'scheduled', 'view']
-	readonly_fields = ['lang', 'view']
-	can_delete = False
-	extra = 0
-	max_num = 0
-	model = LocalNewsletter
 
 class NewsletterAdmin( admin.ModelAdmin ):
 	list_display = [ 'id', 'subject', 'type', 'from_name', 'from_email', 'release_date','published','last_modified']
@@ -112,7 +105,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 			}
 		),
 	)
-	inlines = [NewsletterContentInlineAdmin, LocalNewsletterInlineAdmin]
+	inlines = [NewsletterContentInlineAdmin]
 #	formfield_overrides = {
 #        models.TextField: {'widget': TinyMCE( attrs={'cols': 80, 'rows': 20}, )},
 #    }
@@ -125,9 +118,9 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		"""
 		urls = super( NewsletterAdmin, self ).get_urls()
 		extra_urls = patterns( '',
-			( r'^(?P<pk>[0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ) ),
-			( r'^(?P<pk>[0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
-			( r'^(?P<pk>[0-9]+)/html/(?P<lang>[-a-z]+)$', self.admin_site.admin_view( self.html_newsletter_view ) ),
+			( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ) ),
+			( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
+			( r'^(?P<pk>[-a-z0-9]+)/html/(?P<lang>[-a-z]+)$', self.admin_site.admin_view( self.html_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/schedule/$', self.admin_site.admin_view( self.schedule_newsletter_view ) ),
@@ -140,10 +133,15 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		"""
 		View HTML version of newsletter
 		"""
-		if lang:
-			newsletter = get_object_or_404( LocalNewsletter, lang=lang, newsletter__pk=pk )
-		else:
-			newsletter = get_object_or_404( Newsletter, pk=pk )
+		try:
+			newsletter = Newsletter.objects.get(pk=pk)
+		except Newsletter.DoesNotExist:
+			# This might be a translation:
+			try:
+				newsletter = NewsletterProxy.objects.get(pk=pk)
+			except NewsletterProxy.DoesNotExist:
+				raise Http404
+
 		data = newsletter.render( {}, store=False )
 		return HttpResponse( data['html'], mimetype="text/html" )
 	
@@ -391,7 +389,22 @@ class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, Transl
     raw_id_fields = ( 'source', )
     readonly_fields = ( 'id', )
     inlines = []
+
+class NewsletterProxyInlineForm( ModelForm ):
+	class Meta:
+		model = NewsletterProxy
+
+class NewsletterProxyInlineAdmin( admin.TabularInline ):
+	model = NewsletterProxy
+	extra = 0
+	max_num = 0
+	can_delete = False
+	form = NewsletterProxyInlineForm
+	fields = ['lang', 'subject', 'translation_ready', 'view']
+	readonly_fields = ['lang', 'view']
 	
+NewsletterAdmin.inlines += [NewsletterProxyInlineAdmin]
+
 def register_with_admin( admin_site ):
 	admin_site.register( NewsletterType, NewsletterTypeAdmin )
 	admin_site.register( Newsletter, NewsletterAdmin )

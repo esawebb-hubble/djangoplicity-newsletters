@@ -1,33 +1,96 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
 
+
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        
-        # Adding model 'LocalNewsletter'
-        db.create_table('newsletters_localnewsletter', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('newsletter', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['newsletters.Newsletter'])),
-            ('scheduled', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('lang', self.gf('django.db.models.fields.CharField')(max_length=5)),
-            ('subject', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('text', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('html', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('editorial', self.gf('tinymce.models.HTMLField')(blank=True)),
-            ('editorial_text', self.gf('django.db.models.fields.TextField')(blank=True)),
-        ))
-        db.send_create_signal('newsletters', ['LocalNewsletter'])
+        # Removing unique constraint on 'MailChimpCampaign', fields ['newsletter', 'list_id']
+        db.delete_unique('newsletters_mailchimpcampaign', ['newsletter_id', 'list_id'])
 
+        # Adding model 'Language'
+        db.create_table('newsletters_language', (
+            ('lang', self.gf('django.db.models.fields.CharField')(max_length=5, primary_key=True)),
+        ))
+        db.send_create_signal('newsletters', ['Language'])
+
+        # Adding field 'MailChimpCampaign.lang'
+        db.add_column('newsletters_mailchimpcampaign', 'lang',
+                      self.gf('django.db.models.fields.CharField')(default='', max_length=5),
+                      keep_default=False)
+
+        # Adding unique constraint on 'MailChimpCampaign', fields ['lang', 'newsletter', 'list_id']
+        db.create_unique('newsletters_mailchimpcampaign', ['lang', 'newsletter_id', 'list_id'])
+
+        # Adding M2M table for field languages on 'NewsletterType'
+        db.create_table('newsletters_newslettertype_languages', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('newslettertype', models.ForeignKey(orm['newsletters.newslettertype'], null=False)),
+            ('language', models.ForeignKey(orm['newsletters.language'], null=False))
+        ))
+        db.create_unique('newsletters_newslettertype_languages', ['newslettertype_id', 'language_id'])
+
+        # Adding field 'Newsletter.lang'
+        db.add_column('newsletters_newsletter', 'lang',
+                      self.gf('django.db.models.fields.CharField')(default='en', max_length=5, db_index=True),
+                      keep_default=False)
+
+        # Adding field 'Newsletter.source'
+        db.add_column('newsletters_newsletter', 'source',
+                      self.gf('djangoplicity.translation.fields.TranslationForeignKey')(blank=True, related_name='translations', null=True, only_sources=False, to=orm['newsletters.Newsletter']),
+                      keep_default=False)
+
+        # Adding field 'Newsletter.translation_ready'
+        db.add_column('newsletters_newsletter', 'translation_ready',
+                      self.gf('django.db.models.fields.BooleanField')(default=False),
+                      keep_default=False)
+
+
+        # Changing field 'Newsletter.id'
+        db.alter_column('newsletters_newsletter', 'id', self.gf('django.db.models.fields.SlugField')(max_length=50, primary_key=True))
+        # Adding index on 'Newsletter', fields ['id']
+        db.create_index('newsletters_newsletter', ['id'])
+
+        db.alter_column('newsletters_newslettercontent', 'newsletter_id', self.gf('django.db.models.fields.SlugField')(max_length=50))
+        db.alter_column('newsletters_mailchimpcampaign', 'newsletter_id', self.gf('django.db.models.fields.SlugField')(max_length=50))
 
     def backwards(self, orm):
-        
-        # Deleting model 'LocalNewsletter'
-        db.delete_table('newsletters_localnewsletter')
+        # Removing index on 'Newsletter', fields ['id']
+        db.delete_index('newsletters_newsletter', ['id'])
 
+        # Removing unique constraint on 'MailChimpCampaign', fields ['lang', 'newsletter', 'list_id']
+        db.delete_unique('newsletters_mailchimpcampaign', ['lang', 'newsletter_id', 'list_id'])
+
+        # Deleting model 'Language'
+        db.delete_table('newsletters_language')
+
+        # Deleting field 'MailChimpCampaign.lang'
+        db.delete_column('newsletters_mailchimpcampaign', 'lang')
+
+        # Adding unique constraint on 'MailChimpCampaign', fields ['newsletter', 'list_id']
+        db.create_unique('newsletters_mailchimpcampaign', ['newsletter_id', 'list_id'])
+
+        # Removing M2M table for field languages on 'NewsletterType'
+        db.delete_table('newsletters_newslettertype_languages')
+
+        # Deleting field 'Newsletter.lang'
+        db.delete_column('newsletters_newsletter', 'lang')
+
+        # Deleting field 'Newsletter.source'
+        db.delete_column('newsletters_newsletter', 'source_id')
+
+        # Deleting field 'Newsletter.translation_ready'
+        db.delete_column('newsletters_newsletter', 'translation_ready')
+
+
+        # Changing field 'Newsletter.id'
+        db.alter_column('newsletters_newsletter', 'id', self.gf('django.db.models.fields.AutoField')(primary_key=True))
+
+        db.alter_column('newsletters_newslettercontent', 'newsletter_id', self.gf('django.db.models.fields.related.ForeignKey'))
+        db.alter_column('newsletters_mailchimpcampaign', 'newsletter_id', self.gf('django.db.models.fields.related.ForeignKey'))
 
     models = {
         'contenttypes.contenttype': {
@@ -39,36 +102,29 @@ class Migration(SchemaMigration):
         },
         'newsletters.datasourceordering': {
             'Meta': {'ordering': "['name']", 'object_name': 'DataSourceOrdering'},
-            'fields': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
+            'fields': ('django.db.models.fields.SlugField', [], {'max_length': '50'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'})
         },
         'newsletters.datasourceselector': {
             'Meta': {'ordering': "['name']", 'object_name': 'DataSourceSelector'},
-            'field': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
+            'field': ('django.db.models.fields.SlugField', [], {'max_length': '50'}),
             'filter': ('django.db.models.fields.CharField', [], {'default': "'I'", 'max_length': '1'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'match': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
+            'match': ('django.db.models.fields.SlugField', [], {'max_length': '50'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'type': ('django.db.models.fields.CharField', [], {'default': "'str'", 'max_length': '4'}),
             'value': ('django.db.models.fields.CharField', [], {'max_length': '255'})
         },
-        'newsletters.localnewsletter': {
-            'Meta': {'object_name': 'LocalNewsletter'},
-            'editorial': ('tinymce.models.HTMLField', [], {'blank': 'True'}),
-            'editorial_text': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'html': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'lang': ('django.db.models.fields.CharField', [], {'max_length': '5'}),
-            'newsletter': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['newsletters.Newsletter']"}),
-            'scheduled': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'subject': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'text': ('django.db.models.fields.TextField', [], {'blank': 'True'})
+        'newsletters.language': {
+            'Meta': {'object_name': 'Language'},
+            'lang': ('django.db.models.fields.CharField', [], {'max_length': '5', 'primary_key': 'True'})
         },
         'newsletters.mailchimpcampaign': {
-            'Meta': {'unique_together': "(['newsletter', 'list_id'],)", 'object_name': 'MailChimpCampaign'},
+            'Meta': {'unique_together': "(['newsletter', 'list_id', 'lang'],)", 'object_name': 'MailChimpCampaign'},
             'campaign_id': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'lang': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '5'}),
             'list_id': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'newsletter': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['newsletters.Newsletter']"})
         },
@@ -96,7 +152,7 @@ class Migration(SchemaMigration):
             'help_text': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'mailer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['newsletters.Mailer']"}),
-            'name': ('django.db.models.fields.SlugField', [], {'max_length': '255', 'db_index': 'True'}),
+            'name': ('django.db.models.fields.SlugField', [], {'max_length': '255'}),
             'type': ('django.db.models.fields.CharField', [], {'default': "'str'", 'max_length': '4'}),
             'value': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'blank': 'True'})
         },
@@ -110,16 +166,19 @@ class Migration(SchemaMigration):
             'from_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'frozen': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'html': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'id': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'primary_key': 'True'}),
+            'lang': ('django.db.models.fields.CharField', [], {'default': "'en'", 'max_length': '5', 'db_index': 'True'}),
             'last_modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'published': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'release_date': ('djangoplicity.archives.fields.ReleaseDateTimeField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
             'scheduled': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'scheduled_task_id': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
             'send': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'source': ('djangoplicity.translation.fields.TranslationForeignKey', [], {'blank': 'True', 'related_name': "'translations'", 'null': 'True', 'only_sources': 'False', 'to': "orm['newsletters.Newsletter']"}),
             'start_date': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'subject': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'text': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'translation_ready': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['newsletters.NewsletterType']"})
         },
         'newsletters.newslettercontent': {
@@ -127,7 +186,7 @@ class Migration(SchemaMigration):
             'data_source': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['newsletters.NewsletterDataSource']", 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'newsletter': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['newsletters.Newsletter']"}),
-            'object_id': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'})
+            'object_id': ('django.db.models.fields.SlugField', [], {'max_length': '50'})
         },
         'newsletters.newsletterdatasource': {
             'Meta': {'ordering': "['type__name', 'title']", 'unique_together': "(('type', 'name'),)", 'object_name': 'NewsletterDataSource'},
@@ -135,7 +194,7 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'limit': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'list': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'name': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
+            'name': ('django.db.models.fields.SlugField', [], {'max_length': '50'}),
             'ordering': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['newsletters.DataSourceOrdering']", 'null': 'True', 'blank': 'True'}),
             'selectors': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['newsletters.DataSourceSelector']", 'symmetrical': 'False', 'blank': 'True'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
@@ -148,6 +207,7 @@ class Migration(SchemaMigration):
             'default_from_name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'html_template': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'languages': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['newsletters.Language']", 'symmetrical': 'False', 'blank': 'True'}),
             'mailers': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['newsletters.Mailer']", 'symmetrical': 'False', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'sharing': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),

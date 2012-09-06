@@ -494,49 +494,53 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		"""
 		Render the newsletter
 		"""
-		if not self.frozen:
-			t_html = Template( self.type.html_template )
-			t_text = Template( self.type.text_template )
-			t_subject = Template( self.type.subject_template )
-
-			defaults = {
-				'base_url' : "http://%s" % Site.objects.get_current().domain,
-				'MEDIA_URL' : settings.MEDIA_URL,
-				'STATIC_URL' : settings.STATIC_URL,
-				'ARCHIVE_ROOT' : getattr( settings, "ARCHIVE_ROOT", "" ),
-				'data' : NewsletterContent.data_context( self ),
-				'editorial' : self.editorial,
-				'editorial_text' : self.editorial_text,
-				'enable_sharing' : self.type.sharing,
-				'enable_archive' : self.type.archive,
-				'release_date' : self.release_date,
-				'published' : self.published,
-				'unsubscribe_link' : '', # Will be provided by the mailer plugin
-				'preferences_link' : '', # Will be provided by the mailer plugin 
-				'browser_link' : '', # Will be provided by the mailer plugin
-				'now' : datetime.now(),
-			}
-			defaults.update( extra_ctx )
-			ctx = Context( defaults )
-
-			data = {
-				'html' : t_html.render( ctx ),
-				'text' : t_text.render( ctx ),
-				'subject' : t_subject.render( ctx ),
-			}
-			
-			if store:
-				self.html = data['html']
-				self.text = data['text']
-				self.subject = data['subject']
-			
-			return data
-		else:
+		if self.is_source() and self.frozen or \
+				self.is_translation() and self.source.frozen:
 			return {
 				'html' : self.html,
 				'text' : self.text,
 				'subject' : self.subject,
 			}
+
+		t_html = Template( self.type.html_template )
+		t_text = Template( self.type.text_template )
+		t_subject = Template( self.type.subject_template )
+
+		defaults = {
+			'base_url' : "http://%s" % Site.objects.get_current().domain,
+			'MEDIA_URL' : settings.MEDIA_URL,
+			'STATIC_URL' : settings.STATIC_URL,
+			'ARCHIVE_ROOT' : getattr( settings, "ARCHIVE_ROOT", "" ),
+			'data' : NewsletterContent.data_context( self, lang=self.lang ),
+			'editorial' : self.editorial,
+			'editorial_text' : self.editorial_text,
+			'enable_sharing' : self.type.sharing,
+			'enable_archive' : self.type.archive,
+			'release_date' : self.release_date,
+			'published' : self.published,
+			'unsubscribe_link' : '', # Will be provided by the mailer plugin
+			'preferences_link' : '', # Will be provided by the mailer plugin 
+			'browser_link' : '', # Will be provided by the mailer plugin
+			'now' : datetime.now(),
+		}
+		defaults.update( extra_ctx )
+		ctx = Context( defaults )
+
+		if self.is_translation():
+			translation.activate(self.lang)
+
+		data = {
+			'html' : t_html.render( ctx ),
+			'text' : t_text.render( ctx ),
+			'subject' : t_subject.render( ctx ),
+		}
+		
+		if store:
+			self.html = data['html']
+			self.text = data['text']
+			self.subject = data['subject']
+		
+		return data
 
 
 	def save( self, *args, **kwargs ):
@@ -552,7 +556,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 				
 			self.render( {} )
 
-			for local in LocalNewsletter.objects.filter(newsletter=self):
+			for local in self.translations.all():
 				local.save()
 
 		elif self.is_translation():
@@ -561,14 +565,22 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 		return super( Newsletter, self ).save( *args, **kwargs )
 
+	def view(self):
+		if self.id:
+			#  FIXME: replace by view_link() or similar
+			return '<a href="/public/djangoplicity/admin/newsletters/newsletter/%s/html">View</a>' % str(self.id)
+		else:
+			return "Not present"
+	view.allow_tags = True
+
 	def get_local_version( self, language ):
 		"""
 		Return local version of the newsletter matching language
 		or None
 		"""
 		try:
-			return LocalNewsletter.objects.get( newsletter=self, lang=language )
-		except LocalNewsletter.DoesNotExist:
+			return self.translations.get( lang=language )
+		except Newsletter.DoesNotExist:
 			return None
 
 	def __unicode__( self ):
@@ -622,7 +634,6 @@ class NewsletterProxy( Newsletter, TranslationProxyMixin ):
             rename_fks = []
 
 
-
 class NewsletterContent( models.Model ):
 	"""
 	Specifies content for a specific newsletter. Note, that 
@@ -642,6 +653,11 @@ class NewsletterContent( models.Model ):
 		Generate a data context for a newsletter
 		"""
 		ctx = {}
+
+		# If newsletter is a translation we use the data
+		# NewsletterContent from the source Newsletter
+		if newsletter.is_translation():
+			newsletter = newsletter.source
 
 		for datasrc in NewsletterDataSource.data_sources( newsletter.type ):
 			# For each data source - get object(s) for this newsletter.
@@ -845,106 +861,6 @@ class NewsletterDataSource( models.Model ):
 		unique_together = ( 'type', 'name' )
 		ordering = ['type__name', 'title']
 
-class LocalNewsletter( models.Model ):
-	"""
-	Local version of a newsletter
-	"""
-
-	newsletter = models.ForeignKey( Newsletter )
-
-	# Status
-	scheduled = models.BooleanField( default=False )
-
-	# Content
-	lang = models.CharField( verbose_name=_( 'Language' ), max_length=5, choices=settings.LANGUAGES)
-	subject = models.CharField( max_length=255, blank=True )
-	text = models.TextField( blank=True )
-	html = models.TextField( verbose_name="HTML", blank=True )
-
-	# Editorial if needed
-	editorial = tinymce_models.HTMLField( blank=True )
-	editorial_text = models.TextField( blank=True )
-
-	def save( self, *args, **kwargs ):
-		"""
-		"""
-		if not self.newsletter.frozen:
-			if self.editorial_text == '' and self.editorial:
-				self.editorial_text = defaultfilters.striptags( unescape( defaultfilters.safe( self.editorial ) ) )
-				
-			self.render( {} )
-
-		return super( LocalNewsletter, self ).save( *args, **kwargs )
-
-	def view(self):
-		if self.id:
-			#  FIXME: replace by view_link() or similar
-			return '<a href="/public/djangoplicity/admin/newsletters/newsletter/%s/html/%s">View</a>' % (str(self.newsletter.id), self.lang)
-		else:
-			return "Not present"
-	view.allow_tags = True
-
-
-	def render( self, extra_ctx, store=True ):
-		"""
-		Render the local newsletter
-		"""
-		if not self.newsletter.frozen:
-			t_html = Template( self.newsletter.type.html_template )
-			t_text = Template( self.newsletter.type.text_template )
-			t_subject = Template( self.newsletter.type.subject_template )
-
-			# Look for translated editorial and editorial_text (if any)
-			try:
-				trans = self.newsletter.translations.get(lang=self.lang)
-				editorial = trans.editorial
-				editorial_text = trans.editorial_text
-			except Newsletter.DoesNotExist:
-				editorial = self.newsletter.editorial
-				editorial_text = self.newsletter.editorial_text
-
-			print editorial
-
-			defaults = {
-				'base_url' : "http://%s" % Site.objects.get_current().domain,
-				'MEDIA_URL' : settings.MEDIA_URL,
-				'STATIC_URL' : settings.STATIC_URL,
-				'ARCHIVE_ROOT' : getattr( settings, "ARCHIVE_ROOT", "" ),
-				'data' : NewsletterContent.data_context( self.newsletter, lang=self.lang ),
-				'editorial' : editorial,
-				'editorial_text' : editorial_text,
-				'enable_sharing' : self.newsletter.type.sharing,
-				'enable_archive' : self.newsletter.type.archive,
-				'release_date' : self.newsletter.release_date,
-				'published' : self.newsletter.published,
-				'unsubscribe_link' : '', # Will be provided by the mailer plugin
-				'preferences_link' : '', # Will be provided by the mailer plugin 
-				'browser_link' : '', # Will be provided by the mailer plugin
-				'now' : datetime.now(),
-			}
-			defaults.update( extra_ctx )
-			ctx = Context( defaults )
-			translation.activate(self.lang)
-
-			data = {
-				'html' : t_html.render( ctx ),
-				'text' : t_text.render( ctx ),
-				'subject' : t_subject.render( ctx ),
-			}
-			
-			if store:
-				self.html = data['html']
-				self.text = data['text']
-				self.subject = data['subject']
-			
-			return data
-		else:
-			return {
-				'html' : self.html,
-				'text' : self.text,
-				'subject' : self.subject,
-			}
-
 
 # =================================
 # Auto generation component
@@ -996,7 +912,7 @@ class NewsletterGenerator( object ):
 				( content_obj, created ) = NewsletterContent.objects.get_or_create( newsletter=nl, data_source=src, object_id=obj.pk )
 
 		for language in self.type.languages.all():
-			( content_obj, created ) = LocalNewsletter.objects.get_or_create( newsletter=nl, lang=language.lang )
+			( content_obj, created ) = NewsletterProxy.objects.get_or_create( id='%s-%s' % (nl.id, language.lang), source=nl, lang=language.lang )
 
 		nl.save()
 		return nl
