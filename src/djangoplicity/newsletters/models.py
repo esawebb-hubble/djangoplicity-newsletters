@@ -70,6 +70,25 @@ from tinymce import models as tinymce_models
 import traceback
 from django.utils import translation
 
+
+def make_nl_id():
+	'''
+	Create a new Unique ID for the newsletter based on the largest
+	existing ID so far
+	'''
+	max_id = 0
+	for id in Newsletter.objects.values_list('id', flat=True):
+		try:
+			id = int(id)
+		except ValueError:
+			# We're only intersted in string integers, skip!
+			continue
+		if id > max_id:
+			max_id = id
+	return str(max_id + 1)
+
+	languages.extend(newsletter.type.languages.values_list('lang', flat=True))
+
 class Mailer( models.Model ):
 	"""
 	Model for defining mailers. A newsletter type can define several mailers to use
@@ -345,7 +364,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 	A definition of a newsletter.
 	"""
 
-	id = models.SlugField( primary_key=True )
+	id = models.SlugField( primary_key=True, default=make_nl_id )
 	
 	# Status
 	type = models.ForeignKey( NewsletterType )
@@ -572,6 +591,14 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		else:
 			return "Not present"
 	view.allow_tags = True
+
+	def edit(self):
+		if self.id:
+			#  FIXME: replace by view_link() or similar
+			return '<a href="/public/djangoplicity/admin/newsletters/newsletterproxy/%s">Edit</a>' % str(self.id)
+		else:
+			return "Not present"
+	edit.allow_tags = True
 
 	def get_local_version( self, language ):
 		"""

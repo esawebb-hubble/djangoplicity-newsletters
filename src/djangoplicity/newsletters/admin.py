@@ -118,9 +118,8 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		"""
 		urls = super( NewsletterAdmin, self ).get_urls()
 		extra_urls = patterns( '',
-			( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ) ),
+			( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ), ),
 			( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
-			( r'^(?P<pk>[-a-z0-9]+)/html/(?P<lang>[-a-z]+)$', self.admin_site.admin_view( self.html_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/schedule/$', self.admin_site.admin_view( self.schedule_newsletter_view ) ),
@@ -400,8 +399,8 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	max_num = 0
 	can_delete = False
 	form = NewsletterProxyInlineForm
-	fields = ['lang', 'id', 'subject', 'translation_ready', 'view']
-	readonly_fields = ['lang', 'view']
+	fields = ['id', 'lang', 'subject', 'translation_ready', 'edit', 'view']
+	readonly_fields = ['lang', 'edit', 'view']
 	
 NewsletterAdmin.inlines += [NewsletterProxyInlineAdmin]
 
