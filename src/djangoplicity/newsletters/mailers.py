@@ -440,15 +440,18 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		Return the id of the 'Preferred language' group in Mailchimp as well as
 		the list of preferred languages from the list 
 		"""
+		id = -1
 		mc_languages = []
 		groups = self.ml.connection.listInterestGroupings(id=self.ml.list_id)
 
 		#  'groups' will be a list on success, or a dict on error:
 		if isinstance(groups, dict) and 'error' in groups:
-			raise Exception(groups['error'])
-
-		id = -1
-
+			# MailChimp returns an error if no groups are defined, 
+			# but we catch this later:
+			if groups['error'] == 'This list does not have interest groups enabled':
+				return (id, mc_languages)
+			else:
+				raise Exception(groups['error'])
 		for group in groups:
 			if group['name'] == 'Preferred language':
 				id = group['id']
