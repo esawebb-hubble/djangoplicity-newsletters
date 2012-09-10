@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load djangoplicity_text_utils djangoplicity_datetime %}=========
 Stars@ESO
 =========
@@ -6,4 +7,4 @@ Stars@ESO
 
 {{ obj.release_date|date }}: {{ obj.description|striptags|truncatewords:50|unescape|safe }} [read more on {{base_url}}{{ obj.get_absolute_url }}]
 {% endfor %}
-See latest {{org}} annoucements on {{base_url}}{% url visits_defaultquery %}
+{% blocktrans %}See latest {{org}} annoucements on{% endblocktrans %} {{base_url}}{% url visits_defaultquery %}

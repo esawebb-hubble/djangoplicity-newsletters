@@ -1,9 +1,10 @@
+{% load i18n %}
 ---{% if unsubscribe_link %}
-You are receiving this newsletter because {{reason}}.
+{% trans "You are receiving this newsletter because {{reason}}" %}.
 
-{% endif %}{% if unsubscribe_link %}Unsubscribe at {{unsubscribe_link}}
-{% endif %}{% if preferences_link %}Change subscription preferences at {{preferences_link}}
-{% endif%}{% if enable_sharing %}{% if browser_link %}View newsletter in browser at {{browser_link}}
+{% endif %}{% if unsubscribe_link %}{% trans "Unsubscribe at" %} {{unsubscribe_link}}
+{% endif %}{% if preferences_link %}{% trans "Change subscription preferences at" %} {{preferences_link}}
+{% endif%}{% if enable_sharing %}{% if browser_link %}{% trans "View newsletter in browser at" %} {{browser_link}}
 {% endif %}{% endif %}
 European Southern Observatory
 Karl-Schwarzschild-Str 2
