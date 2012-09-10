@@ -148,7 +148,15 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		"""
 		View text version of newsletter
 		"""
-		newsletter = get_object_or_404( Newsletter, pk=pk )
+		try:
+			newsletter = Newsletter.objects.get(pk=pk)
+		except Newsletter.DoesNotExist:
+			# This might be a translation:
+			try:
+				newsletter = NewsletterProxy.objects.get(pk=pk)
+			except NewsletterProxy.DoesNotExist:
+				raise Http404
+
 		data = newsletter.render( {}, store=False )
 		response = HttpResponse( data['text'] )
 		response["Content-Type"] = "text/plain; charset=utf-8"
