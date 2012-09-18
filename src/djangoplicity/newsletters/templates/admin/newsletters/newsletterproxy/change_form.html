@@ -1,0 +1,32 @@
+{% extends "admin/change_form.html" %}{% load i18n %}
+
+
+{% block object-tools %}
+{% if change %}{% if not is_popup %}
+  <ul class="object-tools">
+    {% block object-tools-items %}
+    <li><a href="html/" class="historylink">{% trans "View HTML" %}</a></li>
+    <li><a href="text/" class="historylink">{% trans "View text" %}</a></li>
+    <li><a href="history/" class="historylink">{% trans "History" %}</a></li>
+    {% if has_absolute_url %}<li><a href="../../../r/{{ content_type_id }}/{{ object_id }}/" class="viewsitelink">{% trans "View on site" %}</a></li>{% endif%}
+    {% endblock %}
+  </ul>
+{% endif %}{% endif %}
+{% endblock %}
+
+
+{% block form_top %}
+{% if original.send %}
+<fieldset class="module" style="background-color: #0f0;">
+<div class="form-row">
+<p>Newsletter was sent on <strong>{{original.send}}</strong> ({{original.send|timesince}} ago).</p>
+</div>
+</fieldset>
+{% else %}{% if original.scheduled %}
+<fieldset class="module" style="background-color: #FFA500;">
+<div class="form-row">
+<p>Newsletter is scheduled for sending {% if original.release_date|timeuntil != "0 minutes" %}in {{original.release_date|timeuntil}} {%endif%}on <strong>{{original.release_date}}</strong>.</p>
+</div>
+</fieldset>
+{% endif %}{% endif %}
+{% endblock %}

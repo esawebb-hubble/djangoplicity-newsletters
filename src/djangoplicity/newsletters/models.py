@@ -584,14 +584,21 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 		return super( Newsletter, self ).save( *args, **kwargs )
 
-	def view(self):
+	def view_html(self):
 		if self.id:
 			#  FIXME: replace by view_link() or similar
-			return '<a href="/public/djangoplicity/admin/newsletters/newsletter/%s/html">View</a>' % str(self.id)
+			return '<a href="/public/djangoplicity/admin/newsletters/newsletterproxy/%s/html">View HTML</a>' % str(self.id)
 		else:
 			return "Not present"
-	view.allow_tags = True
+	view_html.allow_tags = True
 
+	def view_text(self):
+		if self.id:
+			#  FIXME: replace by view_link() or similar
+			return '<a href="/public/djangoplicity/admin/newsletters/newsletterproxy/%s/text">View text</a>' % str(self.id)
+		else:
+			return "Not present"
+	view_text.allow_tags = True
 	def edit(self):
 		if self.id:
 			#  FIXME: replace by view_link() or similar

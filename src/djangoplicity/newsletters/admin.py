@@ -118,8 +118,8 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		"""
 		urls = super( NewsletterAdmin, self ).get_urls()
 		extra_urls = patterns( '',
-			( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( self.html_newsletter_view ), ),
-			( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( self.text_newsletter_view ) ),
+			( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), ),
+			( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
 			( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ) ),
 			( r'^(?P<pk>[0-9]+)/schedule/$', self.admin_site.admin_view( self.schedule_newsletter_view ) ),
@@ -128,10 +128,12 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		)
 		return extra_urls + urls
 	
-	def html_newsletter_view( self, request, pk=None, lang=None ):
+	@classmethod
+	def html_newsletter_view( cls, request, pk=None, lang=None ):
 		"""
 		View HTML version of newsletter
 		"""
+		print pk
 		try:
 			newsletter = Newsletter.objects.get(pk=pk)
 		except Newsletter.DoesNotExist:
@@ -144,7 +146,8 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		data = newsletter.render( {}, store=False )
 		return HttpResponse( data['html'], mimetype="text/html" )
 	
-	def text_newsletter_view( self, request, pk=None ):
+	@classmethod
+	def text_newsletter_view( cls, request, pk=None ):
 		"""
 		View text version of newsletter
 		"""
@@ -385,17 +388,30 @@ class LanguageAdmin( admin.ModelAdmin ):
 	list_display = [ 'lang' ]
 
 class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, TranslationDuplicateAdmin, ArchiveAdmin ):
-    list_display = ( 'id', 'subject' )
-    search_fields = NewsletterAdmin.search_fields
-    fieldsets = (
-                    ( 'Language', {'fields': ( 'lang', 'source', 'translation_ready', ) } ),
-                    ( None, {'fields': ( 'id', ) } ),
-                    ( 'Newsletter', {'fields': ( 'subject', 'editorial', 'editorial_text', ), } ),
-                )
-    ordering = NewsletterAdmin.ordering
-    raw_id_fields = ( 'source', )
-    readonly_fields = ( 'id', )
-    inlines = []
+	list_display = ( 'id', 'subject' )
+	search_fields = NewsletterAdmin.search_fields
+	fieldsets = (
+					( 'Language', {'fields': ( 'lang', 'source', 'translation_ready', ) } ),
+					( None, {'fields': ( 'id', ) } ),
+					( 'Newsletter', {'fields': ( 'subject', 'editorial', 'editorial_text', ), } ),
+				)
+	ordering = NewsletterAdmin.ordering
+	raw_id_fields = ( 'source', )
+	readonly_fields = ( 'id', )
+	inlines = []
+
+	def get_urls( self ):
+		"""
+		Define extra URLS for newsletter admin.
+		
+		See https://docs.djangoproject.com/en/1.3/ref/contrib/admin/#django.contrib.admin.ModelAdmin.get_urls
+		"""
+		urls = super( NewsletterProxyAdmin, self ).get_urls()
+		extra_urls = patterns( '',
+			( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), ),
+			( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ) ),
+		)
+		return extra_urls + urls
 
 class NewsletterProxyInlineForm( ModelForm ):
 	class Meta:
@@ -407,8 +423,8 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	max_num = 0
 	can_delete = False
 	form = NewsletterProxyInlineForm
-	fields = ['id', 'lang', 'subject', 'translation_ready', 'edit', 'view']
-	readonly_fields = ['lang', 'edit', 'view']
+	fields = ['id', 'lang', 'subject', 'translation_ready', 'edit', 'view_html', 'view_text']
+	readonly_fields = ['lang', 'edit', 'view_html', 'view_text']
 	
 NewsletterAdmin.inlines += [NewsletterProxyInlineAdmin]
 
