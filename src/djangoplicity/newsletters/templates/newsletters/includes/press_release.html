@@ -20,7 +20,7 @@ EMBARGOED* UNTIL {{release.release_date|time4lang:"en"|datetime:"DATETIME" }}
 {% if signature %}
 <p>
 {% trans "Kind regards" %},<br />
-{{signature|safe}}<br />
+{% trans signature|safe %}<br />
 {% if signature_date %}{{signature_date|date}}{% endif %}
 </p>
 {% endif %}
