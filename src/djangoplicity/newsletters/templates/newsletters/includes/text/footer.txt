@@ -1,6 +1,6 @@
 {% load i18n %}
 ---{% if unsubscribe_link %}
-{% trans "You are receiving this newsletter because {{reason}}" %}.
+{% blocktrans %}You are receiving this newsletter because {{reason}}{% endblocktrans %}.
 
 {% endif %}{% if unsubscribe_link %}{% trans "Unsubscribe at" %} {{unsubscribe_link}}
 {% endif %}{% if preferences_link %}{% trans "Change subscription preferences at" %} {{preferences_link}}

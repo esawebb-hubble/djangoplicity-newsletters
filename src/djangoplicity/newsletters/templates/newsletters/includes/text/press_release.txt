@@ -1,7 +1,7 @@
 {% load i18n %}
 {% load djangoplicity_text_utils release_links djangoplicity_datetime %}{% trans "For Your Information" %}:
 
-{{org}} {% blocktrans %}data.release.release_type {% endblocktrans %} {{data.release.id}}{% if embargo and data.release.release_date > now %} *UNDER EMBARGO*{% endif %} - {{data.release.title|safe}}{% if data.release.subtitle %} — {{data.release.subtitle|safe}}{% endif %}
+{{org}} {% trans data.release.release_type.name %} {{data.release.id}}{% if embargo and data.release.release_date > now %} *UNDER EMBARGO*{% endif %} - {{data.release.title|safe}}{% if data.release.subtitle %} — {{data.release.subtitle|safe}}{% endif %}
 {% if embargo and data.release.release_date > now %}
 EMBARGOED* UNTIL {{data.release.release_date|time4lang:"en"|datetime:"DATETIME" }}
 {% endif %}
