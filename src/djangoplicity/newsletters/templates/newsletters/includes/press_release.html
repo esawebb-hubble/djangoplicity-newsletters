@@ -15,7 +15,7 @@ EMBARGOED* UNTIL {{release.release_date|time4lang:"en"|datetime:"DATETIME" }}
 {% block translations %}
 {%if release.get_translations.languages %}<p>{% trans "Translations are available in:"%} {% for translation in release.get_translations.languages %}<a href="{{base_url}}{{translation.object.get_absolute_url}}">{{translation.name}}</a>{% if not forloop.last %}, {% endif %}{%endfor%}</p>
 {% endif %}
-{% if release.kids_title and release.kids_description %}<p>{% trans "Space Scoop - the children's version of this release is available at:" %} <a href="{{base_url}}{% url releases_detail_kids release %}">{{base_url}}{% url releases_detail_kids release %}</a></p>{% endif %}{% endblock %}
+{% if release.kids_title and release.kids_description %}<p>{% trans "Space Scoop - the children's version of this release is available at:" %} <a href="{{base_url}}{{ release.get_absolute_url }}kids/">{{base_url}}{{ release.get_absolute_url }}kids/</a></p>{% endif %}{% endblock %}
 
 {% if signature %}
 <p>
