@@ -21,6 +21,6 @@ password: {{data.release.get_embargo_login.1}}{% endif %}
 http://www.eso.org{% url releases_detail_kids data.release.id %}
 {% endif%} 
 {% trans "Kind regards" %},
-{% if signature1 %}{{signature1}}{% endif %}{% if signature2 %}
-{{signature2}}{% endif %}{% if signature_date %}
+{% if signature1 %}{% trans signature1|striptags %}{% endif %}{% if signature2 %}
+{% trans signature2|striptags %}{% endif %}{% if signature_date %}
 {% if embargo and data.release.release_date > now %}{{ data.release.embargo_date|date }}{% else %}{{ data.release.release_date|date }}{% endif %}{% endif %}
