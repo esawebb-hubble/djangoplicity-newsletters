@@ -133,7 +133,6 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		"""
 		View HTML version of newsletter
 		"""
-		print pk
 		try:
 			newsletter = Newsletter.objects.get(pk=pk)
 		except Newsletter.DoesNotExist:
