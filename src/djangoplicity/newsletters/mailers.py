@@ -71,6 +71,7 @@ The parameters are stored in MailerParameter, and are automatically created by t
 """
 
 from django.core.mail import EmailMultiAlternatives
+import urllib
 
 class MailerPlugin():
 	"""
@@ -252,11 +253,17 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		#  Encode the string to utf otherwise Mailchimp might complain
 		#  about the length of special characters, 
 		#  i.e.: Mailchimp counts '\xc3' as 4 characters instead of one
-		value = value.encode('utf-8')
-		if len(value) >= limit-2:
-			return "%s..." % value[:limit-5]
-		else:
-			return value
+		#  We can't just encode the string in utf and then cut it as
+		#  it might cut characters in the wrong place, so we do it char by char
+
+		if len(value.encode('utf-8')) <= limit:
+				return value
+
+		while len(value.encode('utf-8')) > limit - 3:
+			value = value[:-1]
+
+		value = value + '...'
+		return value.encode('utf-8')
 
 	def _set_segment( self, campaign, language, languages ):
 		"""
