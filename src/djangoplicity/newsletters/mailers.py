@@ -559,8 +559,14 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		# We loop a second time to make sure all segments are updated
 		# correctly before trying to actually send the newsletter
 		for language, campaign in campaigns:
-			if not self.ml.connection.campaignSendNow( cid=campaign.campaign_id ):
-				raise Exception("MailChimp could not send newsletter.")
+			r = self.ml.connection.campaignSendNow( cid=campaign.campaign_id )
+			# Test for errors
+			try:
+				if 'error' in r:
+					return 'MailChimp could not send newsletter: "%s"' % r['error']
+			except TypeError:
+				if not r:
+					return 'MailChimp could not send newsletter.'
 
 	def send_test( self, newsletter, emails ):
 		"""
@@ -571,7 +577,11 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		campaigns = self._get_campaigns(newsletter)
 
 		for language, campaign in campaigns:
-			if notself.ml.connection.campaignSendTest( cid=campaign.campaign_id, test_emails=emails ):
-				raise Exception("MailChimp could not send test email.")
-
-	
+			r = self.ml.connection.campaignSendTest( cid=campaign.campaign_id, test_emails=emails )
+			# Test for errors
+			try:
+				if 'error' in r:
+					return 'MailChimp could not send test email: "%s"' % r['error']
+			except TypeError:
+				if not r:
+					return 'MailChimp could not send test email.'

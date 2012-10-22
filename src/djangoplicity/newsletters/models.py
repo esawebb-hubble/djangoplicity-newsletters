@@ -446,7 +446,9 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			self.send = datetime.now()
 				
 			for m in self.type.mailers.all():
-				m.send_now( self )
+				res = m.send_now( self )
+				if res:
+					raise Exception(res)
 			
 			self.frozen = True
 			self.save()
@@ -459,7 +461,9 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		the task send_newsletter_test
 		"""
 		for m in self.type.mailers.all():
-			m.send_test( self, emails )
+			res = m.send_test( self, emails )
+			if res:
+				raise Exception(res)
 	
 	def schedule( self ):
 		"""
