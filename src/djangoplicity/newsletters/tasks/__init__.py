@@ -122,3 +122,87 @@ def unschedule_newsletter( newsletter_pk ):
 	logger.info("Unscheduling newsletter %s" % newsletter_pk)
 	
 	nl._unschedule()		
+
+@task( name="newsletters.abuse_reports", ignore_result=True )
+def abuse_reports():
+	"""
+	Generate a report for abuse reports for campaigns sent
+	over the last 8 weeks.
+	This task is meant to be run once a week
+	"""
+	from datetime import datetime, timedelta
+	from django.core.mail import EmailMessage
+	from djangoplicity.mailinglists.models import MailChimpList
+	from djangoplicity.newsletters.models import MailChimpMailerPlugin
+
+	logger = abuse_reports.get_logger()
+
+	email_from = 'no-reply@eso.org'
+	email_reply_to = 'mandre@eso.org'
+	email_to = 'osandu@eso.org'
+
+	#  Calculate the date 8 weeks ago
+	start_date = datetime.today() - timedelta(weeks=8)
+	#  Calculate the date one week ago
+	week_ago = datetime.today() - timedelta(weeks=1)
+
+
+	body = ''
+	n_complaints = 0
+
+	for ml in MailChimpList.objects.all():
+		#  Fetch the list of campaigns sent within the last 8 weeks
+		campaigns = ml.connection.campaigns(filters={'list_id': ml.list_id, 'sendtime_start': start_date.strftime('%Y-%m-%d %H:%M:%S')})
+		if campaigns['total'] == 0:
+				continue
+
+		content = ''
+
+		for campaign in campaigns['data']:
+			complaints = ml.connection.campaignAbuseReports(cid=campaign['id'], since=week_ago.strftime('%Y-%m-%d %H:%M:%S'))
+			if complaints['total'] == 0:
+				continue
+			else:
+				n_complaints += complaints['total']
+
+			if not content:
+				name = 'MailChimp List: %s' % ml.name
+				content = '=' * len(name) + '\n'
+				content += name + '\n'
+				content += '=' * len(name) + '\n'
+
+			title = 'Campaign: %s (%d complaints)' % (campaign['title'], complaints['total'])
+			content += '\n' + title + '\n'
+			content += '-' * len(title) + '\n'
+			for complaint in complaints['data']:
+				member = ml.connection.listMemberInfo(id=ml.list_id, email_address=complaint['email'])
+				if 'code' in member:
+					logger.critical('Error running listMemberInfo: "%s"' % member['error'])
+					continue
+				if member['success'] != 1:
+					logger.critical('Can\'t identify member "%s"' % complaint['email'])
+					continue
+
+				content += '%s https://us2.admin.mailchimp.com/lists/members/view?id=%s' % (complaint['email'], member['data'][0]['web_id']) + '\n'
+
+		body += content
+
+	if body:
+		logger.info('Sending report for %d complaints' % n_complaints)
+		# Prepare the message:
+		msg = EmailMessage()
+		msg.headers = {'Reply-To': email_reply_to}
+		msg.subject =  '%d complaints reported in MailChimp' % n_complaints
+		msg.from_email = email_from
+		msg.to = [email_to]
+		msg.body = body
+
+		msg.send()
+	else:
+		logger.info('No Mailchimp Complaints found')
+
+
+
+
+
+
