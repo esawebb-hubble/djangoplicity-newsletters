@@ -460,7 +460,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			else:
 				raise Exception(groups['error'])
 		for group in groups:
-			if group['name'] == 'Preferred language':
+			if group['name'].startswith('Preferred language'):
 				id = group['id']
 				for g in group['groups']:
 					mc_languages.append(g['name'])
