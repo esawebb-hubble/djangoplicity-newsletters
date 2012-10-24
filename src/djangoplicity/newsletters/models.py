@@ -646,7 +646,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 class NewsletterProxy( Newsletter, TranslationProxyMixin ):
     """
-    Image proxy model for creating admin only to edit
+    Image proxy model for creating admin to edit
     translated objects.
     """
     objects = Newsletter.translation_objects
@@ -950,7 +950,8 @@ class NewsletterGenerator( object ):
 				( content_obj, created ) = NewsletterContent.objects.get_or_create( newsletter=nl, data_source=src, object_id=obj.pk )
 
 		for language in self.type.languages.all():
-			( content_obj, created ) = NewsletterProxy.objects.get_or_create( id='%s-%s' % (nl.id, language.lang), source=nl, lang=language.lang )
+			( content_obj, created ) = NewsletterProxy.objects.get_or_create( id='%s-%s' % (nl.id, language.lang), 
+										translation_ready=True, source=nl, lang=language.lang )
 
 		nl.save()
 		return nl
