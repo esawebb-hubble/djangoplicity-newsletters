@@ -127,7 +127,7 @@ def unschedule_newsletter( newsletter_pk ):
 def abuse_reports():
 	"""
 	Generate a report for abuse reports for campaigns sent
-	over the last 8 weeks.
+	over the last 4 weeks.
 	This task is meant to be run once a week
 	"""
 	from datetime import datetime, timedelta
@@ -141,8 +141,8 @@ def abuse_reports():
 	email_reply_to = 'mandre@eso.org'
 	email_to = 'osandu@eso.org'
 
-	#  Calculate the date 8 weeks ago
-	start_date = datetime.today() - timedelta(weeks=8)
+	#  Calculate the date 4 weeks ago
+	start_date = datetime.today() - timedelta(weeks=4)
 	#  Calculate the date one week ago
 	week_ago = datetime.today() - timedelta(weeks=1)
 
@@ -151,8 +151,9 @@ def abuse_reports():
 	n_complaints = 0
 
 	for ml in MailChimpList.objects.all():
-		#  Fetch the list of campaigns sent within the last 8 weeks
-		campaigns = ml.connection.campaigns(filters={'list_id': ml.list_id, 'sendtime_start': start_date.strftime('%Y-%m-%d %H:%M:%S')})
+		#  Fetch the list of campaigns sent within the last 4 weeks
+		campaigns = ml.connection.campaigns(filters={'list_id': ml.list_id, 'sendtime_start': start_date.strftime('%Y-%m-%d %H:%M:%S')},
+											limit=1000)
 		if campaigns['total'] == 0:
 				continue
 
