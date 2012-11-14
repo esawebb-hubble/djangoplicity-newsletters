@@ -580,6 +580,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			self.render( {} )
 
 			for local in self.translations.all():
+				local.render( {} )
 				local.save()
 
 		elif self.is_translation():
@@ -638,7 +639,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 	class Translation:
 		fields = ['subject', 'editorial', 'editorial_text', ]
-		excludes = []
+		excludes = ['html', 'text']
 
 # ========================================================================
 # Translation proxy model
