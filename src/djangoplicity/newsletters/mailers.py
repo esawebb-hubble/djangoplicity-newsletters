@@ -442,6 +442,9 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				info.campaign_id = self._create_campaign( newsletter, language )
 				info.save()
 
+			# Set the Newsletter segments:
+			self._set_segment(info, language, languages)
+
 	def _get_languages( self):
 		"""
 		Return the id of the 'Preferred language' group in Mailchimp as well as
