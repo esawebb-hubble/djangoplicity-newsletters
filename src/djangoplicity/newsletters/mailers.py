@@ -443,7 +443,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				info.save()
 
 			# Set the Newsletter segments:
-			self._set_segment(info, language, languages)
+			if language:
+				self._set_segment(info, language, languages)
 
 	def _get_languages( self):
 		"""
@@ -555,9 +556,10 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		languages = ['', ]
 		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 
-		# Update the segments based on languages
+		# Update the segments based on languages (if any)
 		for language, campaign in campaigns:
-			self._set_segment(campaign, language, languages)
+			if language and campaign:
+				self._set_segment(campaign, language, languages)
 
 		# We loop a second time to make sure all segments are updated
 		# correctly before trying to actually send the newsletter
