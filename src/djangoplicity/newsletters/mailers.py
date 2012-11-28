@@ -277,6 +277,10 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		# Get the interest group id from Mailchimp
 		(id, mc_languages) = self._get_languages()
+		if id == -1:
+			# No languages defined in Mailchimp we return to prevent
+			# an exception when testing the segment
+			return
 
 		# Build the segment's options
 		# if we have a language we only send to subscribers of this language
@@ -443,10 +447,9 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				info.save()
 
 			# Set the Newsletter segments:
-			if language:
-				self._set_segment(info, language, languages)
+			self._set_segment(info, language, languages)
 
-	def _get_languages( self):
+	def _get_languages( self ):
 		"""
 		Return the id of the 'Preferred language' group in Mailchimp as well as
 		the list of preferred languages from the list 
@@ -558,8 +561,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		# Update the segments based on languages (if any)
 		for language, campaign in campaigns:
-			if language and campaign:
-				self._set_segment(campaign, language, languages)
+			self._set_segment(campaign, language, languages)
 
 		# We loop a second time to make sure all segments are updated
 		# correctly before trying to actually send the newsletter
