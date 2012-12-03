@@ -139,7 +139,7 @@ def abuse_reports():
 
 	email_from = 'no-reply@eso.org'
 	email_reply_to = 'mandre@eso.org'
-	email_to = 'osandu@eso.org'
+	email_to = ['osandu@eso.org', 'mandre@eso.org']
 
 	#  Calculate the date 4 weeks ago
 	start_date = datetime.today() - timedelta(weeks=4)
@@ -195,7 +195,7 @@ def abuse_reports():
 		msg.headers = {'Reply-To': email_reply_to}
 		msg.subject =  '%d complaints reported in MailChimp' % n_complaints
 		msg.from_email = email_from
-		msg.to = [email_to]
+		msg.to = email_to
 		msg.body = body
 
 		msg.send()
