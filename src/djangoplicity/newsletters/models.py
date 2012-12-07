@@ -517,6 +517,9 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		"""
 		Render the newsletter
 		"""
+		print '======= Newsletter debug ======='
+		print '** render', self.is_translation(), self.lang
+		print '** lang', translation.get_language()
 		if self.is_source() and self.frozen or \
 				self.is_translation() and self.source.frozen:
 			return {
@@ -551,12 +554,15 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 		if self.is_translation():
 			translation.activate(self.lang)
+			print '** activate lang', self.lang, translation.get_language()
+		print '** lang', translation.get_language()
 
 		data = {
 			'html' : t_html.render( ctx ),
 			'text' : t_text.render( ctx ),
 			'subject' : t_subject.render( ctx ),
 		}
+		print data['text']
 		
 		if store:
 			self.html = data['html']
