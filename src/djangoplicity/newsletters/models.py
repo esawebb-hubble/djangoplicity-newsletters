@@ -562,7 +562,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			'text' : t_text.render( ctx ),
 			'subject' : t_subject.render( ctx ),
 		}
-		print data['text']
+		print data['text'].encode('ascii', 'ignore')
 		
 		if store:
 			self.html = data['html']
