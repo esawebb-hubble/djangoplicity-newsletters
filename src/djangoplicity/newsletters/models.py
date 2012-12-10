@@ -552,9 +552,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		defaults.update( extra_ctx )
 		ctx = Context( defaults )
 
-		if self.is_translation():
-			translation.activate(self.lang)
-			print '** activate lang', self.lang, translation.get_language()
+		translation.activate(self.lang)
 		print '** lang', translation.get_language()
 
 		data = {
@@ -562,8 +560,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			'text' : t_text.render( ctx ),
 			'subject' : t_subject.render( ctx ),
 		}
-#		translation.deactivate()
-#		print data['text'].encode('ascii', 'ignore')
+		translation.deactivate()
 		
 		if store:
 			self.html = data['html']
