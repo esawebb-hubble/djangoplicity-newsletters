@@ -430,7 +430,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			if language:
 				local = newsletter.get_local_version(language)
 				if not local:
-					raise Exception('Can\'t find Local newsletter for Newsletter %d for language ""' % (newsletter.id, language))
+					raise Exception('Can\'t find Local newsletter for Newsletter %s for language "%s"' % (newsletter.id, language))
 
 				if not local.translation_ready:
 					continue

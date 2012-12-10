@@ -399,8 +399,6 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			if datetime.now() + timedelta( minutes=2 ) >= self.release_date:
 				raise Exception("Cannot schedule newsletter to be sent in the past.")
 
-			self.frozen = True
-
 			for m in self.type.mailers.all():
 				m.on_scheduled( self )
 				
@@ -554,17 +552,18 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		defaults.update( extra_ctx )
 		ctx = Context( defaults )
 
-		translation.activate(self.lang)
-		print '** activate lang', translation.get_language()
+		if self.is_translation():
+			translation.activate(self.lang)
+			print '** activate lang', self.lang, translation.get_language()
+		print '** lang', translation.get_language()
 
 		data = {
 			'html' : t_html.render( ctx ),
 			'text' : t_text.render( ctx ),
 			'subject' : t_subject.render( ctx ),
 		}
-		translation.deactivate()
-		print '** deactivate lang', translation.get_language()
-		print data['text'].encode('ascii', 'ignore')
+#		translation.deactivate()
+#		print data['text'].encode('ascii', 'ignore')
 		
 		if store:
 			self.html = data['html']
