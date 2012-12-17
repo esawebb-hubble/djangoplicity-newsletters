@@ -134,6 +134,7 @@ def abuse_reports():
 	from django.core.mail import EmailMessage
 	from djangoplicity.mailinglists.models import MailChimpList
 	from djangoplicity.newsletters.models import MailChimpMailerPlugin
+	from django.contrib.sites.models import Site
 
 	logger = abuse_reports.get_logger()
 
@@ -193,7 +194,7 @@ def abuse_reports():
 		# Prepare the message:
 		msg = EmailMessage()
 		msg.headers = {'Reply-To': email_reply_to}
-		msg.subject =  '%d complaints reported in MailChimp' % n_complaints
+		msg.subject =  '%d complaints reported in MailChimp for %s' % (n_complaints, Site.objects.get_current().domain)
 		msg.from_email = email_from
 		msg.to = email_to
 		msg.body = body
