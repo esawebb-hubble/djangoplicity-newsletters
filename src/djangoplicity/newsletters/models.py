@@ -736,9 +736,14 @@ class NewsletterContent( models.Model ):
 					# possible to add a sepcial flag in the 'Newsletter data
 					# sources' of the NewsletterType
 					if datasrc.name in ('exhibitions', 'ongoing_events', 'special_events'):
+						country = lang
+						# Extract the country from the language code if necessary
+						# e.g.: at for de-at
+						if '-' in country:
+							country = country.split('-')[1]
 						if lang == settings.LANGUAGE_CODE or \
 								not d.country or \
-								(d.country and d.country.isocode == lang):
+								(d.country and d.country.isocode == country):
 							tmpdata.append(d)
 					else:
 						tmpdata.append(d)
