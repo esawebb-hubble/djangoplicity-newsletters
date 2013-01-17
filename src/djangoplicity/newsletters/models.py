@@ -14,7 +14,7 @@
 #	  notice, this list of conditions and the following disclaimer in the
 #	  documentation and/or other materials provided with the distribution.
 #
-#	* Neither the name of the European Southern Observatory nor the names 
+#	* Neither the name of the European Southern Observatory nor the names
 #	  of its contributors may be used to endorse or promote products derived
 #	  from this software without specific prior written permission.
 #
@@ -33,31 +33,28 @@
 """
 The newsletter system consists of the following components:
 
- * Newsletter types which are used to define:
+	* Newsletter types which are used to define:
 	* where to send the newsletter
 	* how to render the newsletter
 	* how to select content for the newsletter (auto-generation support)
- * Mailer plug-in system that allow sending a newsletter
-   via different channels (e.g. via mailchimp, standard email or mailman list).
-   The mailer plug-in system can be extended with the users own mailer plug-ins.
- * Newsletter generation component, that can integrate content from any django
-   model into the newsletter. 
-   
+	* Mailer plug-in system that allow sending a newsletter
+		via different channels (e.g. via mailchimp, standard email or mailman list).
+		The mailer plug-in system can be extended with the users own mailer plug-ins.
+	* Newsletter generation component, that can integrate content from any django
+		model into the newsletter.
+
 ----
 """
 
 from datetime import datetime, timedelta
 from django.conf import settings
-from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.db import models
 from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
-from django.utils.functional import lazy
 from django.utils.translation import ugettext as _
 from djangoplicity import archives
-from djangoplicity.archives.contrib.admin.defaults import view_link
 from djangoplicity.archives.translation import TranslationProxyMixin
 from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 	MailmanMailerPlugin
@@ -87,7 +84,6 @@ def make_nl_id():
 			max_id = id
 	return str(max_id + 1)
 
-	languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 
 class Mailer( models.Model ):
 	"""
@@ -105,7 +101,7 @@ class Mailer( models.Model ):
 		Set choices for plugin field dynamically based on registered plugins.
 		"""
 		super( Mailer, self ).__init__( *args, **kwargs )
-		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices()#lazy( Mailer.get_plugin_choices, list )
+		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices() # lazy( Mailer.get_plugin_choices, list )
 
 	def get_plugincls( self ):
 		"""
@@ -129,28 +125,27 @@ class Mailer( models.Model ):
 		"""
 		return dict( [( p.name, p.get_value() ) for p in MailerParameter.objects.filter( mailer=self ) ] )
 
-	
 	def on_scheduled( self, newsletter ):
 		"""
 		Notification that the given newsletter was scheduled for sending
 		"""
 		plugin = self.get_plugin()
 		return plugin.on_scheduled( newsletter )
-		
+
 	def on_unscheduled( self, newsletter ):
 		"""
-		Notification that the scheduled newsletter was 
+		Notification that the scheduled newsletter was
 		cancelled.
 		"""
 		plugin = self.get_plugin()
 		return plugin.on_unscheduled( newsletter )
-		
+
 	def send_now( self, newsletter ):
 		"""
 		Send newsletter now via this mailer
 		"""
 		l = self._log_entry( newsletter )
-		
+
 		try:
 			plugin = self.get_plugin()
 			return plugin.send_now( newsletter )
@@ -176,17 +171,17 @@ class Mailer( models.Model ):
 			l.success = False
 			l.error = traceback.format_exc()
 			l.save()
-			
+
 	def _log_entry( self, newsletter ):
 		"""
 		Create a log entry for sending a mail
 		"""
-		l = MailerLog( 
-				plugin = self.plugin,
-				name = self.name,
-				subject = newsletter.subject,
-				newsletter_pk = newsletter.pk,
-				parameters = '; '.join([unicode( p ) for p in MailerParameter.objects.filter( mailer=self )]),
+		l = MailerLog(
+				plugin=self.plugin,
+				name=self.name,
+				subject=newsletter.subject,
+				newsletter_pk=newsletter.pk,
+				parameters='; '.join([unicode( p ) for p in MailerParameter.objects.filter( mailer=self )]),
 			)
 		return l
 
@@ -214,7 +209,7 @@ class Mailer( models.Model ):
 		"""
 		if instance and not raw:
 			known_params = dict( [( p.name, p ) for p in MailerParameter.objects.filter( mailer=instance )] )
-			
+
 			for p, desc, t in instance.get_plugincls().parameters:
 				touched = False
 				try:
@@ -222,25 +217,24 @@ class Mailer( models.Model ):
 				except MailerParameter.DoesNotExist:
 					param = MailerParameter( mailer=instance, name=p )
 					touched = True
-					
+
 				for attr, val in [( 'type', t ), ( 'help_text', desc )]:
 					if getattr( param, attr ) != val:
 						setattr( param, attr, val )
 						touched = True
-						
+
 				if touched:
 					param.save()
-				
+
 				try:
 					del known_params[ param.name ]
 				except KeyError:
 					pass
-			
+
 			# Delete unknown parameters
 			for param in known_params.values():
 				param.delete()
-					
-		
+
 	def __unicode__( self ):
 		return "%s: %s" % ( self.get_plugincls().name, self.name )
 
@@ -250,11 +244,12 @@ class Mailer( models.Model ):
 # Connect signal handlers
 post_save.connect( Mailer.post_save_handler, sender=Mailer )
 
+
 class MailerParameter( models.Model ):
 	"""
 	Parameter for a mailer (e.g. mailchimp list id, or list of email addresses).
-	
-	The mail parameters are automatically created by  
+
+	The mail parameters are automatically created by
 	"""
 	mailer = models.ForeignKey( Mailer )
 	name = models.SlugField( max_length=255, unique=False )
@@ -280,11 +275,11 @@ class MailerParameter( models.Model ):
 
 	def __unicode__( self ):
 		return u"%s = %s (%s)" % ( self.name, self.value, self.type )
-	
+
 	class Meta:
-		ordering = ['mailer','name']
+		ordering = ['mailer', 'name']
 		unique_together = ['mailer', 'name']
-		
+
 
 class MailerLog( models.Model ):
 	"""
@@ -298,7 +293,7 @@ class MailerLog( models.Model ):
 	subject = models.CharField( max_length=255, blank=False )
 	newsletter_pk = models.IntegerField()
 	error = models.TextField( blank=True )
-	
+
 	class Meta:
 		ordering = ['-timestamp']
 
@@ -314,6 +309,7 @@ class Language( models.Model ):
 			if lang == self.lang:
 				return name
 		return 'Unknown language in settings; "%s"' % self.lang
+
 
 class NewsletterType( models.Model ):
 	"""
@@ -365,7 +361,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 	"""
 
 	id = models.SlugField( primary_key=True, default=make_nl_id )
-	
+
 	# Status
 	type = models.ForeignKey( NewsletterType )
 	frozen = models.BooleanField( default=False )
@@ -401,89 +397,89 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 			for m in self.type.mailers.all():
 				m.on_scheduled( self )
-				
+
 			res = send_scheduled_newsletter.apply_async( args=[ self.pk ], eta=self.release_date )
-			
-			self.scheduled_task_id = res.task_id 
+
+			self.scheduled_task_id = res.task_id
 			self.scheduled = True
 			self.save()
-		
+
 	def _unschedule( self ):
 		"""
 		"""
 		if self.scheduled and not self.send:
 			from celery.task.control import revoke
-			
+
 			if not self.scheduled_task_id:
 				raise Exception("Scheduled task ID does not exist. Cannot cancel sending.")
-			
+
 			revoke( self.scheduled_task_id )
-			
+
 			for m in self.type.mailers.all():
 				m.on_unscheduled( self )
-			
+
 			self.scheduled = False
 			self.scheduled_task_id = ""
 			self.save()
 		else:
 			raise Exception( "Newsletter has already been sent." if self.send else "Newsletter is not scheduled for sending." )
-	
+
 	def _send_now( self ):
 		"""
-		Function that does the actual work. Is called from 
+		Function that does the actual work. Is called from
 		the task send_newsletter
 		"""
 		if not self.scheduled:
 			self._send()
 		else:
 			raise Exception( "Newsletter is scheduled for sending. To send now, you must first cancel the current schedule." )
-		
+
 	def _send( self ):
 		"""
 		Send newsletter
 		"""
 		if self.send is None:
 			self.send = datetime.now()
-				
+
 			for m in self.type.mailers.all():
 				res = m.send_now( self )
 				if res:
 					raise Exception(res)
-			
+
 			self.frozen = True
 			self.save()
 		else:
 			raise Exception("Newsletter has already been sent.")
-		
+
 	def _send_test( self, emails ):
 		"""
-		Function that does the actual work. Is called from 
+		Function that does the actual work. Is called from
 		the task send_newsletter_test
 		"""
 		for m in self.type.mailers.all():
 			res = m.send_test( self, emails )
 			if res:
 				raise Exception(res)
-	
+
 	def schedule( self ):
 		"""
 		Schedule a newsletter for sending.
 		"""
 		if not self.send and not self.scheduled:
 			schedule_newsletter.delay( self.pk )
-		
+
 	def unschedule( self ):
 		"""
 		Cancel current schedule for newsletter
 		"""
 		if self.scheduled:
 			unschedule_newsletter.delay( self.pk )
-			
+
 	def send_now( self ):
 		"""
 		Send a newsletter right away. Once send, it
 		cannot be send again.
-		
+
 		Note each mailer will render the newsletter, since subscription
 		links etc might change depending on the mailer.
 		"""
@@ -493,18 +489,17 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 	def send_test( self, emails ):
 		"""
 		Send a test version of the newsletter.
-		
+
 		Note each mailer will render the newsletter, since subscription
 		links etc might change depending on the mailer.
 		"""
-		
+
 		send_newsletter_test.delay( self.pk, emails )
-	
 
 	@classmethod
 	def latest_for_type( cls, type ):
 		"""
-		Get the latest published newsletter issue for a specific type. 
+		Get the latest published newsletter issue for a specific type.
 		"""
 		qs = cls.objects.filter( type=type, published=True ).order_by( '-release_date' )
 		if len( qs ) > 0:
@@ -512,20 +507,16 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		else:
 			return None
 
-
 	def render( self, extra_ctx, store=True ):
 		"""
 		Render the newsletter
 		"""
-		print '======= Newsletter debug ======='
-		print '** render', self.is_translation(), self.lang
-		print '** lang', translation.get_language()
 		if self.is_source() and self.frozen or \
 				self.is_translation() and self.source.frozen:
 			return {
-				'html' : self.html,
-				'text' : self.text,
-				'subject' : self.subject,
+				'html': self.html,
+				'text': self.text,
+				'subject': self.subject,
 			}
 
 		t_html = Template( self.type.html_template )
@@ -533,42 +524,40 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		t_subject = Template( self.type.subject_template )
 
 		defaults = {
-			'base_url' : "http://%s" % Site.objects.get_current().domain,
-			'MEDIA_URL' : settings.MEDIA_URL,
-			'STATIC_URL' : settings.STATIC_URL,
-			'ARCHIVE_ROOT' : getattr( settings, "ARCHIVE_ROOT", "" ),
-			'data' : NewsletterContent.data_context( self, lang=self.lang ),
-			'editorial' : self.editorial,
-			'editorial_text' : self.editorial_text,
-			'enable_sharing' : self.type.sharing,
-			'enable_archive' : self.type.archive,
-			'release_date' : self.release_date,
-			'published' : self.published,
-			'unsubscribe_link' : '', # Will be provided by the mailer plugin
-			'preferences_link' : '', # Will be provided by the mailer plugin 
-			'browser_link' : '', # Will be provided by the mailer plugin
-			'now' : datetime.now(),
+			'base_url': "http://%s" % Site.objects.get_current().domain,
+			'MEDIA_URL': settings.MEDIA_URL,
+			'STATIC_URL': settings.STATIC_URL,
+			'ARCHIVE_ROOT': getattr( settings, "ARCHIVE_ROOT", "" ),
+			'data': NewsletterContent.data_context( self, lang=self.lang ),
+			'editorial': self.editorial,
+			'editorial_text': self.editorial_text,
+			'enable_sharing': self.type.sharing,
+			'enable_archive': self.type.archive,
+			'release_date': self.release_date,
+			'published': self.published,
+			'unsubscribe_link': '', # Will be provided by the mailer plugin
+			'preferences_link': '', # Will be provided by the mailer plugin
+			'browser_link': '', # Will be provided by the mailer plugin
+			'now': datetime.now(),
 		}
 		defaults.update( extra_ctx )
 		ctx = Context( defaults )
 
 		translation.activate(self.lang)
-		print '** lang', translation.get_language()
 
 		data = {
-			'html' : t_html.render( ctx ),
-			'text' : t_text.render( ctx ),
-			'subject' : t_subject.render( ctx ),
+			'html': t_html.render( ctx ),
+			'text': t_text.render( ctx ),
+			'subject': t_subject.render( ctx ),
 		}
 		translation.deactivate()
-		
+
 		if store:
 			self.html = data['html']
 			self.text = data['text']
 			self.subject = data['subject']
-		
-		return data
 
+		return data
 
 	def save( self, *args, **kwargs ):
 		"""
@@ -580,7 +569,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 				self.from_email = self.type.default_from_email
 			if self.editorial_text == '' and self.editorial:
 				self.editorial_text = defaultfilters.striptags( unescape( defaultfilters.safe( self.editorial ) ) )
-				
+
 			self.render( {} )
 
 			for local in self.translations.all():
@@ -608,6 +597,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		else:
 			return "Not present"
 	view_text.allow_tags = True
+
 	def edit(self):
 		if self.id:
 			#  FIXME: replace by view_link() or similar
@@ -649,37 +639,38 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 # Translation proxy model
 # ========================================================================
 
+
 class NewsletterProxy( Newsletter, TranslationProxyMixin ):
-    """
-    Image proxy model for creating admin to edit
-    translated objects.
-    """
-    objects = Newsletter.translation_objects
+	"""
+	Image proxy model for creating admin to edit
+	translated objects.
+	"""
+	objects = Newsletter.translation_objects
 
-    def clean( self ):
-        # Note: For some reason it's not possible to
-        # to define clean/validate_unique in TranslationProxyMixin
-        # so we have to do this trick, where we add the methods and
-        # call into translation proxy micin.
-        self.id_clean()
+	def clean( self ):
+		# Note: For some reason it's not possible to
+		# to define clean/validate_unique in TranslationProxyMixin
+		# so we have to do this trick, where we add the methods and
+		# call into translation proxy micin.
+		self.id_clean()
 
-    def validate_unique( self, exclude=None ):
-        self.id_validate_unique( exclude=exclude )
+	def validate_unique( self, exclude=None ):
+		self.id_validate_unique( exclude=exclude )
 
-    class Meta:
-        proxy = True
-        verbose_name = _('Newsletter translation')
-        app_label = 'newsletters'
+	class Meta:
+		proxy = True
+		verbose_name = _('Newsletter translation')
+		app_label = 'newsletters'
 
-    class Archive:
-        class Meta:
+	class Archive:
+		class Meta:
 #            rename_pk = ('media_image','id')
-            rename_fks = []
+			rename_fks = []
 
 
 class NewsletterContent( models.Model ):
 	"""
-	Specifies content for a specific newsletter. Note, that 
+	Specifies content for a specific newsletter. Note, that
 	only content objects of allowed content types will be
 	available in the templates.
 	"""
@@ -735,6 +726,16 @@ class NewsletterContent( models.Model ):
 						# data language matches current language or default language
 						tmpdata.append(d)
 				else:
+					# TODO:
+					# We only display exhibitions, ongoing_events and special_events
+					# if their country matches the current language (or if they don't
+					# have a country. Ideally this shouldn't be hard coded here... It
+					# should be possible to add a sepcial flag in the 'Newsletter data
+					# sources' of the NewsletterType
+					if datasrc.name in ('exhibitions', 'ongoing_events', 'special_events'):
+						if not d.country or (d.country and d.country.isocode == lang):
+							tmpdata.append(d)
+					else:
 						tmpdata.append(d)
 
 			# If a language is passed, fetch the translations (if any)
@@ -763,7 +764,7 @@ class NewsletterContent( models.Model ):
 
 class DataSourceSelector( models.Model ):
 	"""
-	Data source selector is used for selecting objects when auto-generating 
+	Data source selector is used for selecting objects when auto-generating
 	newsletters.
 	"""
 	name = models.CharField( max_length=255 )
@@ -777,7 +778,7 @@ class DataSourceSelector( models.Model ):
 		"""
 		Get a dictionary to use in a query object for this selector.
 		"""
-		return { str( "%s__%s" % ( self.field, self.match ) ) : self.get_value( ctx )  }
+		return { str( "%s__%s" % ( self.field, self.match ) ): self.get_value( ctx )  }
 
 	def get_value( self, ctx={} ):
 		"""
@@ -813,7 +814,7 @@ class DataSourceSelector( models.Model ):
 class DataSourceOrdering( models.Model ):
 	"""
 	Data source ordering is used to order objects in a data source
-	when auto-generating objects 
+	when auto-generating objects
 	"""
 	name = models.CharField( max_length=255 )
 	fields = models.SlugField()
@@ -830,8 +831,8 @@ class DataSourceOrdering( models.Model ):
 
 class NewsletterDataSource( models.Model ):
 	"""
-	Data source for a newsletter. A data source is a reference to a 
-	django content type combined with selectors, ordering etc. that 
+	Data source for a newsletter. A data source is a reference to a
+	django content type combined with selectors, ordering etc. that
 	can be used to generate a normal query set for selecting new
 	objects
 	"""
@@ -846,7 +847,6 @@ class NewsletterDataSource( models.Model ):
 
 	def __unicode__( self ):
 		return "%s: %s" % ( self.type, self.title )
-
 
 	def _limit_queryset( self, qs ):
 		"""
@@ -880,14 +880,14 @@ class NewsletterDataSource( models.Model ):
 	def get_queryset( self, ctx ):
 		"""
 		Get the queryset for this data source. Since a selector
-		provides ability to include variables you must also 
-		provide a context. This is normally done by the 
+		provides ability to include variables you must also
+		provide a context. This is normally done by the
 		newsletter generation system.
 		"""
 		modelcls = self.content_type.model_class()
 		qs = modelcls.objects.all()
 
-		# Run all filters 
+		# Run all filters
 		selectors = self.selectors.all()
 		if len( selectors ) > 0:
 			qs = qs.filter( *[sel.get_q_object( ctx ) for sel in selectors] )
@@ -944,18 +944,18 @@ class NewsletterGenerator( object ):
 		Update an newsletter based on content published between certain dates.
 		"""
 		context = {
-			'start_date' : nl.start_date,
-			'end_date' : nl.end_date,
-			'published' : nl.published,
-			'release_date' : nl.release_date,
+			'start_date': nl.start_date,
+			'end_date': nl.end_date,
+			'published': nl.published,
+			'release_date': nl.release_date,
 		}
 
 		for src in NewsletterDataSource.data_sources( self.type ):
 			for obj in src.get_queryset( context ):
-				( content_obj, created ) = NewsletterContent.objects.get_or_create( newsletter=nl, data_source=src, object_id=obj.pk )
+				NewsletterContent.objects.get_or_create( newsletter=nl, data_source=src, object_id=obj.pk )
 
 		for language in self.type.languages.all():
-			( content_obj, created ) = NewsletterProxy.objects.get_or_create( id='%s-%s' % (nl.id, language.lang), 
+			NewsletterProxy.objects.get_or_create( id='%s-%s' % (nl.id, language.lang),
 										translation_ready=True, source=nl, lang=language.lang )
 
 		nl.save()
@@ -973,7 +973,7 @@ class MailChimpCampaign( models.Model ):
 	list_id = models.CharField( max_length=50 )
 	campaign_id = models.CharField( max_length=50 )
 	lang = models.CharField( max_length=5, choices=settings.LANGUAGES, default='' )
-	
+
 	class Meta:
 		unique_together = ['newsletter', 'list_id', 'lang']
 
@@ -984,7 +984,6 @@ Mailer.register_plugin( EmailMailerPlugin )
 Mailer.register_plugin( MailmanMailerPlugin )
 
 try:
-	from djangoplicity.mailinglists.models import MailChimpList
 	from djangoplicity.newsletters.mailers import MailChimpMailerPlugin
 	Mailer.register_plugin( MailChimpMailerPlugin )
 except ImportError:
