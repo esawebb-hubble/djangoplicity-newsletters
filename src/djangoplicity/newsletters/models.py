@@ -729,11 +729,16 @@ class NewsletterContent( models.Model ):
 					# TODO:
 					# We only display exhibitions, ongoing_events and special_events
 					# if their country matches the current language (or if they don't
-					# have a country. Ideally this shouldn't be hard coded here... It
-					# should be possible to add a sepcial flag in the 'Newsletter data
+					# have a country.
+					# If the newsletter language is the default system one (usually 'en')
+					# we show all datasources
+					# Ideally this shouldn't be hard coded here... It should be
+					# possible to add a sepcial flag in the 'Newsletter data
 					# sources' of the NewsletterType
 					if datasrc.name in ('exhibitions', 'ongoing_events', 'special_events'):
-						if not d.country or (d.country and d.country.isocode == lang):
+						if lang == settings.LANGUAGE_CODE or \
+								not d.country or \
+								(d.country and d.country.isocode == lang):
 							tmpdata.append(d)
 					else:
 						tmpdata.append(d)
