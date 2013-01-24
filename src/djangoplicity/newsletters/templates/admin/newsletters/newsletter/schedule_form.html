@@ -33,7 +33,7 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
 <p>Newsletter have already been sent.</p>
 </div>
 </fieldset>
-{% else %}{% if original.scheduled %}
+{% else %}{% if original.scheduled_status != 'OFF' %}
 <fieldset class="module" style="background-color: #FFC; ">
 <div class="form-row">
 <p>Newsletter is already scheduled for sending on {{original.release_date}}.</p>

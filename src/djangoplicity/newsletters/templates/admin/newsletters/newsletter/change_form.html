@@ -6,9 +6,9 @@
   <ul class="object-tools">
     {% block object-tools-items %}
     <li><a href="send_test/" class="historylink">{% trans "Send test" %}</a></li>
-    {% if not original.send and not original.scheduled %}<li><a href="send_now/" class="historylink">{% trans "Send now" %}</a></li>{% endif %}
-    {% if not original.send and not original.scheduled %}<li><a href="schedule/" class="historylink">{% trans "Schedule" %}</a></li>{% endif %}
-    {% if not original.send and original.scheduled %}<li><a href="unschedule/" class="historylink">{% trans "Cancel schedule" %}</a></li>{% endif %}
+    {% if not original.send and original.scheduled_status == 'OFF' %}<li><a href="send_now/" class="historylink">{% trans "Send now" %}</a></li>{% endif %}
+    {% if not original.send and original.scheduled_status == 'OFF' %}<li><a href="schedule/" class="historylink">{% trans "Schedule" %}</a></li>{% endif %}
+    {% if not original.send and original.scheduled_status != 'OFF' %}<li><a href="unschedule/" class="historylink">{% trans "Cancel schedule" %}</a></li>{% endif %}
     <li><a href="html/" class="historylink">{% trans "View HTML" %}</a></li>
     <li><a href="text/" class="historylink">{% trans "View text" %}</a></li>
     <li><a href="history/" class="historylink">{% trans "History" %}</a></li>
@@ -26,11 +26,19 @@
 <p>Newsletter was sent on <strong>{{original.send}}</strong> ({{original.send|timesince}} ago).</p>
 </div>
 </fieldset>
-{% else %}{% if original.scheduled %}
+{% else %}{% if original.scheduled_status == 'ON' %}
 <fieldset class="module" style="background-color: #FFA500;">
 <div class="form-row">
 <p>Newsletter is scheduled for sending {% if original.release_date|timeuntil != "0 minutes" %}in {{original.release_date|timeuntil}} {%endif%}on <strong>{{original.release_date}}</strong>.</p>
 </div>
 </fieldset>
-{% endif %}{% endif %}
+{% endif %}
+{% if original.scheduled_status == 'ONGOING' %}
+<fieldset class="module" style="background-color: #FFA500;">
+<div class="form-row">
+<p>Newsletter is being uploaded and will be scheduled for sending, this will take a few minutes.</p>
+</div>
+</fieldset>
+{% endif %}
+{% endif %}
 {% endblock %}

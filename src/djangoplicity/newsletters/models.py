@@ -360,12 +360,18 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 	A definition of a newsletter.
 	"""
 
+	SCHEDULED_CHOICES = (
+		('OFF', 'Not Scheduled'),
+		('ONGOING', 'Being Scheduled'),
+		('ON', 'Scheduled')
+	)
+
 	id = models.SlugField( primary_key=True, default=make_nl_id )
 
 	# Status
 	type = models.ForeignKey( NewsletterType )
 	frozen = models.BooleanField( default=False )
-	scheduled = models.BooleanField( default=False )
+	scheduled_status = models.CharField( max_length=10, default='OFF', choices=SCHEDULED_CHOICES )
 	scheduled_task_id = models.CharField( max_length=64, blank=True )
 	send = models.DateTimeField( verbose_name='Sent', blank=True, null=True )
 
@@ -389,25 +395,41 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 	def _schedule( self ):
 		"""
 		"""
-		if self.scheduled or self.send:
-			raise Exception( "Newsletter has already been sent." if not self.scheduled else "Newsletter is scheduled for sending." )
+		if self.scheduled_status in ('ON', 'ONGOING'):
+			raise Exception("Newsletter is scheduled for sending.")
+		elif self.send:
+			raise Exception("Newsletter has already been sent.")
 		else:
 			if datetime.now() + timedelta( minutes=2 ) >= self.release_date:
 				raise Exception("Cannot schedule newsletter to be sent in the past.")
 
-			for m in self.type.mailers.all():
-				m.on_scheduled( self )
+			self.scheduled_status = 'ONGOING'
+			self.save()
+
+			try:
+				for m in self.type.mailers.all():
+					m.on_scheduled( self )
+			except Exception, e:
+				# Something wrong happen, set scheduled_status to 'OFF
+				# and re-raise the exception
+				self.scheduled_status = 'OFF'
+				self.save()
+				raise e
 
 			res = send_scheduled_newsletter.apply_async( args=[ self.pk ], eta=self.release_date )
 
 			self.scheduled_task_id = res.task_id
-			self.scheduled = True
+			self.scheduled_status = 'ON'
 			self.save()
 
 	def _unschedule( self ):
 		"""
 		"""
-		if self.scheduled and not self.send:
+		if self.send:
+			raise Exception("Newsletter has already been sent")
+		elif self.scheduled_status == 'OFF':
+			raise Exception("Newsletter is not scheduled for sending.")
+		else:
 			from celery.task.control import revoke
 
 			if not self.scheduled_task_id:
@@ -418,18 +440,16 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			for m in self.type.mailers.all():
 				m.on_unscheduled( self )
 
-			self.scheduled = False
+			self.scheduled_status = 'OFF'
 			self.scheduled_task_id = ""
 			self.save()
-		else:
-			raise Exception( "Newsletter has already been sent." if self.send else "Newsletter is not scheduled for sending." )
 
 	def _send_now( self ):
 		"""
 		Function that does the actual work. Is called from
 		the task send_newsletter
 		"""
-		if not self.scheduled:
+		if self.scheduled_status == 'OFF':
 			self._send()
 		else:
 			raise Exception( "Newsletter is scheduled for sending. To send now, you must first cancel the current schedule." )
@@ -465,14 +485,14 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		"""
 		Schedule a newsletter for sending.
 		"""
-		if not self.send and not self.scheduled:
+		if not self.send and self.scheduled_status == 'OFF':
 			schedule_newsletter.delay( self.pk )
 
 	def unschedule( self ):
 		"""
 		Cancel current schedule for newsletter
 		"""
-		if self.scheduled:
+		if self.scheduled_status == 'ON':
 			unschedule_newsletter.delay( self.pk )
 
 	def send_now( self ):
@@ -483,7 +503,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		Note each mailer will render the newsletter, since subscription
 		links etc might change depending on the mailer.
 		"""
-		if not self.send and not self.scheduled:
+		if not self.send and self.scheduled_status == 'OFF':
 			send_newsletter.delay( self.pk )
 
 	def send_test( self, emails ):

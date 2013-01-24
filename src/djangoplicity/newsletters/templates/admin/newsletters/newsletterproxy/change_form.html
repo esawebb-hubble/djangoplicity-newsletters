@@ -24,11 +24,19 @@
 <p>Newsletter was sent on <strong>{{original.send}}</strong> ({{original.send|timesince}} ago).</p>
 </div>
 </fieldset>
-{% else %}{% if original.scheduled %}
+{% else %}{% if original.scheduled_status == 'ON' %}
 <fieldset class="module" style="background-color: #FFA500;">
 <div class="form-row">
 <p>Newsletter is scheduled for sending {% if original.release_date|timeuntil != "0 minutes" %}in {{original.release_date|timeuntil}} {%endif%}on <strong>{{original.release_date}}</strong>.</p>
 </div>
 </fieldset>
-{% endif %}{% endif %}
+{% endif %}
+{% if original.scheduled_status == 'ONGOING' %}
+<fieldset class="module" style="background-color: #FFA500;">
+<div class="form-row">
+<p>Newsletter is being uploaded and will be scheduled for sending, this will take a few minutes.</p>
+</div>
+</fieldset>
+{% endif %}
+{% endif %}
 {% endblock %}

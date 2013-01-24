@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -60,7 +60,7 @@ from tinymce.widgets import TinyMCE
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
 	model = NewsletterDataSource
 	extra = 0
-	
+
 class MailerParameterInlineAdmin( admin.TabularInline ):
 	model = MailerParameter
 	extra = 0
@@ -68,7 +68,7 @@ class MailerParameterInlineAdmin( admin.TabularInline ):
 	readonly_fields = ['type', 'help_text', 'name']
 	can_delete = False
 	fields = ['name', 'value', 'type', 'help_text', ]
-	
+
 class NewsletterContentInlineAdmin( admin.TabularInline ):
 	model = NewsletterContent
 	extra = 0
@@ -78,28 +78,28 @@ class NewsletterAdmin( admin.ModelAdmin ):
 	list_editable = ['from_name', 'from_email', 'subject', ]
 	list_filter = ['type', 'last_modified', 'published']
 	search_fields = ['from_name', 'from_email', 'subject', 'html', 'text']
-	readonly_fields = ['last_modified', 'send', 'scheduled' ]
+	readonly_fields = ['last_modified', 'send', 'scheduled_status' ]
 	fieldsets = (
-		( 
-			None, 
+		(
+			None,
 			{
-				'fields' : ( 'type', ('release_date', 'scheduled'), 'published', 'frozen', 'send', 'last_modified' ),
+				'fields' : ( 'type', ('release_date', 'scheduled_status'), 'published', 'frozen', 'send', 'last_modified' ),
 			}
 		),
-		( 
-			"Auto generation", 
+		(
+			"Auto generation",
 			{
 				'fields' : ( 'start_date', 'end_date' ),
 			}
 		),
-		( 
-			"Sender", 
+		(
+			"Sender",
 			{
 				'fields' : ( 'from_name', 'from_email' ),
 			}
 		),
-		( 
-			"Content", 
+		(
+			"Content",
 			{
 				'fields' : ( 'subject', 'editorial', 'editorial_text' ),
 			}
@@ -109,11 +109,11 @@ class NewsletterAdmin( admin.ModelAdmin ):
 #	formfield_overrides = {
 #        models.TextField: {'widget': TinyMCE( attrs={'cols': 80, 'rows': 20}, )},
 #    }
-	
+
 	def get_urls( self ):
 		"""
 		Define extra URLS for newsletter admin.
-		
+
 		See https://docs.djangoproject.com/en/1.3/ref/contrib/admin/#django.contrib.admin.ModelAdmin.get_urls
 		"""
 		urls = super( NewsletterAdmin, self ).get_urls()
@@ -127,7 +127,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 			( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ) ),
 		)
 		return extra_urls + urls
-	
+
 	@classmethod
 	def html_newsletter_view( cls, request, pk=None, lang=None ):
 		"""
@@ -144,7 +144,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 
 		data = newsletter.render( {}, store=False )
 		return HttpResponse( data['html'], mimetype="text/html" )
-	
+
 	@classmethod
 	def text_newsletter_view( cls, request, pk=None ):
 		"""
@@ -163,48 +163,48 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		response = HttpResponse( data['text'] )
 		response["Content-Type"] = "text/plain; charset=utf-8"
 		return response
-	
+
 	def generate_newsletter_view( self, request ):
 		"""
 		Generate a new newsletter
 		"""
-		from djangoplicity.newsletters.forms import GenerateNewsletterForm 
+		from djangoplicity.newsletters.forms import GenerateNewsletterForm
 		if request.method == "POST":
 			form = GenerateNewsletterForm( request.POST )
 			if form.is_valid():
 				# Create newsletter object
 				nl = form.save( commit=False )
-				
+
 				# Set default values
 				nl.published = False
 				nl.release_date = nl.end_date
 				nl.save()
-				
+
 				# Generate newsletter
 				nl.type.get_generator().update_newsletter( nl )
 
-				# Redirect to change view for generated newsletter 
+				# Redirect to change view for generated newsletter
 				return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
 		else:
 			form = GenerateNewsletterForm()
-		
-		return self._render_admin_view( 
-					request, 
+
+		return self._render_admin_view(
+					request,
 					"admin/newsletters/newsletter/generate_form.html",
 					{
 						'title': _( 'Generate %s' ) % force_unicode( self.model._meta.verbose_name ),
 						'adminform': form,
 					},
 				)
-		
+
 	def send_newsletter_test_view( self, request, pk=None ):
 		"""
 		Send a newsletter test
 		"""
 		from djangoplicity.newsletters.forms import TestEmailsForm
-		
-		nl = get_object_or_404( Newsletter, pk=pk ) 
-		
+
+		nl = get_object_or_404( Newsletter, pk=pk )
+
 		if request.method == "POST":
 			form = TestEmailsForm( request.POST )
 			if form.is_valid():
@@ -214,23 +214,23 @@ class NewsletterAdmin( admin.ModelAdmin ):
 				return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
 		else:
 			form = TestEmailsForm()
-			
+
 		ctx = {
 			'title': _( '%s: Send test email' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
 			'original' : nl,
 		}
-		
+
 		return self._render_admin_view( request, "admin/newsletters/newsletter/send_test_form.html", ctx )
-	
+
 	def send_newsletter_view( self, request, pk=None ):
 		"""
 		Send a newsletter right away.
 		"""
 		from djangoplicity.newsletters.forms import SendNewsletterForm
-		
+
 		nl = get_object_or_404( Newsletter, pk=pk )
-		
+
 		if request.method == "POST":
 			form = SendNewsletterForm( request.POST )
 			if form.is_valid():
@@ -239,32 +239,32 @@ class NewsletterAdmin( admin.ModelAdmin ):
 					nl.send_now()
 					self.message_user( request, _( "Sent newsletter" ) )
 					return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
-				
+
 			#print form.non_field_errors
 			if 'send_now' not in form.errors:
 				form.errors['send_now'] = []
 			form.errors['send_now'].append( "Please check-mark the box to send the newsletter." )
 		else:
 			form = SendNewsletterForm()
-			
+
 		ctx = {
 			'title': _( '%s: Send now' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
 			'original' : nl,
 		}
-		
+
 		nl.render( {}, store=False )
-		
+
 		return self._render_admin_view( request, "admin/newsletters/newsletter/send_now_form.html", ctx )
-	
+
 	def schedule_newsletter_view( self, request, pk=None ):
 		"""
 		Schedule a newsletter for sending.
 		"""
 		from djangoplicity.newsletters.forms import ScheduleNewsletterForm
-		
+
 		nl = get_object_or_404( Newsletter, pk=pk )
-		
+
 		if request.method == "POST":
 			form = ScheduleNewsletterForm( request.POST )
 			if form.is_valid():
@@ -273,32 +273,32 @@ class NewsletterAdmin( admin.ModelAdmin ):
 					nl.schedule()
 					self.message_user( request, _( "Newsletter schedule to be sent at %s." % nl.release_date ) )
 					return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
-				
+
 			if 'schedule' not in form.errors:
 				form.errors['schedule'] = []
 			form.errors['schedule'].append( "Please check-mark the box to schedule the newsletter for being sent." )
 		else:
 			form = ScheduleNewsletterForm()
-			
+
 		ctx = {
 			'title': _( '%s: Schedule for sending' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
 			'original' : nl,
 			'is_past' : datetime.now() + timedelta(minutes=2) >= nl.release_date
 		}
-		
+
 		nl.render( {}, store=False )
-		
+
 		return self._render_admin_view( request, "admin/newsletters/newsletter/schedule_form.html", ctx )
-	
+
 	def unschedule_newsletter_view( self, request, pk=None ):
 		"""
 		Cancel a scheduled newsletter.
 		"""
 		from djangoplicity.newsletters.forms import UnscheduleNewsletterForm
-		
+
 		nl = get_object_or_404( Newsletter, pk=pk )
-		
+
 		if request.method == "POST":
 			form = UnscheduleNewsletterForm( request.POST )
 			if form.is_valid():
@@ -307,37 +307,37 @@ class NewsletterAdmin( admin.ModelAdmin ):
 					nl.unschedule()
 					self.message_user( request, _( "Cancelling schedule for newsletter." ) )
 					return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
-				
+
 			if 'cancel_schedule' not in form.errors:
 				form.errors['cancel_schedule'] = []
 			form.errors['cancel_schedule'].append( "Please check-mark the box to cancel schedule for newsletter." )
 		else:
 			form = UnscheduleNewsletterForm()
-			
+
 		ctx = {
 			'title': _( '%s: Cancel schedule' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
 			'original' : nl,
 		}
-		
+
 		return self._render_admin_view( request, "admin/newsletters/newsletter/unschedule_form.html", ctx )
-		
+
 	def _render_admin_view( self, request, template, context ):
 		"""
 		Helper function for rendering an admin view
 		"""
 		opts = self.model._meta
-		
+
 		defaults = {
 					'root_path': self.admin_site.root_path,
 					'app_label': opts.app_label,
 					'opts' : opts,
         }
 		defaults.update( context )
-		
+
 		return render_to_response( template, defaults, context_instance=RequestContext( request ) )
 
-	
+
 class NewsletterTypeAdmin( admin.ModelAdmin ):
 	list_display = ['name', 'default_from_name', 'default_from_email', 'sharing', 'archive' ]
 	list_editable = ['default_from_name', 'default_from_email', 'sharing', 'archive']
@@ -361,25 +361,25 @@ class DataSourceSelectorAdmin( admin.ModelAdmin ):
 	list_editable = ['name', 'filter', 'field', 'match', 'value', 'type' ]
 	list_filter = [ 'filter', 'match' ]
 	search_fields = [ 'name', 'filter', 'field', 'match', 'value' ]
-	
+
 class DataSourceOrderingAdmin( admin.ModelAdmin ):
 	list_display = [ 'id', 'name', 'fields', ]
 	list_editable = ['name', 'fields', ]
 	list_filter = []
 	search_fields = [ 'name', 'fields', ]
-	
+
 class MailerAdmin( admin.ModelAdmin ):
 	list_display = [ 'name', 'plugin' ]
 	list_filter = ['plugin']
 	search_fields = [ 'name', 'plugin', ]
 	inlines = [ MailerParameterInlineAdmin ]
-	
+
 class MailerLogAdmin( admin.ModelAdmin ):
 	list_display = [ 'timestamp', 'subject', 'name', 'plugin', 'parameters', 'success', 'is_test' ]
 	list_filter = ['plugin', 'is_test', 'success', 'timestamp']
 	search_fields = [ 'name', 'plugin', 'subject', 'error', 'parameters' ]
 	readonly_fields = [ 'timestamp', 'subject', 'name', 'plugin', 'parameters', 'success', 'is_test', 'error', 'newsletter_pk' ]
-	
+
 	def has_add_permission( self, request ):
 		return False
 
@@ -402,7 +402,7 @@ class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, Transl
 	def get_urls( self ):
 		"""
 		Define extra URLS for newsletter admin.
-		
+
 		See https://docs.djangoproject.com/en/1.3/ref/contrib/admin/#django.contrib.admin.ModelAdmin.get_urls
 		"""
 		urls = super( NewsletterProxyAdmin, self ).get_urls()
@@ -424,7 +424,7 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	form = NewsletterProxyInlineForm
 	fields = ['id', 'lang', 'subject', 'translation_ready', 'edit', 'view_html', 'view_text']
 	readonly_fields = ['lang', 'edit', 'view_html', 'view_text']
-	
+
 NewsletterAdmin.inlines += [NewsletterProxyInlineAdmin]
 
 def register_with_admin( admin_site ):
@@ -436,7 +436,7 @@ def register_with_admin( admin_site ):
 	admin_site.register( MailerLog, MailerLogAdmin )
 	admin_site.register( Language, LanguageAdmin )
 	admin_site.register( NewsletterProxy, NewsletterProxyAdmin )
-	
 
-# Register with default admin site	
+
+# Register with default admin site
 register_with_admin( admin.site )
