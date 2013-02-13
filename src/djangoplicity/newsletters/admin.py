@@ -329,7 +329,6 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		opts = self.model._meta
 		
 		defaults = {
-					'root_path': self.admin_site.root_path,
 					'app_label': opts.app_label,
 					'opts' : opts,
         }
