@@ -149,7 +149,7 @@ class Mailer( models.Model ):
 		try:
 			plugin = self.get_plugin()
 			return plugin.send_now( newsletter )
-		except Exception, e:
+		except Exception, dummy_e:
 			l.succeess = False
 			l.error = traceback.format_exc()
 		finally:
@@ -389,6 +389,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 	html = models.TextField( verbose_name="HTML", blank=True )
 
 	# Editorial if needed
+	editorial_subject = models.CharField( max_length=255, blank=True )
 	editorial = tinymce_models.HTMLField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
@@ -549,6 +550,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			'STATIC_URL': settings.STATIC_URL,
 			'ARCHIVE_ROOT': getattr( settings, "ARCHIVE_ROOT", "" ),
 			'data': NewsletterContent.data_context( self, lang=self.lang ),
+			'editorial_subject': self.editorial_subject,
 			'editorial': self.editorial,
 			'editorial_text': self.editorial_text,
 			'enable_sharing': self.type.sharing,

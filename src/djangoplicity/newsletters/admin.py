@@ -101,7 +101,7 @@ class NewsletterAdmin( admin.ModelAdmin ):
 		(
 			"Content",
 			{
-				'fields' : ( 'subject', 'editorial', 'editorial_text' ),
+				'fields' : ( 'subject', 'editorial_subject', 'editorial', 'editorial_text' ),
 			}
 		),
 	)

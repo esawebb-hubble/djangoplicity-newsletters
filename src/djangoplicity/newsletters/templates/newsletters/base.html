@@ -288,11 +288,11 @@
 					<!-- // Begin Template Body \\ --> 
                 	<table border="0" cellpadding="0" cellspacing="0" width="{% include "newsletters/includes/width.html" %}" id="templateBody"> 
                     	<tr> 
-                        	<td valign="top" width="{% include "newsletters/includes/width_body.html" %}"> 
-                            	<table border="0" cellpadding="0" cellspacing="0" width="{% include "newsletters/includes/width_body.html" %}"> 
+                        	<td valign="top" %}"> 
+                            	<table border="0" cellpadding="0" cellspacing="0" %}"> 
                                 	<tr> 
                                     	<td valign="top"> 
-                            				<table border="0" cellpadding="0" cellspacing="0" width="{% include "newsletters/includes/width_body.html" %}"> 
+                            				<table border="0" cellpadding="0" cellspacing="0" %}"> 
                                             	<tr> 
                                                 	<td valign="top" class="bodyContent" style="background-color: #FFFFFF;"> 
                                             
@@ -318,6 +318,7 @@
                                  
                                 </table>                                                
                             </td>
+							{% block fullsidebar %}
                             <!-- // Begin Sidebar \\ --> 
                         	<td valign="top" width="192" id="templateSidebar" style="background-color: #FFFFFF;"> 
                             	<table border="0" cellpadding="10" cellspacing="0" width="192" > 
@@ -343,6 +344,7 @@
                                 </table>
                             </td>
                             <!-- // End Sidebar \\ -->
+							{% endblock fullsidebar%}
                         </tr>
                     </table>
                     <!-- // End Template Body \\ -->
