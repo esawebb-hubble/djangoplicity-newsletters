@@ -11,6 +11,9 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{%
 {{ media }}
 <script type="text/javascript" src="{% admin_media_prefix %}js/core.js"></script>
 {{ adminform.media }}
+<script type="text/javascript" src="{% admin_media_prefix %}js/jquery.js"></script>
+<script type="text/javascript" src="{% admin_media_prefix %}js/jquery.init.js"></script>
+<script type="text/javascript" src="{% admin_media_prefix %}js/actions.min.js"></script>
 {% endblock %}
 
 
