@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -30,10 +30,13 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import patterns, url
 
-"""
-All extra views are currently defined in admin.py
-"""
+from djangoplicity.newsletters.views import NewsletterListView, NewsletterDetailView
 
-urlpatterns = patterns( '', )
+# All extra views are currently defined in admin.py
+
+urlpatterns = patterns( '',
+					url(r'^(?P<slug>[-\w]+)/$', NewsletterListView.as_view()),
+					url(r'^(?P<slug>[-\w]+)/(?P<pk>\d+)/$', NewsletterDetailView.as_view()),
+				)

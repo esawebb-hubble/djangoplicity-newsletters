@@ -1,9 +1,12 @@
 {% load i18n %}
+{% load djangoplicity_text_utils %}
 {% load url from future %}{% if objects %}
 <h2 class="h2" style="{{h2_style}}">
 {% if feed_url %}<a href="{{feed_url}}"><img border="0" src="{{base_url}}{{MEDIA_URL}}djangoplicity/images/rssicon.png"></a>&nbsp;{% endif %}
 <a style="color: #285A97;font-size: 15px;font-weight: bold; text-decoration:none;" href="{{base_url}}{% if urlpattern %}{% url urlpattern %}{% else %}{{direct_url}}{%endif%}">{% if org %}{{org}} {% endif %}{% trans title %}</a>
 </h2> 
+
+{% with truncatelength=truncatelength|default:30 %}
 
 {% for obj in objects %}
 <br />
@@ -19,11 +22,12 @@
 <a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="{{base_url}}{{ obj.get_absolute_url }}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a>
 </h3>
 <div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
-<p><strong>{{ obj.release_date|date }}:</strong> {% if obj.headline %}{{ obj.headline|striptags|truncatewords:30|safe }}{% else %}{{ obj.description|striptags|truncatewords:30|safe }}{% endif %}</p>
+<p><strong>{{ obj.release_date|date }}:</strong> {% if obj.headline %}{{ obj.headline|striptags|truncatewords:truncatelength|safe }}{% else %}{{ obj.description|remove_html_except:'a'|truncatewords:truncatelength|safe }}{% endif %}</p>
 </div>
 </td> 
 </tr> 
 <tr><td colspan="2" align="right"><a style="{{a_style}}" href="http://www.eso.org{{ obj.get_absolute_url }}">{{readmore|default:_("Read more")}}</a></td></tr> 
 </table> 
 {% endfor %}
+{% endwith %}
 {% endif %}
