@@ -26,7 +26,10 @@
 </div>
 </td> 
 </tr> 
+{% comment %} Only display "read more" if description was cut {% endcomment %}
+{% if not obj.headline and obj.description|remove_html_except:'a'|wordcount > truncatelength %}
 <tr><td colspan="2" align="right"><a style="{{a_style}}" href="http://www.eso.org{{ obj.get_absolute_url }}">{{readmore|default:_("Read more")}}</a></td></tr> 
+{% endif %}
 </table> 
 {% endfor %}
 {% endwith %}
