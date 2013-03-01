@@ -462,6 +462,9 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		if self.send is None:
 			self.send = datetime.now()
 
+			if self.scheduled_status != 'ON':
+				raise Exception( 'Won\'t send Newsletter: Scheduling status is "%s"' % self.scheduled_status)
+
 			for m in self.type.mailers.all():
 				res = m.send_now( self )
 				if res:
