@@ -319,6 +319,7 @@ class NewsletterType( models.Model ):
 	# Default from email/name
 	#
 	name = models.CharField( max_length=255 )
+	slug = models.SlugField(help_text=_('Slug for e.g. online archive URL'))
 	default_from_name = models.CharField( max_length=255 )
 	default_from_email = models.EmailField()
 
