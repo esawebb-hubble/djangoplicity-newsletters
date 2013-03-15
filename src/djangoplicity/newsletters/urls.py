@@ -30,13 +30,10 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls.defaults import patterns
 
-from djangoplicity.newsletters.views import NewsletterListView, NewsletterDetailView
+"""
+All extra views are currently defined in admin.py
+"""
 
-# All extra views are currently defined in admin.py
-
-urlpatterns = patterns( '',
-					url(r'^(?P<slug>[-\w]+)/$', NewsletterListView.as_view(), name='newsletter_list'),
-					url(r'^(?P<slug>[-\w]+)/(?P<pk>\d+)/$', NewsletterDetailView.as_view(), name='newsletter_detail'),
-				)
+urlpatterns = patterns( '', )
