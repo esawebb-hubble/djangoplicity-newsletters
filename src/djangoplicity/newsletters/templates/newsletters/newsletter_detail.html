@@ -1,3 +1,25 @@
+<style type="text/css">
+	#nl_detail_header {
+		width: 100%; 
+		background: #000146; 
+		padding: 10px; 
+		text-align: center;
+		font-family: Arial, sans-serif, 'Helvetica Neue', Verdana;
+		margin-bottom: 10px;
+	}
+	#nl_detail_header a, a:visited{
+		color: #ee6600;
+		text-decoration: none;
+	}
+</style>
 
-{{ newsletter_data|safe }}
+<div id="nl_detail_header">
+	<p><a href="{% url newsletter_list newsletter_type.slug %}">Back to {{ newsletter_type }} index</a> </p>
+</div>
+{{ newsletter_html|safe }}
 
+<script type="text/javascript" src="{{STATIC_URL}}djangoplicity/js/jquery-1.7.1.min.js"></script>
+<script type="text/javascript">
+// Hide the top "subscription" bar
+$('.preheaderContent').hide();
+</script>

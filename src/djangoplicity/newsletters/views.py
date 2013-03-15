@@ -46,7 +46,7 @@ class NewsletterListView(ListView):
 		slug = self.kwargs.get('slug')
 		newsletter_type = get_object_or_404(NewsletterType, slug=slug, archive=True)
 		qs = super(NewsletterListView, self).get_queryset()
-		return qs.filter(type=newsletter_type)
+		return qs.filter(type=newsletter_type, send__isnull=False)
 
 	def get_context_data(self, **kwargs):
 		'''
@@ -82,6 +82,6 @@ class NewsletterDetailView(DetailView):
 		context = super(NewsletterDetailView, self).get_context_data(**kwargs)
 		context.update({
 			'newsletter_type': newsletter_type,
-			'newsletter_data': newsletter_data['html'],
+			'newsletter_html': newsletter_data['html'],
 		})
 		return context
