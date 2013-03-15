@@ -240,7 +240,6 @@ class NewsletterAdmin( admin.ModelAdmin ):
 					self.message_user( request, _( "Sent newsletter" ) )
 					return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
 
-			#print form.non_field_errors
 			if 'send_now' not in form.errors:
 				form.errors['send_now'] = []
 			form.errors['send_now'].append( "Please check-mark the box to send the newsletter." )
