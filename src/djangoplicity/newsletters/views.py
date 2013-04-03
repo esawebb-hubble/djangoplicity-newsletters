@@ -30,6 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE
 
 from django.shortcuts import get_object_or_404
+from django.template.loader import select_template
 from django.views.generic import ListView, DetailView
 
 from djangoplicity.newsletters.models import Newsletter, NewsletterType
@@ -44,18 +45,26 @@ class NewsletterListView(ListView):
 		Only returns newsletter matching the given NewsletterType slug
 		'''
 		slug = self.kwargs.get('slug')
-		newsletter_type = get_object_or_404(NewsletterType, slug=slug, archive=True)
+		self.newsletter_type = get_object_or_404(NewsletterType, slug=slug, archive=True)
 		qs = super(NewsletterListView, self).get_queryset()
-		return qs.filter(type=newsletter_type, send__isnull=False)
+		return qs.filter(type=self.newsletter_type, send__isnull=False)
 
 	def get_context_data(self, **kwargs):
 		'''
 		Adds the NewsletterType to the context
 		'''
-		slug = self.kwargs.get('slug')
-		newsletter_type = get_object_or_404(NewsletterType, slug=slug, archive=True)
 		context = super(NewsletterListView, self).get_context_data(**kwargs)
-		context.update({'newsletter_type': newsletter_type})
+
+		# Different newsletters might have different templates (to accomodate
+		# the different menus) so we check which template we should inherit from
+		# by search which one is available:
+		template_name = select_template(['newsletters/newsletter_%s_list.html' % self.newsletter_type.slug,
+				'base.html']).name
+
+		context.update({
+			'newsletter_type': self.newsletter_type,
+			'template_name': template_name,
+		})
 		return context
 
 
