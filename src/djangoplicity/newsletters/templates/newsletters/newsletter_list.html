@@ -4,6 +4,15 @@
 
 {% block content %}
 
+{% comment %}
+Due to an unknown bug the shadowbox doesn't load properly and 
+display a "Cancel" dive at the bootom of the page. As we don't
+care about shadowbox on these pages we just hide the div
+{% endcomment %}
+<style type="text/css">
+	 #sb-container {display:none} 
+</style>
+
 <h1>{{ newsletter_type.name }}</h1>
 
 {% for newsletter in object_list %}
