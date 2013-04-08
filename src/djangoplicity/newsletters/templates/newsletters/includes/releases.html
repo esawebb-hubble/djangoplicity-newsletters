@@ -1,4 +1,5 @@
 {# ############### PRESS RELEASES ############### #}
+{% load djangoplicity_datetime %}
 {% if data.releases %}
 <hr style="{{hr_style}}"/> 
 
@@ -7,7 +8,7 @@
 </h3> 
 
 <div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
-{% for obj in data.releases %}<p style="margin-bottom: 20px;"><a href="http://www.eso.org{{obj.get_absolute_url}}"><img border="0" src="http://www.eso.org/public/archives/images/frontpagethumbs/{{obj.main_image.id}}.jpg" style="margin-bottom: 5px;"></img></a><br><strong>{{obj.release_date|date}}:</strong> <a href="http://www.eso.org{{obj.get_absolute_url}}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a></p>
+{% for obj in data.releases %}<p style="margin-bottom: 20px;"><a href="http://www.eso.org{{obj.get_absolute_url}}"><img border="0" src="http://www.eso.org/public/archives/images/frontpagethumbs/{{obj.main_image.id}}.jpg" style="margin-bottom: 5px;"></img></a><br><strong>{{obj.release_date|datetime:"DATE"}}:</strong> <a href="http://www.eso.org{{obj.get_absolute_url}}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a></p>
 {% endfor %}
 </div>
 {% endif %}

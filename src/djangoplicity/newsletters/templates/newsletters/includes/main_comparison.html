@@ -1,3 +1,4 @@
+{% load djangoplicity_datetime %}
 {% with image_url="imagecomparisons/newsfeature/"|add:main_comparison.id|add:".jpg" %}
 <tr> 
 <td colspan="2" class="headerContent" height="{{height}}px"  background="{{base_url}}{{ MEDIA_URL }}{{image_url}}" style="color: #202020;font-family: Helvetica, Arial;font-size: 24px;font-weight: bold;line-height: 100%;padding: 0;text-align: left;vertical-align: bottom;background-color:black;"> 
@@ -8,7 +9,7 @@
 <div style="padding:20px;color:white;font-size:22px;">
 	<div style="font-size:14px;">
 	<span style="background:black;padding:2px;">
-		<a style="color:white; font-size:14px; text-decoration: none; font-weight: bold;" href="{{link_url}}">{% if release_date %}{{release_date|date}}{% endif %}{% if release_date and pretitle %} &mdash; {% endif %}{% if pretitle %}{{ pretitle }}{% endif %}{% if embargo %} &mdash; <span style="color: #f4c819;">UNDER EMBARGO</span>{% endif %}</a>
+		<a style="color:white; font-size:14px; text-decoration: none; font-weight: bold;" href="{{link_url}}">{% if release_date %}{{release_date|datetime:"DATE"}}{% endif %}{% if release_date and pretitle %} &mdash; {% endif %}{% if pretitle %}{{ pretitle }}{% endif %}{% if embargo %} &mdash; <span style="color: #f4c819;">UNDER EMBARGO</span>{% endif %}</a>
 	</span>
 	</div>
 	{% if title %}
