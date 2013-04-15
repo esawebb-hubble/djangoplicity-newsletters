@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # djangoplicity-newsletters
-# Copyright (c) 2007-2011, European Southern Observatory (ESO)
+#
+# Copyright (c) 2007-2013, European Southern Observatory (ESO)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,13 +29,42 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
-#
 
-from django.conf.urls.defaults import patterns, url
+from django.utils.translation import ugettext_noop as _
 
-from djangoplicity.newsletters.views import NewsletterListView, NewsletterDetailView
+from djangoplicity.archives.contrib.browsers import ListBrowser
+from djangoplicity.archives.contrib.queries.defaults import AllPublicQuery
+from djangoplicity.archives.importer.import_actions import move_resources, \
+	make_image_derivatives
+from djangoplicity.archives.options import ArchiveOptions
 
-urlpatterns = patterns( '',
-					url(r'^(?P<slug>[-\w]+)/$', NewsletterListView.as_view(), name='newsletter_list'),
-					url(r'^(?P<slug>[-\w]+)/(?P<pk>\d+)/$', NewsletterDetailView.as_view(), name='newsletter_detail'),
-				)
+
+class NewsletterOptions(ArchiveOptions):
+	urlname_prefix = 'newsletters'
+
+	class Queries(object):
+		default = AllPublicQuery(browsers=('normal', 'viewall'), verbose_name=_("Newsletter"), feed_name="default")
+
+	class Browsers(object):
+		normal = ListBrowser(paginate_by=50)
+		viewall = ListBrowser(paginate_by=100)
+
+	class Import(object):
+		uploadable = True
+		metadata = 'original'
+		scan_directories = [
+			('original', ('.jpg', '.jpeg', '.tif', '.tiff')),
+		]
+		actions = [
+			move_resources,
+			make_image_derivatives('original', [
+				'screen',
+				'news',
+				'newsmini',
+				'newsfeature',
+				'medium',
+				'mini',
+				'frontpagethumbs',
+				'thumbs',
+			]),
+		]

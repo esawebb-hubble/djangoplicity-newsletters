@@ -41,4 +41,14 @@
 </fieldset>
 {% endif %}
 {% endif %}
+<fieldset style="border: 0; width: 220px; float: right;" class="module aligned">
+<div>
+	<div align="center" style="margin-top: 15px;">
+	{% if original.resource_thumbs %}<img src="{{ original.resource_thumbs.url }}" />
+	{% else %}
+	No preview available
+	{% endif %}
+	</div>
+</div>
+</fieldset>
 {% endblock %}

@@ -55,6 +55,7 @@ from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
 from django.utils.translation import ugettext as _
 from djangoplicity import archives
+from djangoplicity.archives.contrib import types
 from djangoplicity.archives.translation import TranslationProxyMixin
 from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 	MailmanMailerPlugin
@@ -565,6 +566,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			'preferences_link': '', # Will be provided by the mailer plugin
 			'browser_link': '', # Will be provided by the mailer plugin
 			'now': datetime.now(),
+			'newsletter_id': self.id,
 		}
 		defaults.update( extra_ctx )
 		ctx = Context( defaults )
@@ -649,6 +651,16 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		ordering = ['-release_date']
 
 	class Archive:
+		original = archives.ImageResourceManager(type=types.OriginalImageType)
+		screen = archives.ImageResourceManager(derived='original', type=types.ScreensizeJpegType)
+		news = archives.ImageResourceManager(derived='original', type=types.NewsJpegType)
+		newsmini = archives.ImageResourceManager(derived='news', type=types.NewsMiniJpegType)
+		newsfeature = archives.ImageResourceManager(derived='news', type=types.JpegType)
+		medium = archives.ImageResourceManager(derived='original', type=types.MediumJpegType)
+		mini = archives.ImageResourceManager(derived='original', type=types.MiniJpegType)
+		frontpagethumbs = archives.ImageResourceManager(derived='original', type=types.FrontpageThumbnailJpegType)
+		thumbs = archives.ImageResourceManager(derived='original', type=types.ThumbnailJpegType)
+
 		class Meta:
 			root = ''
 			release_date = True
@@ -656,6 +668,12 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			last_modified = True
 			created = True
 			published = True
+			root = settings.NEWSLETTERS_ARCHIVE_ROOT
+			# rename_pk = ('internal_internalimage', 'id')
+			# rename_fks = (
+							# ('internal_internalimage', 'source_id'),
+							# ('internal_internalimagecontact', 'image_id'),
+						# )
 
 	class Translation:
 		fields = ['subject', 'editorial', 'editorial_text', ]
