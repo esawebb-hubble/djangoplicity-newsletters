@@ -1,4 +1,5 @@
 {% extends template_name %}                                                                                                                                                                                  
+{% load djangoplicity_utils %}
 
 {% block site_title %}{{ newsletter_type.name }}{% endblock %}
 
@@ -10,13 +11,25 @@ display a "Cancel" dive at the bootom of the page. As we don't
 care about shadowbox on these pages we just hide the div
 {% endcomment %}
 <style type="text/css">
-	 #sb-container {display:none} 
+	#sb-container {display:none} 
+	td.titlerow a {
+		color: black;
+	}
 </style>
 
 <h1>{{ newsletter_type.name }}</h1>
 
-{% for newsletter in object_list %}
-	<p><a href="{{ newsletter.id }}/">{{newsletter}}</a></p>
+<table class="archive_normal" width="100%">
+{% for list in object_list|split_list:"4" %}
+{% block index_row %}
+<tr>{% for item in list %}
+{% block index_image_cell %}<td class="imagerow" width="25%"><a href="{{ item.get_absolute_url }}"><img src="{{ item.resource_thumbs.url }}" width="122" alt="{{item.title}}" /></a></td>{% endblock %}{% endfor %}
+</tr>
+<tr>{% for item in list %}
+{% block index_title_cell %}<td class="titlerow"><a href="{{ item.get_absolute_url }}">{{item.subject}}</a></td>{% endblock %}{% endfor %}
+</tr>
+{% endblock %}
 {% endfor %}
+</table>
 
 {% endblock %} 

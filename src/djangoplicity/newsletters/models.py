@@ -634,6 +634,10 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			return "Not present"
 	edit.allow_tags = True
 
+	@models.permalink
+	def get_absolute_url( self ):
+		return ( 'newsletter_detail', [self.type.slug, self.id] )
+
 	def get_local_version( self, language ):
 		"""
 		Return local version of the newsletter matching language
