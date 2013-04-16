@@ -30,10 +30,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
 
-from django.utils.translation import ugettext_noop as _
 
 from djangoplicity.archives.contrib.browsers import ListBrowser
-from djangoplicity.archives.contrib.queries.defaults import AllPublicQuery
 from djangoplicity.archives.importer.import_actions import move_resources, \
 	make_image_derivatives
 from djangoplicity.archives.options import ArchiveOptions
@@ -41,9 +39,6 @@ from djangoplicity.archives.options import ArchiveOptions
 
 class NewsletterOptions(ArchiveOptions):
 	urlname_prefix = 'newsletters'
-
-	class Queries(object):
-		default = AllPublicQuery(browsers=('normal', 'viewall'), verbose_name=_("Newsletter"), feed_name="default")
 
 	class Browsers(object):
 		normal = ListBrowser(paginate_by=50)

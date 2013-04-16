@@ -35,6 +35,6 @@ from django.conf.urls.defaults import patterns, url
 from djangoplicity.newsletters.views import NewsletterListView, NewsletterDetailView
 
 urlpatterns = patterns( '',
-					url(r'^(?P<slug>[-\w]+)/$', NewsletterListView.as_view(), name='newsletter_list'),
-					url(r'^(?P<slug>[-\w]+)/(?P<pk>\d+)/$', NewsletterDetailView.as_view(), name='newsletter_detail'),
+					url(r'^(?P<category_slug>[-\w]+)/$', NewsletterListView.as_view(), name='newsletter_list'),
+					url(r'^(?P<category_slug>[-\w]+)/(?P<pk>\d+)/$', NewsletterDetailView.as_view(), name='newsletter_detail'),
 				)

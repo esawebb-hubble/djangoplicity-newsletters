@@ -62,7 +62,7 @@ from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 from djangoplicity.newsletters.tasks import send_newsletter, \
 	send_newsletter_test, schedule_newsletter, unschedule_newsletter, \
 	send_scheduled_newsletter
-from djangoplicity.translation.models import TranslationModel
+from djangoplicity.translation.models import TranslationModel, translation_permalink
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 from tinymce import models as tinymce_models
 import traceback
@@ -636,9 +636,9 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			return "Not present"
 	edit.allow_tags = True
 
-	@models.permalink
+	@translation_permalink
 	def get_absolute_url( self ):
-		return ( 'newsletter_detail', [self.type.slug, self.id] )
+		return ( self.lang, 'newsletter_detail', [self.type.slug, self.id if self.is_source() else self.source.id] )
 
 	def get_local_version( self, language ):
 		"""
