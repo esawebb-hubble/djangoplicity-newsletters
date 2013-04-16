@@ -337,6 +337,8 @@ class NewsletterType( models.Model ):
 	archive = models.BooleanField( default=True, help_text=_( 'Enable public archives for this newsletter type.' ) )
 	sharing = models.BooleanField( default=True, help_text=_( 'Enable social sharing of newsletter.' ) )
 
+	subscribe_text = models.TextField(blank=True, help_text=_('Instructions and link to subscribe to the newsletter'))
+
 	#
 	# Mailers
 	#

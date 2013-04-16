@@ -18,6 +18,9 @@ care about shadowbox on these pages we just hide the div
 </style>
 
 <h1>{{ newsletter_type.name }}</h1>
+{% if newsletter_type.subscribe_text %}
+<p>{{ newsletter_type.subscribe_text|safe }}</p>
+{% endif %}
 
 <table class="archive_normal" width="100%">
 {% for list in object_list|split_list:"4" %}
