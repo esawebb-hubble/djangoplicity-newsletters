@@ -32,7 +32,8 @@
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.utils import translation
+if settings.USE_I18N:
+	from django.utils import translation
 from django.views.generic import DetailView
 
 from djangoplicity.newsletters.models import Newsletter, NewsletterType
@@ -52,9 +53,10 @@ class NewsletterDetailView(DetailView):
 
 		try:
 			obj = Newsletter.objects.get(type=newsletter_type, pk=pk, published=True)
-			lang = translation.get_language()
-			if lang != settings.LANGUAGE_CODE:
-				obj = obj.translations.get(lang=lang)
+			if settings.USE_I18N:
+				lang = translation.get_language()
+				if lang != settings.LANGUAGE_CODE:
+					obj = obj.translations.get(lang=lang)
 		except Newsletter.DoesNotExist:
 			raise Http404
 

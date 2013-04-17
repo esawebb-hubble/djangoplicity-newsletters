@@ -5,9 +5,9 @@ from django.core.exceptions import ImproperlyConfigured, FieldError
 from django.http import Http404
 
 from djangoplicity.archives.contrib.queries import CategoryQuery
+from djangoplicity.newsletters.models import Newsletter
 
 if settings.USE_I18N:
-	from djangoplicity.translation.models import TranslationModel
 	from django.utils import translation
 
 
@@ -38,7 +38,6 @@ class NewsletterCategoryQuery(CategoryQuery):
 
 		try:
 			category = categorymodel.objects.get( **{ self.url_field: stringparam } )
-			set_manager = getattr( category, "%s_set" % model._meta.module_name )
 		except categorymodel.DoesNotExist:
 			# URL of non existing category specified.
 			raise Http404
@@ -53,7 +52,11 @@ class NewsletterCategoryQuery(CategoryQuery):
 		#
 		# Select archive items in category
 		#
-		qs = set_manager.all()
+		if settings.USE_I18N:
+			lang = translation.get_language()
+			qs = Newsletter.objects.language(lang).filter(type=category)
+		else:
+			qs = Newsletter.objects.filter(type=category)
 
 		# Filter out non-sent Newsletters
 		now = datetime.now()
