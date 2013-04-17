@@ -11,9 +11,21 @@ if settings.USE_I18N:
 	from django.utils import translation
 
 
+def category_extra_templates(model, query, query_name, query_data):
+	if 'category' in query_data:
+		return ['newsletters/newsletter_%s_list.html' % query_data['category'].slug]
+
+
 class NewsletterCategoryQuery(CategoryQuery):
 	"""
 	"""
+	def __init__(self, *args, **kwargs):
+		defaults = {
+			'extra_templates': category_extra_templates,
+		}
+		defaults.update(kwargs)
+		super(NewsletterCategoryQuery, self).__init__(*args, **defaults)
+
 	def queryset( self, model, options, request, stringparam=None, **kwargs ):
 
 		if not stringparam:
