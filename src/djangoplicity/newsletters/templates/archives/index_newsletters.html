@@ -1,10 +1,19 @@
 {% load djangoplicity_utils %}
 
+{% comment %}
+Due to an unknown bug the shadowbox doesn't load properly and 
+display a "Cancel" dive at the bootom of the page. As we don't
+care about shadowbox on these pages we just hide the div
+We also include mediaarchive.css as it's not otherwise included for 
+some pages outside /public (e.g. for the science newsletter)
+{% endcomment %}
 <style type="text/css">
 	td.titlerow a {
 		color: black;
 	}
+	#sb-container {display:none} 
 </style>
+<link href="{{MEDIA_URL}}css/mediaarchive.css" rel="stylesheet" type="text/css" />
 
 {% if object_list %}
 {% with nl_type=object_list.0.type %}
