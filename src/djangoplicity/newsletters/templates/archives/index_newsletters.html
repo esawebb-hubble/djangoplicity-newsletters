@@ -1,11 +1,18 @@
 {% load djangoplicity_utils %}
 
-<h1>{{ newsletter_type.name }}</h1>
-{% if newsletter_type.subscribe_text %}
-<p>{{ newsletter_type.subscribe_text|safe }}</p>
-{% endif %}
+<style type="text/css">
+	td.titlerow a {
+		color: black;
+	}
+</style>
 
-<h1>{% for c in categories %}{{ category }} {%endfor%}</h1>
+{% if object_list %}
+{% with nl_type=object_list.0.type %}
+{% if nl_type.subscribe_text %}
+<p>{{ nl_type.subscribe_text|safe }}</p>
+{% endif %}
+{% endwith %}
+{% endif %}
 
 {% load i18n %}{% load djangoplicity_utils %}
 {% if not object_list %}
@@ -19,7 +26,7 @@
 {% block index_image_cell %}<td class="imagerow" width="25%"><a href="{{ item.get_absolute_url }}"><img src="{{ item.resource_thumbs.url }}" width="122" alt="{{ item.subject }}" /></a></td>{% endblock %}{% endfor %}
 </tr>
 <tr>{% for item in list %}
-{% block index_title_cell %}<td class="titlerow">{{ item.subject }}</td>{% endblock %}{% endfor %}
+	{% block index_title_cell %}<td class="titlerow"><a href="{{ item.get_absolute_url }}">{{ item.subject }}</a></td>{% endblock %}{% endfor %}
 </tr>
 {% endblock %}
 {% endfor %}

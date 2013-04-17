@@ -32,49 +32,10 @@
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.template.loader import select_template
 from django.utils import translation
 from django.views.generic import DetailView
 
 from djangoplicity.newsletters.models import Newsletter, NewsletterType
-from djangoplicity.simplearchives.views import CategoryListView
-
-
-class NewsletterListView(CategoryListView):
-	model = Newsletter
-	model_category_field = 'type'
-	category_model = NewsletterType
-
-	def get_queryset( self ):
-		# We use the parent get_category() as we need the source
-		# category and not the translations
-		category = super(NewsletterListView, self).get_category()
-		lang = translation.get_language()
-
-		queryset = Newsletter.objects.language(lang).filter(send__isnull=False)
-
-		model_category_field = self.get_model_category_field()
-		queryset = queryset.filter( **{ model_category_field: category } )
-
-		self.category = self.get_category()
-
-		return queryset
-
-	def get_context_data( self, **kwargs ):
-		context = super(NewsletterListView, self).get_context_data(**kwargs)
-		context['archive_title'] = self.category.name
-		# Different newsletters might have different templates (to accomodate
-		# the different menus) so we check which template we should inherit from
-		# by search which one is available:
-		lang = translation.get_language()
-		context['template_name'] = select_template([
-			'newsletters/newsletter_%s_list.%s.html' % (self.category.slug, lang),
-			'newsletters/newsletter_%s_list.html' % self.category.slug,
-			'base.html']).name
-		return context
-
-	def get_template_names( self ):
-		return ['newsletters/newsletter_list.html']
 
 
 class NewsletterDetailView(DetailView):
@@ -90,7 +51,7 @@ class NewsletterDetailView(DetailView):
 		newsletter_type = get_object_or_404(NewsletterType, slug=slug, archive=True)
 
 		try:
-			obj = Newsletter.objects.get(type=newsletter_type, pk=pk)
+			obj = Newsletter.objects.get(type=newsletter_type, pk=pk, published=True)
 			lang = translation.get_language()
 			if lang != settings.LANGUAGE_CODE:
 				obj = obj.translations.get(lang=lang)

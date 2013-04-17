@@ -62,7 +62,7 @@ from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 from djangoplicity.newsletters.tasks import send_newsletter, \
 	send_newsletter_test, schedule_newsletter, unschedule_newsletter, \
 	send_scheduled_newsletter
-from djangoplicity.translation.models import TranslationModel, translation_permalink
+from djangoplicity.translation.models import TranslationModel
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 from tinymce import models as tinymce_models
 import traceback
@@ -465,6 +465,8 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		"""
 		if self.send is None:
 			self.send = datetime.now()
+			if self.type.archive:
+				self.published = True
 
 			if self.scheduled_status != 'ON':
 				raise Exception( 'Won\'t send Newsletter: Scheduling status is "%s"' % self.scheduled_status)
@@ -636,9 +638,9 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			return "Not present"
 	edit.allow_tags = True
 
-	@translation_permalink
+	@models.permalink
 	def get_absolute_url( self ):
-		return ( self.lang, 'newsletter_detail', [self.type.slug, self.id if self.is_source() else self.source.id] )
+		return ( 'newsletters_detail_html', [self.type.slug, self.id] )
 
 	def get_local_version( self, language ):
 		"""

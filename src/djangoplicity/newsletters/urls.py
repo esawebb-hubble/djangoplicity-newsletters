@@ -32,9 +32,14 @@
 
 from django.conf.urls.defaults import patterns, url
 
-from djangoplicity.newsletters.views import NewsletterListView, NewsletterDetailView
+from djangoplicity.newsletters.views import NewsletterDetailView
+from djangoplicity.archives import urlpatterns_for_options
+from djangoplicity.newsletters.options import NewsletterOptions
 
+# The first view is a custom detail view as it can't use the normal template (it would
+# break the email HTML layout).
 urlpatterns = patterns( '',
-					url(r'^(?P<category_slug>[-\w]+)/$', NewsletterListView.as_view(), name='newsletter_list'),
-					url(r'^(?P<category_slug>[-\w]+)/(?P<pk>\d+)/$', NewsletterDetailView.as_view(), name='newsletter_detail'),
+					url(r'^(?P<category_slug>[-\w]+)/html/(?P<pk>\d+)/$', NewsletterDetailView.as_view(), name='newsletters_detail_html'),
 				)
+
+urlpatterns += urlpatterns_for_options( NewsletterOptions )
