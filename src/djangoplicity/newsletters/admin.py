@@ -42,7 +42,6 @@ from datetime import datetime, timedelta
 from django.conf.urls.defaults import patterns
 from django.contrib import admin
 from django.core.urlresolvers import reverse
-from django.db import models
 from django.forms import ModelForm
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
@@ -73,8 +72,8 @@ class NewsletterContentInlineAdmin( admin.TabularInline ):
 	model = NewsletterContent
 	extra = 0
 
-class NewsletterAdmin( admin.ModelAdmin ):
-	list_display = [ 'id', 'subject', 'type', 'from_name', 'from_email', 'release_date','published','last_modified']
+class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
+	list_display = [ 'id', 'subject', 'type', 'from_name', 'from_email', 'release_date', 'list_link_thumbnail', 'published', 'last_modified']
 	list_editable = ['from_name', 'from_email', 'subject', ]
 	list_filter = ['type', 'last_modified', 'published']
 	search_fields = ['from_name', 'from_email', 'subject', 'html', 'text']
