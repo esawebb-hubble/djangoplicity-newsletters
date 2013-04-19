@@ -336,8 +336,8 @@ class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 
 
 class NewsletterTypeAdmin( admin.ModelAdmin ):
-	list_display = ['name', 'default_from_name', 'default_from_email', 'sharing', 'archive', 'subscribe_text' ]
-	list_editable = ['default_from_name', 'default_from_email', 'sharing', 'archive', 'subscribe_text']
+	list_display = ['name', 'default_from_name', 'default_from_email', 'sharing', 'archive' ]
+	list_editable = ['default_from_name', 'default_from_email', 'sharing', 'archive' ]
 	list_filter = ['sharing', 'archive' ]
 	search_fields = ['name', 'default_from_name', 'default_from_email', 'subject_template', 'html_template', 'text_template']
 	inlines = [NewsletterDataSourceInlineAdmin]
