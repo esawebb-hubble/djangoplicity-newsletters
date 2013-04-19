@@ -54,6 +54,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
 from django.utils.translation import ugettext as _
+from django.utils import translation
 from djangoplicity import archives
 from djangoplicity.archives.contrib import types
 from djangoplicity.archives.translation import TranslationProxyMixin
@@ -335,6 +336,7 @@ class NewsletterType( models.Model ):
 	# Options fields
 	#
 	archive = models.BooleanField( default=True, help_text=_( 'Enable public archives for this newsletter type.' ) )
+	local_archive = models.BooleanField( default=False, help_text=_( 'Use local archive (instead of e.g. Mailchimp Online archive)' ) )
 	sharing = models.BooleanField( default=True, help_text=_( 'Enable social sharing of newsletter.' ) )
 
 	subscribe_text = models.TextField(blank=True, help_text=_('Instructions and link to subscribe to the newsletter'))
@@ -351,6 +353,12 @@ class NewsletterType( models.Model ):
 
 	def get_generator( self ):
 		return NewsletterGenerator( type=self )
+
+	@translation_permalink
+	def get_absolute_url( self ):
+		if settings.USE_I18N:
+			lang = translation.get_language()
+		return ( lang, 'newsletters_defaultquery', [self.slug, ] )
 
 	def __unicode__( self ):
 		return self.name
@@ -558,12 +566,14 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			'MEDIA_URL': settings.MEDIA_URL,
 			'STATIC_URL': settings.STATIC_URL,
 			'ARCHIVE_ROOT': getattr( settings, "ARCHIVE_ROOT", "" ),
+			'newsletter_type': self.type,
 			'data': NewsletterContent.data_context( self, lang=self.lang ),
 			'editorial_subject': self.editorial_subject,
 			'editorial': self.editorial,
 			'editorial_text': self.editorial_text,
 			'enable_sharing': self.type.sharing,
 			'enable_archive': self.type.archive,
+			'use_local_archive': self.type.local_archive,
 			'release_date': self.release_date,
 			'published': self.published,
 			'unsubscribe_link': '', # Will be provided by the mailer plugin
