@@ -565,6 +565,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			'MEDIA_URL': settings.MEDIA_URL,
 			'STATIC_URL': settings.STATIC_URL,
 			'ARCHIVE_ROOT': getattr( settings, "ARCHIVE_ROOT", "" ),
+			'newsletter': self,
 			'newsletter_type': self.type,
 			'data': NewsletterContent.data_context( self, lang=self.lang ),
 			'editorial_subject': self.editorial_subject,
