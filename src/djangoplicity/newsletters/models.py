@@ -356,8 +356,7 @@ class NewsletterType( models.Model ):
 
 	@translation_permalink
 	def get_absolute_url( self ):
-		if settings.USE_I18N:
-			lang = translation.get_language()
+		lang = translation.get_language()
 		return ( lang, 'newsletters_defaultquery', [self.slug, ] )
 
 	def __unicode__( self ):
