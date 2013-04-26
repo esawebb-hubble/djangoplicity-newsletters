@@ -1,5 +1,5 @@
 {% load i18n %}
-{% if release %}{% load release_links djangoplicity_datetime %}
+{% if release %}{% load release_links djangoplicity_datetime djangoplicity_utils  %}
 {% if embargo %}
 <div style="padding: 10px; font-size: 18px; background-color: #f4c819; text-align: center; font-weight: bold;">
 EMBARGOED* UNTIL {{release.release_date|time4lang:"en"|datetime:"DATETIME" }}
@@ -13,7 +13,7 @@ EMBARGOED* UNTIL {{release.release_date|time4lang:"en"|datetime:"DATETIME" }}
 
 
 {% block translations %}
-{%if release.get_translations.languages %}<p>{% trans "Translations are available in:"%} {% for translation in release.get_translations.languages %}<a href="{{base_url}}{{translation.object.get_absolute_url}}">{{translation.name}}</a>{% if not forloop.last %}, {% endif %}{%endfor%}</p>
+{%if release.get_translations.languages %}<p>{% trans "Translations are available on your country page:"%} {% for country in release.get_translations.countries %}{% for translation in country %}{% if forloop.counter0 > 0 %}&mdash;{% endif %}<a href="{{base_url}}{{translation.object.get_absolute_url}}">{{ translation.full_code|code_to_local_country }}</a>{% endfor %}{% if not forloop.last %}, {% endif %}{%endfor%}</p>
 {% endif %}
 {% if release.kids_title and release.kids_description %}<p>{% trans "Space Scoop - the children's version of this release is available at:" %} <a href="{{base_url}}{{ release.get_absolute_url }}kids/">{{base_url}}{{ release.get_absolute_url }}kids/</a></p>{% endif %}{% endblock %}
 
