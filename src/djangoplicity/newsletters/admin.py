@@ -381,7 +381,8 @@ class MailerLogAdmin( admin.ModelAdmin ):
 		return False
 
 class LanguageAdmin( admin.ModelAdmin ):
-	list_display = [ 'lang' ]
+	list_display = [ 'lang', 'default_from_name', 'default_from_email' ]
+	list_editable = [ 'default_from_name', 'default_from_email' ]
 
 class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, TranslationDuplicateAdmin, ArchiveAdmin ):
 	list_display = ( 'id', 'subject' )
@@ -389,7 +390,7 @@ class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, Transl
 	fieldsets = (
 					( 'Language', {'fields': ( 'lang', 'source', 'translation_ready', ) } ),
 					( None, {'fields': ( 'id', ) } ),
-					( 'Newsletter', {'fields': ( 'subject', 'editorial', 'editorial_text', ), } ),
+					( 'Newsletter', {'fields': ( 'from_name', 'from_email', 'subject', 'editorial', 'editorial_text', ), } ),
 				)
 	ordering = NewsletterAdmin.ordering
 	raw_id_fields = ( 'source', )

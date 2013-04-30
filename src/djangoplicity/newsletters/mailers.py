@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -31,9 +31,9 @@
 #
 
 """
-A Newsletter can be sent to many different distribution lists via Mailers. By default 
-a NewsletterType must have at least one associated Mailer for a newsletter to be sent 
-anywhere. A Mailer is defined by an admin who specifies which MailerPlugin to use, 
+A Newsletter can be sent to many different distribution lists via Mailers. By default
+a NewsletterType must have at least one associated Mailer for a newsletter to be sent
+anywhere. A Mailer is defined by an admin who specifies which MailerPlugin to use,
 and any configuration values required by the MailerPlugin.
 
 Currently the following MailerPlugins implementations are available:
@@ -42,23 +42,23 @@ Currently the following MailerPlugins implementations are available:
   * Mailman list - send the newsletter to a mailman address, including unsubscribe and
   	subscription preferences links in the text.
   * MailChimp - send newsletter via MailChimp API.
- 
+
 A MailerPlugin must as a minimum support the following methods/properties:
 
   * ``name'' - Human readable name for the MailerPlugin
-  * ``send_test( newsletter, emails )'' - Send a test version of the newsletters to the specified 
+  * ``send_test( newsletter, emails )'' - Send a test version of the newsletters to the specified
     list of email addresses
   * ``send_now( newsletter )'' - Send the newsletter for real.
-  
-Newsletters going to mailing lists must normally include instructions on how to unsubscribe. 
-Since this differs from list to list, the newsletters sent to different lists cannot be 
+
+Newsletters going to mailing lists must normally include instructions on how to unsubscribe.
+Since this differs from list to list, the newsletters sent to different lists cannot be
 identical. The method ``get_mailer_context'' allows the MailerPlugin to provide extra context
 variables to the Newsletter template when being rendered. By default the following variables
 are available:
 
   * ``unsubscribe_link''
-  * ``preferences_link'' 
-  * ``browser_link'' 
+  * ``preferences_link''
+  * ``browser_link''
 
 Each mailer plugin can override the ``get_mailer_context'' to provide their own context
 variables for the templates.
@@ -79,28 +79,28 @@ class MailerPlugin():
 	"""
 	name = ''
 	parameters = []
-	
+
 	def __init__( self, params ):
 		"""
 		Any parameters defined in ``MailerPlugin.parameters'' will be passed to the plugin via
 		the params. The values of these parameters are configurable via the admin interface.
 		"""
 		pass
-	
+
 	def on_scheduled( self, newsletter ):
 		"""
 		Mailer plugins are notified when a newsletter is scheduled
 		for sending. This allows plugins to do any preparations
 		prior to sending if needed.
-		
-		.. note:: 
-		
-			The mailer plugins should NOT use their own scheduling 
+
+		.. note::
+
+			The mailer plugins should NOT use their own scheduling
 			feature. send_now() will be called the right time to for all mailers
 			to send the newsletter.
 		"""
 		pass
-	
+
 	def on_unscheduled( self, newsletter ):
 		"""
 		Mailer plugins are notified when a newsletter is unscheduled
@@ -108,43 +108,43 @@ class MailerPlugin():
 		a scheduled newsletter is cancelled.
 		"""
 		pass
-	
+
 	def send_now( self, newsletter ):
 		"""
 		When invoked this method should send the newsletter immediately
 		"""
 		raise NotImplementedError
-	
+
 	def send_test( self, newsletter, emails ):
 		"""
 		When invoked this method should send a test version of the newsletter
 		to the provided list of email addresses.
 		"""
 		raise NotImplementedError
-	
+
 	@classmethod
 	def get_class_path( cls ):
 		return "%s.%s" % ( cls.__module__, cls.__name__ )
-	
+
 	def get_mailer_context( self ):
 		return {
 			'unsubscribe_link' : '',
-			'preferences_link' : '', 
-			'browser_link' : '', 
+			'preferences_link' : '',
+			'browser_link' : '',
 		}
 
 
 class EmailMailerPlugin( MailerPlugin ):
 	"""
 	Mailer implementation that will send the newsletter to a predefined
-	list of email addresses (which could be e.g. a mailing list). 
-	
+	list of email addresses (which could be e.g. a mailing list).
+
 	It does however not included any unsubscribe links or similar. The class
-	can be used as base class for other MailerPlugins that works by sending 
+	can be used as base class for other MailerPlugins that works by sending
 	an email. Typically the derived class would just need to specifiy
 	``name'', ``parameters'', ``__init__'' and ``'get_mailer_context()'.
-	
-	See MailmanMailerPlugin for an example. 
+
+	See MailmanMailerPlugin for an example.
 	"""
 	name = 'Standard mailer'
 	parameters = [ ( 'emails', 'Comma separated list of emails to send to.', 'str' ) ]
@@ -160,7 +160,7 @@ class EmailMailerPlugin( MailerPlugin ):
 		Send combined HTML and plain text email.
 		"""
 		data = newsletter.render( self.get_mailer_context(), store=False )
-		
+
 		from_email = '%s <%s>' % ( newsletter.from_name, newsletter.from_email )
 		msg = EmailMultiAlternatives( data['subject'], data['text'], from_email, emails )
 		msg.attach_alternative( data['html'], "text/html" )
@@ -172,27 +172,27 @@ class EmailMailerPlugin( MailerPlugin ):
 
 	def send_test( self, newsletter, emails ):
 		self._send( newsletter, emails )
-		
+
 	def get_mailer_context( self ):
 		return {
 			'unsubscribe_link' : '',
-			'preferences_link' : '', 
+			'preferences_link' : '',
 			'browser_link' : '',
-			'is_email_mailer' : True, 
+			'is_email_mailer' : True,
 		}
-		
-	
+
+
 class MailmanMailerPlugin( EmailMailerPlugin ):
 	"""
-	Mailer implementation that sends a newsletter to an email address (usually a Mailman list), 
+	Mailer implementation that sends a newsletter to an email address (usually a Mailman list),
 	and includes a unsubscribe and preferences link specified by the admin user.
 	"""
 	name = 'Mailman mailer'
-	parameters = [ 
+	parameters = [
 		( 'emails', 'Comma separated list of mailman list emails to send to.', 'str' ),
 		( 'listinfo_url', 'URL to the listinfo mailman page', 'str' ),
 	]
-	
+
 	def __init__( self, params ):
 		try:
 			self._to_emails = [x.strip() for x in params['emails'].split()]
@@ -202,34 +202,34 @@ class MailmanMailerPlugin( EmailMailerPlugin ):
 			self.listinfo_url = params['listinfo_url'].strip()
 		except KeyError:
 			raise Exception( "Parameter 'listinfo_url' is missing" )
-	
+
 	def get_mailer_context(self):
 		return {
 			'unsubscribe_link' : self.listinfo_url,
-			'preferences_link' : self.listinfo_url, 
+			'preferences_link' : self.listinfo_url,
 			'browser_link' : '',
 			'is_mailman_mailer' : True,
 		}
 
-		
+
 class MailChimpMailerPlugin( MailerPlugin ):
 	"""
 	Mailer implementation that will send the newsletter via MailChimp.
 	It requires that the djangoplicity.mailinglists application has also been
 	installed and that the MailChimp list have been defined.
-	
+
 	MailChimp have some length limits on subjects (150 chars) and campaign titles (100) so
-	the plugin will chop off the values if they are too long. 
-	
+	the plugin will chop off the values if they are too long.
+
 	HTML link tracking and opens tracking are enabled and is currently not configurable.
-	
-	When a newsletter is scheduled for sending it will be uploaded immediately to MailChimp, 
-	however just before sending it will be uploaded again.  
+
+	When a newsletter is scheduled for sending it will be uploaded immediately to MailChimp,
+	however just before sending it will be uploaded again.
 	"""
 	name = 'MailChimp mailer'
-	parameters = [ 
+	parameters = [
 		( 'list_id', 'MailChimp list id - must be defined in djangoplicity.', 'str' ),
-		( 'enable_browser_link', "Enable 'view in browser' link", 'bool' ), 
+		( 'enable_browser_link', "Enable 'view in browser' link", 'bool' ),
 	]
 
 	def __init__( self, params ):
@@ -241,17 +241,17 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			self.enable_browser_link = params['enable_browser_link']
 		except KeyError:
 			raise Exception( "Parameter 'enable_browser_link' is missing" )
-		
+
 		from djangoplicity.mailinglists.models import MailChimpList
 		self.ml = MailChimpList.objects.get( list_id=list_id )
-		
+
 	def _chop( self, value, limit ):
 		"""
 		Chop off parts of a string if needed to ensure
 		its smaller than a maximum length.
 		"""
 		#  Encode the string to utf otherwise Mailchimp might complain
-		#  about the length of special characters, 
+		#  about the length of special characters,
 		#  i.e.: Mailchimp counts '\xc3' as 4 characters instead of one
 		#  We can't just encode the string in utf and then cut it as
 		#  it might cut characters in the wrong place, so we do it char by char
@@ -267,7 +267,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 	def _set_segment( self, campaign, language, languages ):
 		"""
-		Update the campaign segment to only send to members of the 
+		Update the campaign segment to only send to members of the
 		given language
 		"""
 		# Get the Full name of the language
@@ -290,7 +290,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			'conditions': [{
 				'field': 'interests-%d' % id,
 				'op': 'all'	if language else 'none',
-				'value': language if language else ','.join(mc_languages), 
+				'value': language if language else ','.join(mc_languages),
 			}]
 		}
 
@@ -299,10 +299,10 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		if isinstance(r, dict) and 'error' in r:
 			raise Exception('Testing segment "%s" failed: "%s"' % (str(segment_opts),  r['error']))
 
-		if not self.ml.connection.campaignUpdate(cid=campaign.campaign_id, 
+		if not self.ml.connection.campaignUpdate(cid=campaign.campaign_id,
 				name='segment_opts', value=segment_opts):
 			raise Exception('Updating segment "%s" failed' % str(segment_opts))
-	
+
 	def _update_campaign( self, nl, campaign_id, lang ):
 		"""
 		Update an existing campaign in MailChimp.
@@ -324,8 +324,9 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 			# Set the variables accordingly:
 			subject = local.subject
-			from_email = local.source.from_email
-			from_name = local.source.from_name
+			from_email = local.from_email if local.from_email else local.source.from_email
+			from_name = local.from_name if local.from_name else local.source.from_name
+			print subject, from_email, from_name
 			html = local.html
 			text = local.text
 		else:
@@ -337,7 +338,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			from_name = nl.from_name
 			html = nl.html
 			text = nl.text
-		
+
 		# Total is the number of campaigns matching the query (should only ever
 		# be 1 or 0 as we filter on campaign_id)
 		if 'total' in campaigns and campaigns['total'] > 0:
@@ -373,8 +374,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 			# Set the variables accordingly:
 			subject = local.subject
-			from_email = local.source.from_email
-			from_name = local.source.from_name
+			from_email = local.from_email if local.from_email else local.source.from_email
+			from_name = local.from_name if local.from_name else local.source.from_name
 			html = local.html
 			text = local.text
 		else:
@@ -410,7 +411,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		if 'error' in val:
 			raise Exception("MailChimp could not create the campaign, error %d: '%s'." % (val['code'], val['error']))
 		return val
-	
+
 	def _upload_newsletter( self, newsletter ):
 		"""
 		Upload a newsletter (and localised version if any) into MailChimp, and
@@ -424,7 +425,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		# string for the original version
 		languages = ['', ]
 		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
-		
+
 		for language in languages:
 			# Only upload ready translations
 			if language:
@@ -435,9 +436,9 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				if not local.translation_ready:
 					continue
 
-			( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter, 
+			( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter,
 									list_id=self.ml.list_id, lang=language )
-			
+
 			if not created and info.campaign_id:
 				( info.campaign_id, touched ) = self._update_campaign( newsletter, info.campaign_id, language )
 				if touched:
@@ -452,7 +453,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 	def _get_languages( self ):
 		"""
 		Return the id of the 'Preferred language' group in Mailchimp as well as
-		the list of preferred languages from the list 
+		the list of preferred languages from the list
 		"""
 		id = -1
 		mc_languages = []
@@ -460,7 +461,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		#  'groups' will be a list on success, or a dict on error:
 		if isinstance(groups, dict) and 'error' in groups:
-			# MailChimp returns an error if no groups are defined, 
+			# MailChimp returns an error if no groups are defined,
 			# but we catch this later:
 			if groups['error'] == 'This list does not have interest groups enabled':
 				return (id, mc_languages)
@@ -483,18 +484,18 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		nl_languages = newsletter.type.languages.all()
 		# Convert from code (e.g.: es-cl) to full name (e.g.: Spanish/Chile)
 		nl_languages = [ str(lang) for lang in nl_languages ]
-		
+
 		# Get a list of the Mailchimp list's languages:
 		mc_languages = self._get_languages()[1]
 
 		# Check that languages are identical on both sides:
 		for lang in nl_languages:
 			if lang not in mc_languages:
-				raise Exception("Language '%s' missing in MailChimp 'Preferred language' group for list '%s'" 
+				raise Exception("Language '%s' missing in MailChimp 'Preferred language' group for list '%s'"
 						% (lang, self.ml.list_id))
 		for lang in mc_languages:
 			if lang not in nl_languages:
-				raise Exception("Language '%s' missing in list's '%s' languages" 
+				raise Exception("Language '%s' missing in list's '%s' languages"
 						% (lang, newsletter.type.name))
 
 	def _get_campaigns(self, newsletter):
@@ -534,8 +535,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 	def get_mailer_context(self):
 		return {
-			'unsubscribe_link' : '*|UNSUB|*', # MailChimp will automatically replace the tag *|...|*-tags with a lists unsubscribe link etc. 
-			'preferences_link' : '*|UPDATE_PROFILE|*', 
+			'unsubscribe_link' : '*|UNSUB|*', # MailChimp will automatically replace the tag *|...|*-tags with a lists unsubscribe link etc.
+			'preferences_link' : '*|UPDATE_PROFILE|*',
 			'browser_link' : '*|ARCHIVE|*' if self.enable_browser_link else '',
 			'is_mailchimp_mailer' : True,
 		}

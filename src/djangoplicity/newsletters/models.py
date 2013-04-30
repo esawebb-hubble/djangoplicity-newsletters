@@ -305,6 +305,8 @@ class Language( models.Model ):
 	Available languages for Local newsletters
 	"""
 	lang = models.CharField(primary_key=True, verbose_name=_( 'Language' ), max_length=5, choices=settings.LANGUAGES)
+	default_from_name = models.CharField( max_length=255, blank=True, null=True )
+	default_from_email = models.EmailField( blank=True, null=True)
 
 	def __unicode__( self ):
 		for lang, name in settings.LANGUAGES:
@@ -620,10 +622,17 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 				local.save()
 
 		elif self.is_translation():
+			language = Language.objects.get(lang=self.lang)
+			if self.from_name == '' and language.default_from_name:
+				self.from_name = language.default_from_name
+			if self.from_email == '' and language.default_from_email:
+				self.from_email = language.default_from_email
+
 			if self.editorial_text == '' and self.editorial:
 				self.editorial_text = defaultfilters.striptags( unescape( defaultfilters.safe( self.editorial ) ) )
 
-		return super( Newsletter, self ).save( *args, **kwargs )
+		result = super( Newsletter, self ).save()
+		return result
 
 	def view_html(self):
 		if self.id:
@@ -696,7 +705,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 	class Translation:
 		fields = ['subject', 'editorial', 'editorial_text', ]
-		excludes = ['html', 'text']
+		excludes = ['html', 'text', 'from_name', 'from_email']
 
 # ========================================================================
 # Translation proxy model
