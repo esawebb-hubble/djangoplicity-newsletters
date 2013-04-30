@@ -20,9 +20,14 @@ EMBARGOED* UNTIL {{release.release_date|time4lang:"en"|datetime:"DATETIME" }}
 
 {% if signature %}
 <p>
+{% comment %}
+We only show the "signature" if there is no editorial
+{% endcomment %}
+{% if not editorial %}
 {% trans "Kind regards" %},<br />
 {% trans signature|safe %}<br />
 {% if signature_date %}{{signature_date|datetime:"DATE"}}{% endif %}
+{% endif %}
 </p>
 {% endif %}
 
