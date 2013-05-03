@@ -924,29 +924,6 @@ class GroupMapping( models.Model ):
 	group = models.ForeignKey( MailChimpGroup)
 	field = models.CharField( max_length=255 )
 
-	def parse_merge_var( self, params, addr_oneline=False ):
-		"""
-		"""
-		tag = self.merge_var.tag
-
-		if tag not in params:
-			return []
-
-		val = params[tag]
-
-		if self.merge_var.field_type == 'address':
-			try:
-				res = {}
-				fields = self._field_list()
-
-				for mc_f, dj_f in fields:
-					res[dj_f] = val[mc_f] if dj_f not in res else ( res[dj_f] + "  " + val[mc_f] if val[mc_f] else res[dj_f] )
-				return res.items()
-			except KeyError, e:
-				return []
-		else:
-			return [( self.field, val )]
-
 	def create_groups( self, obj, changes=None ):
 		"""
 		Return a dict of form {'id': mailchimpgroup_id, 'groups': mailchimp_grouping_value'}
