@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -41,10 +41,9 @@ from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.core.validators import validate_email
 from django.db import models
-from django.db.models.signals import post_save, pre_delete, post_delete
-from django.dispatch import Signal, receiver
+from django.db.models.signals import post_save, pre_delete
 from django.utils.encoding import smart_unicode
-from djangoplicity.actions.models import Action, EventAction
+from djangoplicity.actions.models import EventAction
 from djangoplicity.mailinglists.exceptions import MailChimpError
 from djangoplicity.mailinglists.mailman import MailmanList
 from mailsnake import MailSnake
@@ -62,6 +61,7 @@ uuidmod._uuid_generate_random = None
 #
 NEWSLETTERS_MAILCHIMP_APIKEY = settings.NEWSLETTERS_MAILCHIMP_APIKEY if hasattr( settings, 'NEWSLETTERS_MAILCHIMP_APIKEY' ) else ''
 
+
 def _object_identifier( obj ):
 	"""
 	Return an objects identifier for a model object (e.g. contacts.contact:2579)
@@ -71,12 +71,14 @@ def _object_identifier( obj ):
 	else:
 		return ""
 
+
 #
 # Models
 #
+
 class BadEmailAddress( models.Model ):
 	"""
-	Bad email addresses which was found to bounce back emails.  
+	Bad email addresses which was found to bounce back emails.
 	"""
 	email = models.EmailField( unique=True )
 	timestamp = models.DateTimeField( auto_now_add=True )
@@ -91,7 +93,7 @@ class BadEmailAddress( models.Model ):
 
 class Subscriber( models.Model ):
 	"""
-	Subscriber (i.e an email address) to one or more lists.  
+	Subscriber (i.e an email address) to one or more lists.
 	"""
 	email = models.EmailField( unique=True )
 
@@ -121,7 +123,7 @@ class List( models.Model ):
 
 	def subscribe( self, subscriber=None, email=None, async=True ):
 		"""
-		Subscribe a user to this list. 
+		Subscribe a user to this list.
 		"""
 		if not subscriber:
 			if email:
@@ -146,7 +148,7 @@ class List( models.Model ):
 
 	def unsubscribe( self, subscriber=None, email=None, async=True ):
 		"""
-		Unsubscribe a user to this list. 
+		Unsubscribe a user to this list.
 		"""
 		try:
 			if subscriber:
@@ -169,7 +171,7 @@ class List( models.Model ):
 	def _subscribe( self, email ):
 		"""
 		Method that will directly subscribe an email to this list (normally called from
-		a background task.) 
+		a background task.)
 		"""
 		self.mailman.subscribe( email )
 
@@ -216,7 +218,6 @@ class List( models.Model ):
 			sub = Subscription( list=self, subscriber=subscriber )
 			sub.save()
 
-
 	def push( self, remove_existing=True ):
 		"""
 		Push entire list of subscribers to mailman (will overwrite anything in Mailman)
@@ -259,10 +260,10 @@ class Subscription( models.Model ):
 class MailChimpList( models.Model ):
 	"""
 	A list already defined in MailChimp.
-	
+
 	Most information will be fetched directly from MailChimp.
-	
-	Note, the mailchimp API does not support list creation, 
+
+	Note, the mailchimp API does not support list creation,
 	so each list must manually be created via the MailChimp API.
 	"""
 	# Model properties defined in djangoplicity
@@ -270,7 +271,7 @@ class MailChimpList( models.Model ):
 	list_id = models.CharField( unique=True, max_length=50 )
 
 	synchronize = models.BooleanField( default=False )
-	""" Enable list to be sync'ed with mailchimp. """
+	# Enable list to be sync'ed with mailchimp.
 
 	# Model properties replicated from MailChimp
 	name = models.CharField( max_length=255, blank=True )
@@ -296,10 +297,10 @@ class MailChimpList( models.Model ):
 
 	# Status properties
 	connected = models.BooleanField( default=False )
-	""" Designates if the list is being successfully sync'ed with MailChimp. """
+	# Designates if the list is being successfully sync'ed with MailChimp.
 
 	last_sync = models.DateTimeField( blank=True, null=True )
-	""" Designates last time a sync was done for this list. """
+	# Designates last time a sync was done for this list.
 
 	# Model link
 	content_type = models.ForeignKey( ContentType, null=True, blank=True, help_text="Select the content type of objects that subscribers on this list can be linked with." )
@@ -318,7 +319,7 @@ class MailChimpList( models.Model ):
 
 	def get_admin_url( self ):
 		"""
-		Get URL to MailChimp's admin interface for list. 
+		Get URL to MailChimp's admin interface for list.
 		"""
 		dc = self.mailchimp_dc()
 		if dc and self.web_id:
@@ -328,12 +329,11 @@ class MailChimpList( models.Model ):
 
 	def _get_connection( self ):
 		"""
-		Return a mailsnake object that can be used to interact with 
+		Return a mailsnake object that can be used to interact with
 		the MailChimp API.
 		"""
 		return MailSnake( self.api_key )
 	connection = property( _get_connection )
-
 
 	def get_merge_vars( self ):
 		"""
@@ -357,20 +357,20 @@ class MailChimpList( models.Model ):
 		Create a MERGE VARS dictionary from a model object. The model object
 		must have the same content type as defined in content_type field. Hence
 		both content_type and primiary_key_field must be specified for the list.
-		
+
 		The mapping from model object field to MERGE VAR is defined by MergeVarMapping model.
-		
+
 		If the MERGE VAR dictionary should only contain updates, you need to pass a ``changes''
 		dictionary with model field names as keys and 2-tuples as values. The 2-tuples should contain
 		the before and after value::
-		
+
 			changes = {
-				'email' : ( 'email+old@eso.org', 'email+new@eso.org' ),
+				'email': ( 'email+old@eso.org', 'email+new@eso.org' ),
 				# ...
 			}
-			
-		The changes dictionary can easily be created with django-dirtyfields app. 
-		See http://pypi.python.org/pypi/django-dirtyfields 
+
+		The changes dictionary can easily be created with django-dirtyfields app.
+		See http://pypi.python.org/pypi/django-dirtyfields
 		"""
 		merge_vars = {}
 		if self.content_type and self.primary_key_field and isinstance( obj, self.content_type.model_class() ):
@@ -381,6 +381,15 @@ class MailChimpList( models.Model ):
 				( tag, val ) = m.create_merge_var( obj, changes=changes )
 				if val and tag != self.primary_key_field.tag:
 					merge_vars[tag] = val
+
+			groupings = []
+			for g in GroupMapping.objects.filter(list=self).select_related():
+				grouping = g.create_groups(obj, changes=changes)
+				if grouping:
+					groupings.append(grouping)
+
+			if groupings:
+				merge_vars['GROUPINGS'] = groupings
 
 		return merge_vars
 
@@ -404,11 +413,10 @@ class MailChimpList( models.Model ):
 			return Model.objects.get( pk=pk )
 		return None
 
-
 	def get_object_from_mergevars( self, params ):
 		"""
 		If list is linked with a django model (i.e content_type and primary_key_field is set), then this method
-		will retrieve the model object 
+		will retrieve the model object
 		"""
 		# get object_identifier from params, and extract dictionary mapping
 		if self.primary_key_field and self.content_type:
@@ -422,7 +430,7 @@ class MailChimpList( models.Model ):
 	def get_object_from_exportvars( self, data ):
 		"""
 		If list is linked with a django model (i.e content_type and primary_key_field is set), then this method
-		will retrieve the model object 
+		will retrieve the model object
 		"""
 		# get object_identifier from params, and extract dictionary mapping
 		if self.primary_key_field and self.content_type:
@@ -435,10 +443,10 @@ class MailChimpList( models.Model ):
 
 	def subscribe( self, email, merge_vars={}, email_type='html', double_optin=True, send_welcome=False, async=True ):
 		"""
-		Subscribe the provided email address. If user is already subscribed an error will be returned. 
+		Subscribe the provided email address. If user is already subscribed an error will be returned.
 
 		Mailchimp descriptions of flags:
-		
+
 		  * email_type - email type preference for the email ( html, text, or mobile defaults to html )
 		  * double_optin - flag to control whether a double opt-in confirmation message is sent, defaults to true. Abusing this may cause your account to be suspended.
 		  * send_welcome -  if your double_optin is false and this is true, we will send your lists Welcome Email if this subscribe succeeds - this will *not* fire if we end up updating an existing subscriber. If double_optin is true, this has no effect. defaults to false.
@@ -457,14 +465,15 @@ class MailChimpList( models.Model ):
 			raise Exception( "Invalid email type %s - options are html, text, or mobile." % email_type )
 
 		# Check merge vars.
-		allowed_vars = self.get_merge_vars().values_list( 'tag', flat=True )
+		allowed_vars = ['GROUPINGS']
+		allowed_vars.extend(self.get_merge_vars().values_list( 'tag', flat=True ))
 
 		for k, v in merge_vars.items():
 			if k not in allowed_vars:
 				raise Exception( "Invalid merge var %s - allowed variables are %s" % ( k, ", ".join( allowed_vars ) ) )
 
 		# Send subscribe
-		res = self.connection.listSubscribe( 
+		res = self.connection.listSubscribe(
 			id=self.list_id,
 			email_address=email,
 			email_type=email_type,
@@ -475,16 +484,16 @@ class MailChimpList( models.Model ):
 			merge_vars=merge_vars,
 		)
 
-		if res != True:
+		if res is not True:
 			raise MailChimpError( response=res )
 		return True
 
 	def unsubscribe( self, email, delete_member=False, send_goodbye=True, send_notify=True, async=True ):
 		"""
-		Unsubscribe email from MailChimp 
-		
+		Unsubscribe email from MailChimp
+
 		Mailchimp descriptions of flags:
-		
+
 		  * email_address	the email address to unsubscribe OR the email "id" returned from listMemberInfo, Webhooks, and Campaigns
 		  * delete_member	flag to completely delete the member from your list instead of just unsubscribing, default to false
 		  * send_goodbye	flag to send the goodbye email to the email address, defaults to true
@@ -494,7 +503,7 @@ class MailChimpList( models.Model ):
 		validate_email( email )
 
 		# Send subscribe
-		res = self.connection.listUnsubscribe( 
+		res = self.connection.listUnsubscribe(
 			id=self.list_id,
 			email_address=email,
 			delete_member=delete_member,
@@ -502,7 +511,7 @@ class MailChimpList( models.Model ):
 			send_notify=send_notify,
 		)
 
-		if res != True:
+		if res is not True:
 			raise MailChimpError( response=res )
 		return True
 
@@ -525,7 +534,7 @@ class MailChimpList( models.Model ):
 			raise Exception( "Invalid email type %s - options are html, text, mobile or <blank>." % email_type )
 
 		# Check merge vars.
-		allowed_vars = list( self.get_merge_vars().values_list( 'tag', flat=True ) ) + ['EMAIL', 'NEW_EMAIL', 'OPTIN_IP', 'OPTIN_TIME', 'MC_LOCATION']
+		allowed_vars = list( self.get_merge_vars().values_list( 'tag', flat=True ) ) + ['EMAIL', 'NEW_EMAIL', 'OPTIN_IP', 'OPTIN_TIME', 'MC_LOCATION', 'GROUPINGS']
 
 		for k, v in merge_vars.items():
 			if k not in allowed_vars:
@@ -537,7 +546,7 @@ class MailChimpList( models.Model ):
 			del merge_vars['NEW_EMAIL']
 
 		# Send subscribe
-		res = self.connection.listUpdateMember( 
+		res = self.connection.listUpdateMember(
 			id=self.list_id,
 			email_address=email,
 			email_type=email_type,
@@ -545,7 +554,7 @@ class MailChimpList( models.Model ):
 			merge_vars=merge_vars,
 		)
 
-		if res != True:
+		if res is not True:
 			raise MailChimpError( response=res )
 		return True
 
@@ -566,11 +575,11 @@ class MailChimpList( models.Model ):
 	def fetch_info( self ):
 		"""
 		Synchronize information from MailChimp list to Djangoplicity
-		
+
 		mailsnake.lists - see http://apidocs.mailchimp.com/1.3/lists.func.php
 		"""
 		try:
-			res = self.connection.lists( filters={ 'list_id' : self.list_id } )
+			res = self.connection.lists( filters={ 'list_id': self.list_id } )
 			if res['total'] == 1:
 				info = res['data'][0]
 
@@ -602,7 +611,7 @@ class MailChimpList( models.Model ):
 				# Try to get Merge Vars
 				pks = []
 				for v in self.connection.listMergeVars( id=self.list_id ):
-					( obj, created ) = MailChimpMergeVar.objects.get_or_create( 
+					( obj, created ) = MailChimpMergeVar.objects.get_or_create(
 						list=self,
 						name=v['name'],
 						required=v['req'],
@@ -620,21 +629,28 @@ class MailChimpList( models.Model ):
 				# Delete all merge vars which was not defined.
 				MailChimpMergeVar.objects.filter( list=self ).exclude( pk__in=pks ).delete()
 
-				# Try to get Groupings
-				pks = []
+				# Try to get Groups and Groupings
+				groups_pks = []
+				groupings_pks = []
 				try:
 					for v in self.connection.listInterestGroupings( id=self.list_id ):
+						( obj, created ) = MailChimpGroup.objects.get_or_create( list=self, group_id=v['id'] )
+						if obj.name != v['name']:
+							obj.name = v['name']
+							obj.save()
+						groups_pks.append( obj.pk )
 						for g in v['groups']:
 							( obj, created ) = MailChimpGrouping.objects.get_or_create( list=self, group_id=v['id'], option=g['name'] )
 							if obj.name != v['name']:
 								obj.name = v['name']
 								obj.save()
-							pks.append( obj.pk )
+							groupings_pks.append( obj.pk )
 				except TypeError:
-					# listInterestGroupings will return a dict on error, that in turn will result in a TypeError when trying to be used in the for-loop. 
+					# listInterestGroupings will return a dict on error, that in turn will result in a TypeError when trying to be used in the for-loop.
 					pass
 
-				MailChimpGrouping.objects.filter( list=self ).exclude( pk__in=pks ).delete()
+				MailChimpGroup.objects.filter( list=self ).exclude( pk__in=groups_pks ).delete()
+				MailChimpGrouping.objects.filter( list=self ).exclude( pk__in=groupings_pks ).delete()
 			else:
 				raise Exception( "Unknown MailChimp error." )
 		except ( HTTPError, URLError ), e:
@@ -690,12 +706,11 @@ class MailChimpList( models.Model ):
 					obj = Model.find_object( **objdict )
 
 				if obj:
-					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag : _object_identifier( obj ), } ) #'EMAIL_TYPE' : data['EMAIL_TYPE'],
+					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: _object_identifier( obj ), } ) # 'EMAIL_TYPE': data['EMAIL_TYPE'],
 				elif data[self.primary_key_field.name] != '':
-					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag : '', } ) #'EMAIL_TYPE' : data['EMAIL_TYPE'],
+					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: '', } ) # 'EMAIL_TYPE': data['EMAIL_TYPE'],
 
-
-				# Send updates in batches of 200	
+				# Send updates in batches of 200
 				if len( batch ) >= 200:
 					self.connection.listBatchSubscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
 					batch = []
@@ -703,8 +718,6 @@ class MailChimpList( models.Model ):
 			# Send the last batch
 			if len( batch ) > 0:
 				self.connection.listBatchSubscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
-				
-
 
 	def parse_export_vars( self, data, mapping=None ):
 		"""
@@ -725,7 +738,6 @@ class MailChimpList( models.Model ):
 
 		return mdict
 
-
 	def export_members( self, status=None, since=None ):
 		"""
 		Export all MailChimp members via the export API.
@@ -735,7 +747,7 @@ class MailChimpList( models.Model ):
 		import json
 
 		url = 'https://%s.api.mailchimp.com/export/1.0/list/' % self.mailchimp_dc()
-		params = { 'apikey' : self.api_key, 'id' : self.list_id }
+		params = { 'apikey': self.api_key, 'id': self.list_id }
 		if status in ['subscribed', 'unsubscribed', 'cleaned']:
 			params['status'] = status
 		if since:
@@ -754,7 +766,7 @@ class MailChimpList( models.Model ):
 	def export_modelfields( self, status=None, since=None ):
 		"""
 		Get a list of dictionaries where each key is corresponding to a model field of the related model for the list.
-		
+
 		This method is quite heavy compared to export_members() method.
 		"""
 		if self.primary_key_field and self.content_type:
@@ -763,11 +775,11 @@ class MailChimpList( models.Model ):
 
 			for m in self.export_members( status=status, since=since ):
 				mdict = {}
-				
+
 				# Primary key
 				if self.primary_key_field.name in m:
 					mdict['pk'] = m[self.primary_key_field.name]
-				
+
 				for mapp in mappings:
 					try:
 						if mapp.merge_var.field_type == 'address':
@@ -785,7 +797,7 @@ class MailChimpList( models.Model ):
 
 	def _list_all_members( self, status ):
 		"""
-		Helper function to paginate through all members 
+		Helper function to paginate through all members
 		"""
 		grand_total = 0
 		data = []
@@ -807,7 +819,7 @@ class MailChimpList( models.Model ):
 			except KeyError, e:
 				raise MailChimpError( response=res )
 
-		return { 'total' : grand_total, 'data' : data }
+		return { 'total': grand_total, 'data': data }
 
 	@classmethod
 	def post_save_handler( cls, sender=None, instance=None, created=False, raw=False, **kwargs ):
@@ -851,6 +863,7 @@ MERGEVAR_DATATYPES = [
 	( 'imageurl', 'imageurl' ),
 ]
 
+
 class MailChimpMergeVar( models.Model ):
 	"""
 	Store information about mailchimp mergevars for each list.
@@ -869,13 +882,27 @@ class MailChimpMergeVar( models.Model ):
 
 	def __unicode__( self ):
 		return "%s: %s" % ( self.list, self.name if self.field_type != 'address' else "%s (addr1,addr2,city,state,zip,country)" % self.name )
-	
+
 	class Meta:
 		ordering = ['list', 'name']
 
+
+class MailChimpGroup( models.Model ):
+	"""
+	Represent a Mailchimp Group
+	"""
+	list = models.ForeignKey( MailChimpList )
+	group_id = models.IntegerField( db_index=True )
+	name = models.CharField( max_length=255 )
+
+	def __unicode__( self ):
+		return "%s" % self.name
+
+
 class MailChimpGrouping( models.Model ):
 	"""
-	
+	Represent a Mailchimp Group and Value (i.e.: there will be multiple
+	MailChimpGrouping for a single group
 	"""
 	list = models.ForeignKey( MailChimpList )
 	group_id = models.IntegerField( db_index=True )
@@ -889,21 +916,13 @@ class MailChimpGrouping( models.Model ):
 		ordering = ['name', 'option']
 
 
-
-
-class MergeVarMapping( models.Model ):
+class GroupMapping( models.Model ):
+	'''
+	Mapping between a Mailchimp Group and a field.
+	'''
 	list = models.ForeignKey( MailChimpList )
-	merge_var = models.ForeignKey( MailChimpMergeVar )
+	group = models.ForeignKey( MailChimpGroup)
 	field = models.CharField( max_length=255 )
-
-	def _field_list( self ):
-		fields = [x.strip() for x in self.field.split( "," )]
-
-		if len( fields ) == 6:
-			return zip( ['addr1', 'addr2', 'city', 'state', 'zip', 'country'], fields )
-		else:
-			raise Exception( "Address type merge vars must specify 5 elements." )
-
 
 	def parse_merge_var( self, params, addr_oneline=False ):
 		"""
@@ -928,6 +947,67 @@ class MergeVarMapping( models.Model ):
 		else:
 			return [( self.field, val )]
 
+	def create_groups( self, obj, changes=None ):
+		"""
+		Return a dict of form {'id': mailchimpgroup_id, 'groups': mailchimp_grouping_value'}
+		"""
+		val = None
+
+		try:
+			if changes is None or ( changes is not None and self.field in changes ):
+				field = getattr(obj, self.field)
+				if hasattr(field, '__call__'):
+					val = field()
+				else:
+					val = field
+		except AttributeError:
+			pass
+
+		if not val:
+			return
+
+		val = quote( unicode( val ).encode( "utf8" ) ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
+		return {'id': self.group.group_id, 'groups': val}
+
+	def __unicode__( self ):
+		return "%s -> %s" % ( self.group, self.field )
+
+
+class MergeVarMapping( models.Model ):
+	list = models.ForeignKey( MailChimpList )
+	merge_var = models.ForeignKey( MailChimpMergeVar )
+	field = models.CharField( max_length=255 )
+
+	def _field_list( self ):
+		fields = [x.strip() for x in self.field.split( "," )]
+
+		if len( fields ) == 6:
+			return zip( ['addr1', 'addr2', 'city', 'state', 'zip', 'country'], fields )
+		else:
+			raise Exception( "Address type merge vars must specify 5 elements." )
+
+	def parse_merge_var( self, params, addr_oneline=False ):
+		"""
+		"""
+		tag = self.merge_var.tag
+
+		if tag not in params:
+			return []
+
+		val = params[tag]
+
+		if self.merge_var.field_type == 'address':
+			try:
+				res = {}
+				fields = self._field_list()
+
+				for mc_f, dj_f in fields:
+					res[dj_f] = val[mc_f] if dj_f not in res else ( res[dj_f] + "  " + val[mc_f] if val[mc_f] else res[dj_f] )
+				return res.items()
+			except KeyError, e:
+				return []
+		else:
+			return [( self.field, val )]
 
 	def create_merge_var( self, obj, changes=None ):
 		"""
@@ -970,7 +1050,7 @@ class MergeVarMapping( models.Model ):
 
 		if val and field_type in ['text', 'dropdown', 'radio', 'phone', 'url', 'imageurl', 'zip']:
 			val = quote( unicode( val ).encode( "utf8" ) ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
-	
+
 		return ( self.merge_var.tag, val )
 
 	def __unicode__( self ):
@@ -979,7 +1059,7 @@ class MergeVarMapping( models.Model ):
 
 class MailChimpListToken( models.Model ):
 	"""
-	Tokens used in get parameters to secure webhook requests 
+	Tokens used in get parameters to secure webhook requests
 	from MailChimp.
 	"""
 	list = models.ForeignKey( MailChimpList )
@@ -989,7 +1069,7 @@ class MailChimpListToken( models.Model ):
 
 	def get_absolute_url( self ):
 		"""
-		Get absolute URL to webhook. 
+		Get absolute URL to webhook.
 		"""
 		if self.token and ( self.expired is None or self.expired >= datetime.now() - timedelta( minutes=10 ) ):
 			baseurl = "https://%s%s" % ( Site.objects.get_current().domain, reverse( 'djangoplicity_mailinglists:mailchimp_webhook' ) )
@@ -997,7 +1077,6 @@ class MailChimpListToken( models.Model ):
 			return hookurl
 		return None
 	get_absolute_url.short_description = "Webhook URL"
-
 
 	@classmethod
 	def create( cls, list ):
@@ -1047,23 +1126,24 @@ class MailChimpListToken( models.Model ):
 
 	def hook_params( self ):
 		"""
-		Return a dict of query parameters for a MailChimp webhook 
+		Return a dict of query parameters for a MailChimp webhook
 		"""
-		return { 'token' : self.token, }
+		return { 'token': self.token, }
 
 
 #
 # More advanced stuff - configurable actions to be execute once
 # contacts are added/removed from groups (e.g subscribe to mailman).
 #
-ACTION_EVENTS = ( 
+ACTION_EVENTS = (
 	( 'on_subscribe', 'On subscribe' ),
 	( 'on_unsubscribe', 'On unsubscribe' ),
 	( 'on_upemail', 'On update email' ),
 	( 'on_profile', 'On profile update' ),
 	( 'on_cleaned', 'On cleaned' ),
 	( 'on_campaign', 'On campaign' ),
- )
+)
+
 
 class MailChimpEventAction( EventAction ):
 	"""

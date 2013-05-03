@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -34,6 +34,7 @@ from djangoplicity.actions.plugins import ActionPlugin
 from django.db import models
 from django.utils.encoding import smart_unicode
 from django.db.models.fields import FieldDoesNotExist
+
 
 class MailChimpAction( ActionPlugin ):
 	"""
@@ -62,7 +63,7 @@ class MailChimpAction( ActionPlugin ):
 				except FieldDoesNotExist:
 					pass
 
-		return ( [], { 'model_identifier' : model_identifier, 'pk' : pk } )
+		return ( [], { 'model_identifier': model_identifier, 'pk': pk } )
 
 	def _get_object( self, model_identifier, pk ):
 		"""
@@ -82,7 +83,7 @@ class MailChimpSubscribeAction( MailChimpAction ):
 	action_parameters = MailChimpAction.action_parameters + [
 		( 'double_optin', 'Flag to control whether a double opt-in confirmation message is sent, defaults to true. Abusing this may cause our MailChimp account to be suspended.', 'bool' ),
 		( 'send_welcome', 'If double_optin is false and this is true, a welcome email will be sent if this subscribe succeeds. If double_optin is true, this has no effect. defaults to false.', 'bool' ),
-		
+
 	]
 
 	def run( self, conf, model_identifier=None, pk=None ):
@@ -96,8 +97,6 @@ class MailChimpSubscribeAction( MailChimpAction ):
 
 			mlist.subscribe( obj.email, merge_vars=merge_vars, double_optin=conf['double_optin'], send_welcome=conf['send_welcome'], async=False )
 			self.get_logger().info( "Subscribed %s to MailChimp list %s" % ( obj.email, mlist.name ) )
-			
-
 
 
 class MailChimpUnsubscribeAction( MailChimpAction ):
@@ -134,10 +133,9 @@ class MailChimpUpdateAction( MailChimpAction ):
 			changes = kwargs['changes']
 			model_identifier = smart_unicode( instance._meta )
 			pk = smart_unicode( instance._get_pk_val(), strings_only=True )
-			return ( [], { 'model_identifier' : model_identifier, 'pk' : pk, 'changes' : changes } )
+			return ( [], { 'model_identifier': model_identifier, 'pk': pk, 'changes': changes } )
 
-		return ( [], { 'model_identifier' : None, 'pk' : None, 'changes' : {} } )
-
+		return ( [], { 'model_identifier': None, 'pk': None, 'changes': {} } )
 
 	def run( self, conf, model_identifier=None, pk=None, changes={} ):
 		"""
@@ -146,13 +144,19 @@ class MailChimpUpdateAction( MailChimpAction ):
 		if model_identifier and pk:
 			obj = self._get_object( model_identifier, pk )
 			list = self._get_list( conf['list_id'] )
-			
+
+			# We use get_language instead of language to get the full
+			# name for the language. In order to match 'language' in the
+			# changes we use a bit of a hack:
+			if 'language' in changes:
+				changes['get_language'] = changes['language']
+
 			# Email changed
 			try:
 				( before, after ) = changes['email']
 			except KeyError:
 				( before, after ) = '', ''
-			
+
 			before = before.strip()
 			after = after.strip()
 			if before != after:
@@ -167,20 +171,18 @@ class MailChimpUpdateAction( MailChimpAction ):
 						list.unsubscribe( before, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], async=False )
 						self.get_logger().info( "Unsubscribed email address '%s' from MailChimp list %s" % ( before, list.name ) )
 					else:
-						
+
 						merge_vars = list.create_merge_vars( obj, changes=changes )
 						list.update_profile( before, after, merge_vars=merge_vars, async=False )
 						self.get_logger().info( "Changed email address from '%s' to '%s' on MailChimp list %s" % ( before, after, list.name ) )
 			else:
-				# Email was not updated - other parts was changed 
+				# Email was not updated - other parts was changed
 				merge_vars = list.create_merge_vars( obj, changes=changes )
 				list.update_profile( obj.email, obj.email, merge_vars=merge_vars, async=False )
 				self.get_logger().info( "Updated profile of subscriber with email address '%s' on MailChimp list %s" % ( obj.email, list.name ) )
-			
 
 
 MailChimpSubscribeAction.register()
 MailChimpUnsubscribeAction.register()
 MailChimpUpdateAction.register()
 #MailChimpSyncAction.register()
-
