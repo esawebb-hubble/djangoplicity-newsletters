@@ -350,6 +350,11 @@ class MailChimpList( models.Model ):
 		if self.primary_key_field and self.content_type:
 			for m in MergeVarMapping.objects.filter( list=self ).select_related():
 				mapping.update( dict( m.parse_merge_var( params ) ) )
+
+			if 'GROUPINGS' in params:
+				for g in GroupMapping.objects.filter(list=self).select_related():
+					mapping.update( g.parse_groups(params['GROUPINGS']) )
+
 		return mapping
 
 	def create_merge_vars( self, obj, changes=None ):
@@ -916,7 +921,7 @@ class MailChimpGrouping( models.Model ):
 		ordering = ['name', 'option']
 
 
-class GroupMapping( models.Model ):
+class GroupMapping(models.Model):
 	'''
 	Mapping between a Mailchimp Group and a field.
 	'''
@@ -924,7 +929,13 @@ class GroupMapping( models.Model ):
 	group = models.ForeignKey( MailChimpGroup)
 	field = models.CharField( max_length=255 )
 
-	def create_groups( self, obj, changes=None ):
+	def parse_groups(self, groupings):
+		for grouping in groupings:
+			if grouping['id'] != self.group.group_id:
+				continue
+			return [(self.field, grouping['groups'])]
+
+	def create_groups(self, obj, changes=None):
 		"""
 		Return a dict of form {'id': mailchimpgroup_id, 'groups': mailchimp_grouping_value'}
 		"""
