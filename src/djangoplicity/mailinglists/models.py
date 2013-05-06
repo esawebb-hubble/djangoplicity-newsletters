@@ -353,7 +353,7 @@ class MailChimpList( models.Model ):
 
 			if 'GROUPINGS' in params:
 				for g in GroupMapping.objects.filter(list=self).select_related():
-					mapping.update( g.parse_groups(params['GROUPINGS']) )
+					mapping.update( dict(g.parse_groups(params['GROUPINGS'])) )
 
 		return mapping
 
@@ -931,7 +931,7 @@ class GroupMapping(models.Model):
 
 	def parse_groups(self, groupings):
 		for grouping in groupings:
-			if grouping['id'] != self.group.group_id:
+			if int(grouping['id']) != self.group.group_id:
 				continue
 			return [(self.field, grouping['groups'])]
 
