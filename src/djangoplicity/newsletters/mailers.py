@@ -38,17 +38,17 @@ and any configuration values required by the MailerPlugin.
 
 Currently the following MailerPlugins implementations are available:
 
-  * Email - send the newsletter to a specific a list of email address.
-  * Mailman list - send the newsletter to a mailman address, including unsubscribe and
-  	subscription preferences links in the text.
-  * MailChimp - send newsletter via MailChimp API.
+	* Email - send the newsletter to a specific a list of email address.
+	* Mailman list - send the newsletter to a mailman address, including unsubscribe and
+		subscription preferences links in the text.
+	* MailChimp - send newsletter via MailChimp API.
 
 A MailerPlugin must as a minimum support the following methods/properties:
 
-  * ``name'' - Human readable name for the MailerPlugin
-  * ``send_test( newsletter, emails )'' - Send a test version of the newsletters to the specified
-    list of email addresses
-  * ``send_now( newsletter )'' - Send the newsletter for real.
+	* ``name'' - Human readable name for the MailerPlugin
+	* ``send_test( newsletter, emails )'' - Send a test version of the newsletters to the specified
+		list of email addresses
+	* ``send_now( newsletter )'' - Send the newsletter for real.
 
 Newsletters going to mailing lists must normally include instructions on how to unsubscribe.
 Since this differs from list to list, the newsletters sent to different lists cannot be
@@ -56,9 +56,9 @@ identical. The method ``get_mailer_context'' allows the MailerPlugin to provide 
 variables to the Newsletter template when being rendered. By default the following variables
 are available:
 
-  * ``unsubscribe_link''
-  * ``preferences_link''
-  * ``browser_link''
+	* ``unsubscribe_link''
+	* ``preferences_link''
+	* ``browser_link''
 
 Each mailer plugin can override the ``get_mailer_context'' to provide their own context
 variables for the templates.
@@ -71,7 +71,7 @@ The parameters are stored in MailerParameter, and are automatically created by t
 """
 
 from django.core.mail import EmailMultiAlternatives
-import urllib
+
 
 class MailerPlugin():
 	"""
@@ -270,6 +270,10 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		Update the campaign segment to only send to members of the
 		given language
 		"""
+		# If the newsletter doesn't use languages we don't set segments:
+		if len(languages) == 1 and languages[0] == '':
+			return
+
 		# Get the Full name of the language
 		if language:
 			from djangoplicity.newsletters.models import Language
@@ -475,13 +479,19 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		return (id, mc_languages)
 
-	def _check_languages ( self, newsletter ):
+	def _check_languages( self, newsletter ):
 		"""
 		Check that the newsletter languages (if any) match the Mailchimp list's
 		"""
 
 		# Get a list of the newsletter's languages:
 		nl_languages = newsletter.type.languages.all()
+
+		# If the newsletter doesn't use languages we send to the
+		# whole list so we can ignore the test
+		if not nl_languages:
+			return
+
 		# Convert from code (e.g.: es-cl) to full name (e.g.: Spanish/Chile)
 		nl_languages = [ str(lang) for lang in nl_languages ]
 
