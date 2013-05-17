@@ -1018,8 +1018,11 @@ class MergeVarMapping( models.Model ):
 				fields_done = []
 				for mc_f, dj_f in fields:
 					if dj_f not in fields_done:
-						val[mc_f] = getattr( obj, dj_f )
-						fields_done.append( dj_f )
+						try:
+							val[mc_f] = getattr( obj, dj_f )
+							fields_done.append( dj_f )
+						except AttributeError:
+							pass
 					else:
 						val[mc_f] = ''
 
