@@ -951,6 +951,13 @@ class GroupMapping(models.Model):
 		except AttributeError:
 			pass
 
+		# Make sure that the value for the given group actually exists in Mailchimp
+		# otherwise Mailchimp will complain:
+		try:
+			MailChimpGrouping.objects.get(group_id=self.group.group_id, option=val)
+		except MailChimpGrouping.DoesNotExist:
+			return
+
 		if not val:
 			return
 
