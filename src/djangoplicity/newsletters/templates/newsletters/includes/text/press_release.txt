@@ -3,7 +3,11 @@
 
 {{org}} {% trans data.release.release_type.name %} {{data.release.id}}{% if embargo and data.release.release_date > now %} *{% trans "UNDER EMBARGO" %}*{% endif %} - {{data.release.title|safe}}{% if data.release.subtitle %} — {{data.release.subtitle|safe}}{% endif %}
 {% if embargo and data.release.release_date > now %}
+{% if language == "no" %} 
+{% trans "EMBARGOED* UNTIL" %} {{data.release.release_date|datetime:"DATETIME" }}
+{% else %}
 {% trans "EMBARGOED* UNTIL" %} {{data.release.release_date|time4lang:"en"|datetime:"DATETIME" }}
+{% endif %}
 {% endif %}
 {% trans "For your convenience the first paragraph of the release is provided below:" %}
 
