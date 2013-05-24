@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -41,87 +41,87 @@ def send_scheduled_newsletter( newsletter_pk ):
 	"""
 	Task to start sending a scheduled newsletter - this task should normally
 	be invoked with the eta keyword argument (e.g apply_async( pk, eta=.. ))
-	
-	The task will be revoked if the schedule is cancelled via the admin 
+
+	The task will be revoked if the schedule is cancelled via the admin
 	interface.
-	
+
 	Notes:
 	- A task with eta/countdown will survive if workers are restarted.
 	- The eta/countdown argument only ensures that the task will be
 	  run after the defined time. If workers are overloaded it might be
-	  delayed.    
+	  delayed.
 	"""
 	from djangoplicity.newsletters.models import Newsletter
-	
+
 	logger = send_scheduled_newsletter.get_logger()
-	
+
 	nl = Newsletter.objects.get( pk = newsletter_pk )
-	
+
 	logger.info("Starting to send scheduled newsletter %s" % newsletter_pk)
-	
+
 	nl._send()
 
 
 @task( name="newsletters.send_newsletter", ignore_result=True )
 def send_newsletter( newsletter_pk ):
 	"""
-	Task to start sending a newsletter  
+	Task to start sending a newsletter
 	"""
 	from djangoplicity.newsletters.models import Newsletter
-	
+
 	logger = send_newsletter.get_logger()
-	
+
 	nl = Newsletter.objects.get( pk = newsletter_pk )
-	
+
 	logger.info("Starting to send newsletter %s" % newsletter_pk)
-	
+
 	nl._send_now()
-	
+
 @task( name="newsletters.send_newsletter_test", ignore_result=True )
 def send_newsletter_test( newsletter_pk, emails ):
 	"""
-	Task to start sending a newsletter  
+	Task to start sending a newsletter
 	"""
 	from djangoplicity.newsletters.models import Newsletter
-	
+
 	logger = send_newsletter.get_logger()
-	
+
 	nl = Newsletter.objects.get( pk = newsletter_pk )
-	
+
 	logger.info( "Starting to send test newsletter %s" % newsletter_pk )
-	
+
 	nl._send_test( emails )
-	
+
 
 @task( name="newsletters.schedule_newsletter", ignore_result=True )
 def schedule_newsletter( newsletter_pk ):
 	"""
-	Task to schedule a newsletter for delivery.  
+	Task to schedule a newsletter for delivery.
 	"""
 	from djangoplicity.newsletters.models import Newsletter
-	
+
 	logger = schedule_newsletter.get_logger()
-	
+
 	nl = Newsletter.objects.get( pk = newsletter_pk )
-	
+
 	logger.info("Scheduling newsletter %s" % newsletter_pk)
-	
+
 	nl._schedule()
-	
+
 @task( name="newsletters.unschedule_newsletter", ignore_result=True )
 def unschedule_newsletter( newsletter_pk ):
 	"""
 	Task to unschedule a newsletter for delivery.
 	"""
 	from djangoplicity.newsletters.models import Newsletter
-	
+
 	logger = unschedule_newsletter.get_logger()
-	
+
 	nl = Newsletter.objects.get( pk = newsletter_pk )
-	
+
 	logger.info("Unscheduling newsletter %s" % newsletter_pk)
-	
-	nl._unschedule()		
+
+	nl._unschedule()
 
 @task( name="newsletters.abuse_reports", ignore_result=True )
 def abuse_reports():
@@ -140,7 +140,7 @@ def abuse_reports():
 
 	email_from = 'no-reply@eso.org'
 	email_reply_to = 'mandre@eso.org'
-	email_to = ['osandu@eso.org', 'mandre@eso.org']
+	email_to = ['osandu@eso.org', 'mandre@eso.org', 'lars@eso.org']
 
 	#  Calculate the date 4 weeks ago
 	start_date = datetime.today() - timedelta(weeks=4)
