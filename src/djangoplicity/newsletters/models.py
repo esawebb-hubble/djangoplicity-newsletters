@@ -307,6 +307,8 @@ class Language( models.Model ):
 	lang = models.CharField(primary_key=True, verbose_name=_( 'Language' ), max_length=5, choices=settings.LANGUAGES)
 	default_from_name = models.CharField( max_length=255, blank=True, null=True )
 	default_from_email = models.EmailField( blank=True, null=True)
+	default_editorial = tinymce_models.HTMLField( blank=True )
+	default_editorial_text = models.TextField( blank=True )
 
 	def __unicode__( self ):
 		for lang, name in settings.LANGUAGES:
@@ -627,6 +629,11 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 				self.from_name = language.default_from_name
 			if self.from_email == '' and language.default_from_email:
 				self.from_email = language.default_from_email
+
+			if self.editorial == '' and language.default_editorial:
+				self.editorial = language.default_editorial
+			if self.editorial_text == '' and language.default_editorial_text:
+				self.editorial_text = language.default_editorial_text
 
 			if self.editorial_text == '' and self.editorial:
 				self.editorial_text = defaultfilters.striptags( unescape( defaultfilters.safe( self.editorial ) ) )
