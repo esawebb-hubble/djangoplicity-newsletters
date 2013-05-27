@@ -42,7 +42,8 @@ from datetime import datetime, timedelta
 from django.conf.urls.defaults import patterns
 from django.contrib import admin
 from django.core.urlresolvers import reverse
-from django.forms import ModelForm
+from django.db import models
+from django.forms import ModelForm, widgets
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -54,11 +55,12 @@ from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
 	MailerParameter, Mailer, MailerLog, Language, NewsletterProxy, NewsletterLanguage
-from tinymce.widgets import TinyMCE
+
 
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
 	model = NewsletterDataSource
 	extra = 0
+
 
 class MailerParameterInlineAdmin( admin.TabularInline ):
 	model = MailerParameter
@@ -68,9 +70,11 @@ class MailerParameterInlineAdmin( admin.TabularInline ):
 	can_delete = False
 	fields = ['name', 'value', 'type', 'help_text', ]
 
+
 class NewsletterContentInlineAdmin( admin.TabularInline ):
 	model = NewsletterContent
 	extra = 0
+
 
 class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 	list_display = [ 'id', 'subject', 'type', 'from_name', 'from_email', 'release_date', 'list_link_thumbnail', 'published', 'last_modified']
@@ -82,25 +86,25 @@ class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 		(
 			None,
 			{
-				'fields' : ( 'type', ('release_date', 'scheduled_status'), 'published', 'frozen', 'send', 'last_modified' ),
+				'fields': ( 'type', ('release_date', 'scheduled_status'), 'published', 'frozen', 'send', 'last_modified' ),
 			}
 		),
 		(
 			"Auto generation",
 			{
-				'fields' : ( 'start_date', 'end_date' ),
+				'fields': ( 'start_date', 'end_date' ),
 			}
 		),
 		(
 			"Sender",
 			{
-				'fields' : ( 'from_name', 'from_email' ),
+				'fields': ( 'from_name', 'from_email' ),
 			}
 		),
 		(
 			"Content",
 			{
-				'fields' : ( 'subject', 'editorial_subject', 'editorial', 'editorial_text' ),
+				'fields': ( 'subject', 'editorial_subject', 'editorial', 'editorial_text' ),
 			}
 		),
 	)
@@ -209,7 +213,7 @@ class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 			if form.is_valid():
 				emails = form.cleaned_data['emails']
 				nl.send_test( emails )
-				self.message_user( request, _( "Sent newsletter test emails to %(emails)s" ) % { 'emails' : ", ".join( emails ) } )
+				self.message_user( request, _( "Sent newsletter test emails to %(emails)s" ) % { 'emails': ", ".join( emails ) } )
 				return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
 		else:
 			form = TestEmailsForm()
@@ -217,7 +221,7 @@ class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 		ctx = {
 			'title': _( '%s: Send test email' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
-			'original' : nl,
+			'original': nl,
 		}
 
 		return self._render_admin_view( request, "admin/newsletters/newsletter/send_test_form.html", ctx )
@@ -248,7 +252,7 @@ class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 		ctx = {
 			'title': _( '%s: Send now' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
-			'original' : nl,
+			'original': nl,
 		}
 
 		nl.render( {}, store=False )
@@ -281,8 +285,8 @@ class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 		ctx = {
 			'title': _( '%s: Schedule for sending' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
-			'original' : nl,
-			'is_past' : datetime.now() + timedelta(minutes=2) >= nl.release_date
+			'original': nl,
+			'is_past': datetime.now() + timedelta(minutes=2) >= nl.release_date
 		}
 
 		nl.render( {}, store=False )
@@ -315,7 +319,7 @@ class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 		ctx = {
 			'title': _( '%s: Cancel schedule' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
-			'original' : nl,
+			'original': nl,
 		}
 
 		return self._render_admin_view( request, "admin/newsletters/newsletter/unschedule_form.html", ctx )
@@ -328,8 +332,8 @@ class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 
 		defaults = {
 					'app_label': opts.app_label,
-					'opts' : opts,
-        }
+					'opts': opts,
+		}
 		defaults.update( context )
 
 		return render_to_response( template, defaults, context_instance=RequestContext( request ) )
@@ -347,10 +351,12 @@ class NewsletterTypeAdmin( admin.ModelAdmin ):
 	search_fields = ['name', 'default_from_name', 'default_from_email', 'subject_template', 'html_template', 'text_template']
 	inlines = [NewsletterDataSourceInlineAdmin, NewsletterLanguageInlineAdmin]
 
+
 class NewsletterContentAdmin( admin.ModelAdmin ):
 	list_display = ['newsletter', 'content_type', 'object_id', ]
 	list_filter = ['newsletter__type__name', 'content_type' ]
 	search_fields = ['newsletter__name', ]
+
 
 class NewsletterDataSourceAdmin( admin.ModelAdmin ):
 	list_display = ['name', 'title', 'type', 'content_type', 'list' ]
@@ -358,11 +364,13 @@ class NewsletterDataSourceAdmin( admin.ModelAdmin ):
 	list_filter = ['list', 'type', 'content_type', ]
 	search_fields = ['name', 'title' ]
 
+
 class DataSourceSelectorAdmin( admin.ModelAdmin ):
 	list_display = [ 'id', 'name', 'filter', 'field', 'match', 'value', 'type' ]
 	list_editable = ['name', 'filter', 'field', 'match', 'value', 'type' ]
 	list_filter = [ 'filter', 'match' ]
 	search_fields = [ 'name', 'filter', 'field', 'match', 'value' ]
+
 
 class DataSourceOrderingAdmin( admin.ModelAdmin ):
 	list_display = [ 'id', 'name', 'fields', ]
@@ -370,11 +378,13 @@ class DataSourceOrderingAdmin( admin.ModelAdmin ):
 	list_filter = []
 	search_fields = [ 'name', 'fields', ]
 
+
 class MailerAdmin( admin.ModelAdmin ):
 	list_display = [ 'name', 'plugin' ]
 	list_filter = ['plugin']
 	search_fields = [ 'name', 'plugin', ]
 	inlines = [ MailerParameterInlineAdmin ]
+
 
 class MailerLogAdmin( admin.ModelAdmin ):
 	list_display = [ 'timestamp', 'subject', 'name', 'plugin', 'parameters', 'success', 'is_test' ]
@@ -385,8 +395,10 @@ class MailerLogAdmin( admin.ModelAdmin ):
 	def has_add_permission( self, request ):
 		return False
 
+
 class LanguageAdmin( admin.ModelAdmin ):
 	list_display = [ 'lang', ]
+
 
 class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, TranslationDuplicateAdmin, ArchiveAdmin ):
 	list_display = ( 'id', 'subject' )
@@ -414,9 +426,11 @@ class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, Transl
 		)
 		return extra_urls + urls
 
+
 class NewsletterProxyInlineForm( ModelForm ):
 	class Meta:
 		model = NewsletterProxy
+
 
 class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	model = NewsletterProxy
@@ -424,8 +438,11 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	max_num = 0
 	can_delete = False
 	form = NewsletterProxyInlineForm
-	fields = ['id', 'lang', 'subject', 'editorial', 'editorial_text', 'translation_ready', 'edit', 'view_html', 'view_text']
-	readonly_fields = ['id', 'lang', 'edit', 'view_html', 'view_text']
+	fields = ['id', 'lang', 'editorial', 'editorial_text', 'translation_ready', 'edit', 'view_html', 'view_text']
+	readonly_fields = ['lang', 'edit', 'view_html', 'view_text']
+
+	formfield_overrides = {models.CharField: {'widget': widgets.TextInput(attrs={'size': '9'})}, }
+
 
 NewsletterAdmin.inlines += [NewsletterProxyInlineAdmin]
 
