@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -39,17 +39,17 @@ class MailmanAction(ActionPlugin):
 	An action plugin is a configureable celery task,
 	that can be dynamically connected to events in the system.
 	"""
-	action_parameters = [ 
+	action_parameters = [
 		('list_name', 'Mailman list name - must be defined in djangoplicity', 'str'),
 	]
 	abstract = True
-	
+
 	@classmethod
 	def get_arguments(cls, conf, *args, **kwargs):
 		"""
 		Parse incoming arguments. Email lookup:
 		1) if an 'email' kwarg is provided, then the value is used.
-		2) otherwise 
+		2) otherwise
 		"""
 		email = None
 		if 'email' in kwargs:
@@ -62,15 +62,15 @@ class MailmanAction(ActionPlugin):
 
 		return ( [], { 'email' : email } )
 
-	
+
 	def _get_list(self, list_name):
 		from djangoplicity.mailinglists.models import List
-		return List.objects.get( name=list_name ) 
+		return List.objects.get( name=list_name )
 
 
 class MailmanSubscribeAction(MailmanAction):
 	action_name = 'Mailman subscribe'
-	
+
 	def run(self, conf, email=None):
 		"""
 		Subscribe to mailman list
@@ -79,11 +79,11 @@ class MailmanSubscribeAction(MailmanAction):
 			list = self._get_list( conf['list_name'] )
 			list.subscribe( email=email, async=False )
 			self.get_logger().info("Subscribed %s to mailman list %s" % ( email, list.name ) )
-		
-		
+
+
 class MailmanUnsubscribeAction(MailmanAction):
 	action_name = 'Mailman unsubscribe'
-	
+
 	def run(self, conf, email=None):
 		"""
 		Unsubscribe from mailman list
@@ -92,15 +92,22 @@ class MailmanUnsubscribeAction(MailmanAction):
 			list = self._get_list( conf['list_name'] )
 			list.unsubscribe( email=email, async=False )
 			self.get_logger().info("Unsubscribed %s to mailman list %s" % ( email, list.name ) )
-		
+
 class MailmanUpdateAction( MailmanAction ):
 	action_name = 'Mailman update subscription'
-	
+
 	@classmethod
 	def get_arguments(cls, conf, *args, **kwargs):
-		return ( args, kwargs )
-	
-	def run(self, conf, changes={}, **kwargs ):
+		if 'instance' in kwargs and 'changes' in kwargs:
+			instance = kwargs['instance']
+			changes = kwargs['changes']
+			model_identifier = smart_unicode( instance._meta )
+			pk = smart_unicode( instance._get_pk_val(), strings_only=True )
+			return ( [], { 'model_identifier': model_identifier, 'pk': pk, 'changes': changes } )
+
+		return ( [], { 'model_identifier': None, 'pk': None, 'changes': {} } )
+
+	def run(self, conf, model_identifier=None, changes={}, **kwargs ):
 		"""
 		Email address was updated so change subscriber
 		"""
@@ -119,10 +126,10 @@ class MailmanUpdateAction( MailmanAction ):
 
 class MailmanSyncAction( MailmanAction ):
 	action_name = 'Mailman synchronize'
-	action_parameters = MailmanAction.action_parameters + [ 
+	action_parameters = MailmanAction.action_parameters + [
 		('remove_existing', 'Remove any mailman subscriber not defined in djangoplicity.', 'bool'),
 	]
-	
+
 	@classmethod
 	def get_arguments( cls, conf, *args, **kwargs ):
 		model_identifier = None
@@ -133,8 +140,8 @@ class MailmanSyncAction( MailmanAction ):
 				pk = smart_unicode( v._get_pk_val(), strings_only=True )
 				break
 		return ( [], { 'model_identifier' : model_identifier, 'pk' : pk } )
-	
-	
+
+
 	def _get_emails( self, model_identifier, pk ):
 		"""
 		Get the list of emails to synchronize
