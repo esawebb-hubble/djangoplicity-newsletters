@@ -424,8 +424,8 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	max_num = 0
 	can_delete = False
 	form = NewsletterProxyInlineForm
-	fields = ['id', 'lang', 'subject', 'translation_ready', 'edit', 'view_html', 'view_text']
-	readonly_fields = ['lang', 'edit', 'view_html', 'view_text']
+	fields = ['id', 'lang', 'subject', 'editorial', 'editorial_text', 'translation_ready', 'edit', 'view_html', 'view_text']
+	readonly_fields = ['id', 'lang', 'edit', 'view_html', 'view_text']
 
 NewsletterAdmin.inlines += [NewsletterProxyInlineAdmin]
 
