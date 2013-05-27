@@ -33,9 +33,9 @@
 """
 Administration interface for Newsletters. The major extra views includes:
 
-  * Generation of newsletters.
-  * Viewing HTML/text versions of newsletters
-  * Scheduling of newsletters.
+	* Generation of newsletters.
+	* Viewing HTML/text versions of newsletters
+	* Scheduling of newsletters.
 """
 
 from datetime import datetime, timedelta
@@ -53,7 +53,7 @@ from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
 	TranslationDuplicateAdmin, ArchiveAdmin
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
-	MailerParameter, Mailer, MailerLog, Language, NewsletterProxy
+	MailerParameter, Mailer, MailerLog, Language, NewsletterProxy, NewsletterLanguage
 from tinymce.widgets import TinyMCE
 
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
@@ -335,12 +335,17 @@ class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
 		return render_to_response( template, defaults, context_instance=RequestContext( request ) )
 
 
+class NewsletterLanguageInlineAdmin(admin.TabularInline):
+	model = NewsletterLanguage
+	extra = 1
+
+
 class NewsletterTypeAdmin( admin.ModelAdmin ):
 	list_display = ['name', 'default_from_name', 'default_from_email', 'sharing', 'archive' ]
 	list_editable = ['default_from_name', 'default_from_email', 'sharing', 'archive' ]
 	list_filter = ['sharing', 'archive' ]
 	search_fields = ['name', 'default_from_name', 'default_from_email', 'subject_template', 'html_template', 'text_template']
-	inlines = [NewsletterDataSourceInlineAdmin]
+	inlines = [NewsletterDataSourceInlineAdmin, NewsletterLanguageInlineAdmin]
 
 class NewsletterContentAdmin( admin.ModelAdmin ):
 	list_display = ['newsletter', 'content_type', 'object_id', ]
@@ -381,8 +386,7 @@ class MailerLogAdmin( admin.ModelAdmin ):
 		return False
 
 class LanguageAdmin( admin.ModelAdmin ):
-	list_display = [ 'lang', 'default_from_name', 'default_from_email', 'default_editorial', 'default_editorial_text' ]
-	list_editable = [ 'default_from_name', 'default_from_email', 'default_editorial', 'default_editorial_text' ]
+	list_display = [ 'lang', ]
 
 class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, TranslationDuplicateAdmin, ArchiveAdmin ):
 	list_display = ( 'id', 'subject' )
@@ -424,6 +428,7 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	readonly_fields = ['lang', 'edit', 'view_html', 'view_text']
 
 NewsletterAdmin.inlines += [NewsletterProxyInlineAdmin]
+
 
 def register_with_admin( admin_site ):
 	admin_site.register( NewsletterType, NewsletterTypeAdmin )

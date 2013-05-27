@@ -305,10 +305,6 @@ class Language( models.Model ):
 	Available languages for Local newsletters
 	"""
 	lang = models.CharField(primary_key=True, verbose_name=_( 'Language' ), max_length=5, choices=settings.LANGUAGES)
-	default_from_name = models.CharField( max_length=255, blank=True, null=True )
-	default_from_email = models.EmailField( blank=True, null=True)
-	default_editorial = tinymce_models.HTMLField( blank=True )
-	default_editorial_text = models.TextField( blank=True )
 
 	def __unicode__( self ):
 		for lang, name in settings.LANGUAGES:
@@ -353,7 +349,7 @@ class NewsletterType( models.Model ):
 	#
 	# Languages
 	#
-	languages = models.ManyToManyField( Language, blank=True )
+	languages = models.ManyToManyField( Language, blank=True, through='NewsletterLanguage' )
 
 	def get_generator( self ):
 		return NewsletterGenerator( type=self )
@@ -368,6 +364,21 @@ class NewsletterType( models.Model ):
 
 	class Meta:
 		ordering = ['name']
+
+
+class NewsletterLanguage( models.Model ):
+	"""
+	Available languages for Local newsletters
+	"""
+	newsletter_type = models.ForeignKey(NewsletterType)
+	language = models.ForeignKey(Language)
+	default_from_name = models.CharField( max_length=255, blank=True, null=True )
+	default_from_email = models.EmailField( blank=True, null=True)
+	default_editorial = tinymce_models.HTMLField( blank=True )
+	default_editorial_text = models.TextField( blank=True )
+
+	def __unicode__( self ):
+		return '%s - %s' % (self.newsletter_type, self.language.lang)
 
 
 class Newsletter( archives.ArchiveModel, TranslationModel ):
@@ -624,7 +635,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 				local.save()
 
 		elif self.is_translation():
-			language = Language.objects.get(lang=self.lang)
+			language = NewsletterLanguage.objects.get(language__lang=self.lang, newsletter_type=self.source.type)
 			if self.from_name == '' and language.default_from_name:
 				self.from_name = language.default_from_name
 			if self.from_email == '' and language.default_from_email:
