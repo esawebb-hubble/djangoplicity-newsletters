@@ -51,7 +51,7 @@ from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
 from djangoplicity.contrib import admin as dpadmin
 from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
-	TranslationDuplicateAdmin, ArchiveAdmin
+	TranslationDuplicateAdmin, ArchiveAdmin, DisplaysAdmin
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
 	MailerParameter, Mailer, MailerLog, Language, NewsletterProxy, NewsletterLanguage
@@ -76,7 +76,13 @@ class NewsletterContentInlineAdmin( admin.TabularInline ):
 	extra = 0
 
 
-class NewsletterAdmin( admin.ModelAdmin, ArchiveAdmin ):
+#hack: Injecting Newsletter Options into DisplaysAdmin
+class NewsletterDisplaysAdmin(DisplaysAdmin):
+	from djangoplicity.newsletters.options import NewsletterOptions
+	options = NewsletterOptions
+
+
+class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin, ArchiveAdmin ):
 	list_display = [ 'id', 'subject', 'type', 'from_name', 'from_email', 'release_date', 'list_link_thumbnail', 'published', 'last_modified']
 	list_editable = ['from_name', 'from_email', 'subject', ]
 	list_filter = ['type', 'last_modified', 'published']

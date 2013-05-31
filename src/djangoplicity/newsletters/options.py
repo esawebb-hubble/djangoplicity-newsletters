@@ -34,6 +34,7 @@ from django.conf.urls.defaults import patterns, url
 from django.core.exceptions import ImproperlyConfigured
 
 from djangoplicity.archives.contrib.browsers import ListBrowser
+from djangoplicity.archives.contrib.templater import DisplayTemplate
 from djangoplicity.newsletters.queries import NewsletterCategoryQuery
 from djangoplicity.archives.importer.import_actions import move_resources, \
 	make_image_derivatives
@@ -71,3 +72,9 @@ class NewsletterOptions(ArchiveOptions):
 				'thumbs',
 			]),
 		]
+
+	class Display():
+		esonews = DisplayTemplate( 'file', 'archives/newsletters/translations_list.html', name = 'Translations list' )
+
+
+
