@@ -312,6 +312,9 @@ class Language( models.Model ):
 				return name
 		return 'Unknown language in settings; "%s"' % self.lang
 
+	class Meta:
+		ordering = ['lang']
+
 
 class NewsletterType( models.Model ):
 	"""
@@ -379,6 +382,9 @@ class NewsletterLanguage( models.Model ):
 
 	def __unicode__( self ):
 		return '%s - %s' % (self.newsletter_type, self.language.lang)
+
+	class Meta:
+		ordering = ['language']
 
 
 class Newsletter( archives.ArchiveModel, TranslationModel ):
@@ -751,6 +757,7 @@ class NewsletterProxy( Newsletter, TranslationProxyMixin ):
 		proxy = True
 		verbose_name = _('Newsletter translation')
 		app_label = 'newsletters'
+		ordering = ['lang']
 
 	class Archive:
 		class Meta:

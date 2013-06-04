@@ -403,7 +403,7 @@ class MailerLogAdmin( admin.ModelAdmin ):
 
 
 class LanguageAdmin( admin.ModelAdmin ):
-	list_display = [ 'lang', ]
+	list_display = [ 'pk', 'lang', ]
 
 
 class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, TranslationDuplicateAdmin, ArchiveAdmin ):
@@ -446,6 +446,7 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	form = NewsletterProxyInlineForm
 	fields = ['id', 'lang', 'editorial', 'editorial_text', 'translation_ready', 'edit', 'view_html', 'view_text']
 	readonly_fields = ['lang', 'edit', 'view_html', 'view_text']
+	ordering = ['id']
 
 	formfield_overrides = {models.CharField: {'widget': widgets.TextInput(attrs={'size': '9'})}, }
 
