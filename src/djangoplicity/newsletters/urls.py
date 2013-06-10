@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+: -*- coding: utf-8 -*-
 #
 # djangoplicity-newsletters
 # Copyright (c) 2007-2011, European Southern Observatory (ESO)

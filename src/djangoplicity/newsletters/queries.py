@@ -46,8 +46,11 @@ class NewsletterCategoryQuery(CategoryQuery):
 		except AttributeError:
 			raise ImproperlyConfigured( 'Related query set attribute %s_set does not exist on category model.' % model._meta.module_name )
 
-		#if stringparam in self.featured:
-		#	print "featured"
+		# If the archive is restricted to internal access only we return a 404
+		# if the client is outside the internal network
+		if category.internal_archive:
+			if not (request and "REMOTE_ADDR" in request.META and request.META["REMOTE_ADDR"] in settings.INTERNAL_IPS):
+				raise Http404
 
 		#
 		# Select archive items in category

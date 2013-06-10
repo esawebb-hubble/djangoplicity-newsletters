@@ -340,6 +340,7 @@ class NewsletterType( models.Model ):
 	#
 	archive = models.BooleanField( default=True, help_text=_( 'Enable public archives for this newsletter type.' ) )
 	local_archive = models.BooleanField( default=False, help_text=_( 'Use local archive (instead of e.g. Mailchimp Online archive)' ) )
+	internal_archive = models.BooleanField( default=False, help_text=_( 'Restrict archive to internal network only.' ) )
 	sharing = models.BooleanField( default=True, help_text=_( 'Enable social sharing of newsletter.' ) )
 
 	subscribe_text = models.TextField(blank=True, help_text=_('Instructions and link to subscribe to the newsletter'))
