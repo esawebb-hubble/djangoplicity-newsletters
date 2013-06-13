@@ -4,6 +4,6 @@
 <p style="font-size: 11px; text-align:center;">
 {% if unsubscribe_link %}<a href="{{unsubscribe_link}}" style="color:white">{% trans "Unsubscribe"%}</a>{% endif %}
 {% if preferences_link %}{% if unsubscribe_link %} | {%endif%}<a href="{{preferences_link}}" style="color:white">{% trans "Subscription preferences"%}</a>{% endif %}
-{% if browser_link and enable_sharing or use_local_archive %}{% if unsubscribe_link or preferences_link %} | {%endif%} <a href="{% if use_local_archive %}{{ base_url }}{{ newsletter.get_absolute_url }}{% else %}{{ browser_link }}{% endif %}" style="color:white">{% trans "View in browser"%}</a>{% endif %}
+{% if browser_link and enable_sharing or use_local_archive %}{% if unsubscribe_link or preferences_link %} | {%endif%} <a href="{% if use_local_archive and not newsletter_type.internal_archive %}{{ base_url }}{{ newsletter.get_absolute_url }}{% else %}{{ browser_link }}{% endif %}" style="color:white">{% trans "View in browser"%}</a>{% endif %}
 </p>
 {% endif %}
