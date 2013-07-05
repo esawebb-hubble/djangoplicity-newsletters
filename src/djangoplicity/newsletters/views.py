@@ -74,4 +74,9 @@ class NewsletterDetailView(DetailView):
 			'newsletter_type': newsletter_type,
 			'newsletter_html': newsletter_data['html'],
 		})
+		# If the archive is restricted to internal access only we return a 404
+		# if the client is outside the internal network
+		if newsletter_type.internal_archive:
+			if not (self.request and "REMOTE_ADDR" in self.request.META and self.request.META["REMOTE_ADDR"] in settings.INTERNAL_IPS):
+				raise Http404
 		return context
