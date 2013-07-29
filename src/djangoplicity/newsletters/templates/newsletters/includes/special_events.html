@@ -8,7 +8,7 @@
 <p><strong>{% trans "Ongoing" %}</strong><br> 
 <ul> 
 {% for obj in ongoing_events %}
-<li><a href="{{obj.link}}">{{obj.title}}</a></li>
+<li>{% if obj.link %}<a href="{{obj.link}}">{{obj.title|safe}}</a>{% else %}{{obj.title|safe}}{% endif %}</li>
 {% endfor %}
 </ul> 
 </p>
