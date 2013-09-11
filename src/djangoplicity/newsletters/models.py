@@ -570,8 +570,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		"""
 		Render the newsletter
 		"""
-		if self.is_source() and self.frozen or \
-				self.is_translation() and self.source.frozen:
+		if self.is_source() and self.frozen:
 			return {
 				'html': self.html,
 				'text': self.text,
@@ -642,19 +641,24 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 				local.save()
 
 		elif self.is_translation():
-			language = NewsletterLanguage.objects.get(language__lang=self.lang, newsletter_type=self.source.type)
-			if self.from_name == '' and language.default_from_name:
-				self.from_name = language.default_from_name
-			if self.from_email == '' and language.default_from_email:
-				self.from_email = language.default_from_email
+			try:
+				language = NewsletterLanguage.objects.get(language__lang=self.lang, newsletter_type=self.source.type)
+				if self.from_name == '' and language.default_from_name:
+					self.from_name = language.default_from_name
+				if self.from_email == '' and language.default_from_email:
+					self.from_email = language.default_from_email
 
-			if self.editorial == '' and language.default_editorial:
-				self.editorial = language.default_editorial
-			if self.editorial_text == '' and language.default_editorial_text:
-				self.editorial_text = language.default_editorial_text
+				if self.editorial == '' and language.default_editorial:
+					self.editorial = language.default_editorial
+				if self.editorial_text == '' and language.default_editorial_text:
+					self.editorial_text = language.default_editorial_text
 
-			if self.editorial_text == '' and self.editorial:
-				self.editorial_text = defaultfilters.striptags( unescape( defaultfilters.safe( self.editorial ) ) )
+				if self.editorial_text == '' and self.editorial:
+					self.editorial_text = defaultfilters.striptags( unescape( defaultfilters.safe( self.editorial ) ) )
+			except NewsletterLanguage.DoesNotExist:
+				# This should only happen if we try to save a NL for which the
+				# NewsletterLanguage doesn't exist any longer
+				pass
 
 		result = super( Newsletter, self ).save()
 		return result
