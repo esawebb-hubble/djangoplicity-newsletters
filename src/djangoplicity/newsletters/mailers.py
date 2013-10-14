@@ -71,7 +71,7 @@ The parameters are stored in MailerParameter, and are automatically created by t
 """
 
 from django.core.mail import EmailMultiAlternatives
-
+from email import charset as Charset
 
 class MailerPlugin():
 	"""
@@ -162,6 +162,13 @@ class EmailMailerPlugin( MailerPlugin ):
 		data = newsletter.render( self.get_mailer_context(), store=False )
 
 		from_email = '%s <%s>' % ( newsletter.from_name, newsletter.from_email )
+
+		# Mon Oct 14 16:11:03 CEST 2013 - Mathias Andre
+		# Django 1.4 changed the default encoding from quoted-printable to 8bit
+		# This can cause problem with HTML content where lines > 998 characters
+		# end up cut arbitrarily by the mail server.
+		# To fix this we force back quoted-printable
+		Charset.add_charset('utf-8', Charset.SHORTEST, Charset.QP, 'utf-8')
 		msg = EmailMultiAlternatives( data['subject'], data['text'], from_email, emails )
 		msg.attach_alternative( data['html'], "text/html" )
 		msg.send()
