@@ -39,7 +39,7 @@ Administration interface for Newsletters. The major extra views includes:
 """
 
 from datetime import datetime, timedelta
-from django.conf.urls.defaults import patterns
+from django.conf.urls import patterns
 from django.contrib import admin
 from django.core.urlresolvers import reverse
 from django.db import models

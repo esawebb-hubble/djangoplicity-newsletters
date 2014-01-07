@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 
 from djangoplicity.newsletters.views import NewsletterDetailView
 from djangoplicity.archives import urlpatterns_for_options
