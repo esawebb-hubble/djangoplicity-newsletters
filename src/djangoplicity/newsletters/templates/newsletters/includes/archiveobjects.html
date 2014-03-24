@@ -23,7 +23,7 @@
 <a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="{{base_url}}{{ obj.get_absolute_url }}">{{ obj.title }}{% if obj.subtitle%} &mdash; {{ obj.subtitle }}{% endif%}</a>
 </h3>
 <div style="font-family: Helvetica, Arial;font-size: 12px;color:#505050;">
-<p><strong>{{ obj.release_date|datetime:"DATE" }}:</strong> {% if obj.headline %}{{ obj.headline|striptags|truncatewords:truncatelength|safe }}{% else %}{{ obj.description|remove_html_except:'a'|truncatewords:truncatelength|safe }}{% endif %}</p>
+<p><strong>{{ obj.release_date|datetime:"DATE" }}:</strong> {% if obj.headline %}{{ obj.headline|striptags|truncatewords:truncatelength|safe }}{% else %}{{ obj.description|remove_html_except:'a'|truncatewords_html:truncatelength|safe }}{% endif %}</p>
 </div>
 </td> 
 </tr> 
