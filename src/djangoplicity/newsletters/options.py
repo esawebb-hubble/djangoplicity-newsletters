@@ -44,6 +44,8 @@ from djangoplicity.archives.options import ArchiveOptions
 class NewsletterOptions(ArchiveOptions):
 	urlname_prefix = 'newsletters'
 
+	search_fields = ('id', 'subject', 'editorial_text', 'text')
+
 	class Queries( object ):
 		default = NewsletterCategoryQuery(browsers=('normal', 'viewall'), relation_field='type',
 					url_field='slug', title_field='name', use_category_title=True,
