@@ -1,19 +1,19 @@
 {% extends "admin/newsletters/newsletter/change_form.html" %}{% load i18n %}
 
-{% load adminmedia %} /* At the top of the template. */
+{% load staticfiles %}
 
 {% block extrahead %}{{ block.super }}
 <script type="text/javascript">
-window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{% endfilter %}";
+window.__admin_media_prefix__ = "{% filter escapejs %}{% static 'admin' %}/{% endfilter %}";
 </script>
 {% url 'admin:jsi18n' as jsi18nurl %}
 <script type="text/javascript" src="{{ jsi18nurl|default:"../../../jsi18n/" }}"></script>
 {{ media }}
-<script type="text/javascript" src="{% admin_media_prefix %}js/core.js"></script>
+<script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>
 {{ adminform.media }}
-<script type="text/javascript" src="{% admin_media_prefix %}js/jquery.js"></script>
-<script type="text/javascript" src="{% admin_media_prefix %}js/jquery.init.js"></script>
-<script type="text/javascript" src="{% admin_media_prefix %}js/actions.min.js"></script>
+<script type="text/javascript" src="{% static 'admin/js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/actions.min.js' %}"></script>
 {% endblock %}
 
 
