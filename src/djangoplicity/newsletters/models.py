@@ -598,9 +598,9 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			'use_local_archive': self.type.local_archive,
 			'release_date': self.release_date,
 			'published': self.published,
-			'unsubscribe_link': '', # Will be provided by the mailer plugin
-			'preferences_link': '', # Will be provided by the mailer plugin
-			'browser_link': '', # Will be provided by the mailer plugin
+			'unsubscribe_link': '',  # Will be provided by the mailer plugin
+			'preferences_link': '',  # Will be provided by the mailer plugin
+			'browser_link': '',  # Will be provided by the mailer plugin
 			'now': datetime.now(),
 			'newsletter_id': self.id,
 		}
@@ -612,7 +612,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		data = {
 			'html': t_html.render( ctx ),
 			'text': t_text.render( ctx ),
-			'subject': t_subject.render( ctx ),
+			'subject': self.subject if self.subject else t_subject.render( ctx ),
 		}
 		translation.deactivate()
 
