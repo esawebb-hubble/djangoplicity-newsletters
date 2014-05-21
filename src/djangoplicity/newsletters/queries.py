@@ -22,6 +22,7 @@ class NewsletterCategoryQuery(CategoryQuery):
 	def __init__(self, *args, **kwargs):
 		defaults = {
 			'extra_templates': category_extra_templates,
+			'searchable': True,
 		}
 		defaults.update(kwargs)
 		super(NewsletterCategoryQuery, self).__init__(*args, **defaults)

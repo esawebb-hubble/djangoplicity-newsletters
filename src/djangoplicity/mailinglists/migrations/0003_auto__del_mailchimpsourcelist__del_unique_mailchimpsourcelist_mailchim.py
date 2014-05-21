@@ -9,10 +9,10 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         
         # Removing unique constraint on 'MailChimpSubscriberExclude', fields ['mailchimplist', 'subscriber']
-        db.delete_unique('mailinglists_mailchimpsubscriberexclude', ['mailchimplist_id', 'subscriber_id'])
+#        db.delete_unique('mailinglists_mailchimpsubscriberexclude', ['mailchimplist_id', 'subscriber_id'])
 
         # Removing unique constraint on 'MailChimpSourceList', fields ['mailchimplist', 'list']
-        db.delete_unique('mailinglists_mailchimpsourcelist', ['mailchimplist_id', 'list_id'])
+#        db.delete_unique('mailinglists_mailchimpsourcelist', ['mailchimplist_id', 'list_id'])
 
         # Deleting model 'MailChimpSourceList'
         db.delete_table('mailinglists_mailchimpsourcelist')

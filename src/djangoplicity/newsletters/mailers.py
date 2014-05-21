@@ -337,7 +337,6 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			subject = local.subject
 			from_email = local.from_email if local.from_email else local.source.from_email
 			from_name = local.from_name if local.from_name else local.source.from_name
-			print subject, from_email, from_name
 			html = local.html
 			text = local.text
 		else:

@@ -9,7 +9,7 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         # Removing unique constraint on 'MailChimpCampaign', fields ['newsletter', 'list_id']
-        db.delete_unique('newsletters_mailchimpcampaign', ['newsletter_id', 'list_id'])
+#        db.delete_unique('newsletters_mailchimpcampaign', ['newsletter_id', 'list_id'])
 
         # Adding model 'Language'
         db.create_table('newsletters_language', (

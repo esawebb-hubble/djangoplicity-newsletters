@@ -9,7 +9,7 @@ class Migration(SchemaMigration):
 	def forwards(self, orm):
 		
 		# Removing unique constraint on 'NewsletterContent', fields ['object_id']
-		db.delete_primary_key('newsletters_newslettercontent')
+		# db.delete_primary_key('newsletters_newslettercontent')
 		
 		# Changing field 'NewsletterContent.object_id'
 		db.alter_column('newsletters_newslettercontent', 'object_id', self.gf('django.db.models.fields.SlugField')(max_length=50))
@@ -21,7 +21,9 @@ class Migration(SchemaMigration):
 
 
 	def backwards(self, orm):
-		raise RuntimeError("Backwards migration not supported.")
+		pass
+
+#		raise RuntimeError("Backwards migration not supported.")
 
 	models = {
 		'contenttypes.contenttype': {
