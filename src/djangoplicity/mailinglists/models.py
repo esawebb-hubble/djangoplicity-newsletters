@@ -47,7 +47,7 @@ from djangoplicity.actions.models import EventAction
 from djangoplicity.mailinglists.exceptions import MailChimpError
 from djangoplicity.mailinglists.mailman import MailmanList
 from mailsnake import MailSnake
-from urllib import urlencode, quote
+from urllib import urlencode
 from urllib2 import HTTPError, URLError
 import hashlib
 import uuid as uuidmod
@@ -961,7 +961,7 @@ class GroupMapping(models.Model):
 		if not val:
 			return
 
-		val = quote( unicode( val ).encode( "utf8" ) ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
+		val = unicode( val ).encode( "utf8" ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
 		return {'id': self.group.group_id, 'groups': val}
 
 	def __unicode__( self ):
@@ -1047,7 +1047,7 @@ class MergeVarMapping( models.Model ):
 				pass
 
 		if val and field_type in ['text', 'dropdown', 'radio', 'phone', 'url', 'imageurl', 'zip']:
-			val = quote( unicode( val ).encode( "utf8" ) ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
+			val = unicode( val ).encode( "utf8" ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
 
 		return ( self.merge_var.tag, val )
 
