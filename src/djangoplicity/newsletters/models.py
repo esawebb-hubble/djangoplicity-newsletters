@@ -612,7 +612,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		data = {
 			'html': t_html.render( ctx ),
 			'text': t_text.render( ctx ),
-			'subject': self.subject if self.subject else t_subject.render( ctx ),
+			'subject': t_subject.render( ctx ),
 		}
 		translation.deactivate()
 
