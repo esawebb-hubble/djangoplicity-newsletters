@@ -4,7 +4,7 @@
 {% load url from future %}{% if objects %}
 <h2 class="h2" style="{{h2_style}}">
 {% if feed_url %}<a href="{{feed_url}}"><img border="0" src="{{base_url}}{{MEDIA_URL}}djangoplicity/images/rssicon.png"></a>&nbsp;{% endif %}
-<a style="color: #285A97;font-size: 15px;font-weight: bold; text-decoration:none;" href="{{base_url}}{% if urlpattern %}{% url 'urlpattern' %}{% else %}{{direct_url}}{%endif%}">{% if org %}{{org}} {% endif %}{% trans title %}</a>
+<a style="color: #285A97;font-size: 15px;font-weight: bold; text-decoration:none;" href="{{base_url}}{% if urlpattern %}{% url urlpattern %}{% else %}{{direct_url}}{%endif%}">{% if org %}{{org}} {% endif %}{% trans title %}</a>
 </h2> 
 
 {% with truncatelength=truncatelength|default:30 %}
