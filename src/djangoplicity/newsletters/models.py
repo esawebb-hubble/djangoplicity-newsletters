@@ -581,6 +581,13 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		t_text = Template( self.type.text_template )
 		t_subject = Template( self.type.subject_template )
 
+		# Flag to check if we have a custom editorial
+		custom_editorial = False
+		if self.is_translation():
+			language = NewsletterLanguage.objects.get(language__lang=self.lang, newsletter_type=self.source.type)
+			if self.editorial != language.default_editorial:
+				custom_editorial = True
+
 		defaults = {
 			'base_url': "http://%s" % Site.objects.get_current().domain,
 			'MEDIA_URL': settings.MEDIA_URL,
@@ -593,6 +600,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			'editorial_subject': self.editorial_subject,
 			'editorial': self.editorial,
 			'editorial_text': self.editorial_text,
+			'custom_editorial': custom_editorial,
 			'enable_sharing': self.type.sharing,
 			'enable_archive': self.type.archive,
 			'use_local_archive': self.type.local_archive,
