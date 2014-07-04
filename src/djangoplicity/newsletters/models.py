@@ -584,9 +584,14 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		# Flag to check if we have a custom editorial
 		custom_editorial = False
 		if self.is_translation():
-			language = NewsletterLanguage.objects.get(language__lang=self.lang, newsletter_type=self.source.type)
-			if self.editorial != language.default_editorial:
-				custom_editorial = True
+			try:
+				language = NewsletterLanguage.objects.get(language__lang=self.lang, newsletter_type=self.source.type)
+				if self.editorial != language.default_editorial:
+					custom_editorial = True
+			except NewsletterLanguage.DoesNotExist:
+				# This happens if we're accessing a NL for a language which
+				# is no longer configured so we can just ignore it
+				pass
 
 		defaults = {
 			'base_url': "http://%s" % Site.objects.get_current().domain,
