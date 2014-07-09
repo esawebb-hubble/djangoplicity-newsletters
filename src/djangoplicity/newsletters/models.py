@@ -103,7 +103,7 @@ class Mailer( models.Model ):
 		Set choices for plugin field dynamically based on registered plugins.
 		"""
 		super( Mailer, self ).__init__( *args, **kwargs )
-		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices() # lazy( Mailer.get_plugin_choices, list )
+		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices()  # lazy( Mailer.get_plugin_choices, list )
 
 	def get_plugincls( self ):
 		"""
@@ -820,6 +820,8 @@ class NewsletterContent( models.Model ):
 				try:
 					if datasrc.list:
 						data = modelcls.objects.filter( pk__in=allpks )
+						if datasrc.ordering:
+							data = data.order_by( *datasrc.ordering.get_order_by() )
 					else:
 						if len( allpks ) > 0:
 							data = modelcls.objects.get( pk=allpks[0] )
