@@ -73,6 +73,7 @@ The parameters are stored in MailerParameter, and are automatically created by t
 from django.core.mail import EmailMultiAlternatives
 from email import charset as Charset
 
+
 class MailerPlugin():
 	"""
 	Interface for mailer implementations.
@@ -128,9 +129,9 @@ class MailerPlugin():
 
 	def get_mailer_context( self ):
 		return {
-			'unsubscribe_link' : '',
-			'preferences_link' : '',
-			'browser_link' : '',
+			'unsubscribe_link': '',
+			'preferences_link': '',
+			'browser_link': '',
 		}
 
 
@@ -155,7 +156,7 @@ class EmailMailerPlugin( MailerPlugin ):
 		except KeyError:
 			raise Exception( "Parameter 'emails' is missing" )
 
-	def _send( self, newsletter, emails ):
+	def _send( self, newsletter, emails, test=False ):
 		"""
 		Send combined HTML and plain text email.
 		"""
@@ -163,29 +164,32 @@ class EmailMailerPlugin( MailerPlugin ):
 
 		from_email = '%s <%s>' % ( newsletter.from_name, newsletter.from_email )
 
+		subject = data['subject']
+		if test:
+			subject = 'TEST - ' + subject
+
 		# Mon Oct 14 16:11:03 CEST 2013 - Mathias Andre
 		# Django 1.4 changed the default encoding from quoted-printable to 8bit
 		# This can cause problem with HTML content where lines > 998 characters
 		# end up cut arbitrarily by the mail server.
 		# To fix this we force back quoted-printable
 		Charset.add_charset('utf-8', Charset.SHORTEST, Charset.QP, 'utf-8')
-		msg = EmailMultiAlternatives( data['subject'], data['text'], from_email, emails )
+		msg = EmailMultiAlternatives( subject, data['text'], from_email, emails )
 		msg.attach_alternative( data['html'], "text/html" )
 		msg.send()
-
 
 	def send_now( self, newsletter ):
 		self._send( newsletter, self._to_emails )
 
 	def send_test( self, newsletter, emails ):
-		self._send( newsletter, emails )
+		self._send( newsletter, emails, test=True )
 
 	def get_mailer_context( self ):
 		return {
-			'unsubscribe_link' : '',
-			'preferences_link' : '',
-			'browser_link' : '',
-			'is_email_mailer' : True,
+			'unsubscribe_link': '',
+			'preferences_link': '',
+			'browser_link': '',
+			'is_email_mailer': True,
 		}
 
 
@@ -212,10 +216,10 @@ class MailmanMailerPlugin( EmailMailerPlugin ):
 
 	def get_mailer_context(self):
 		return {
-			'unsubscribe_link' : self.listinfo_url,
-			'preferences_link' : self.listinfo_url,
-			'browser_link' : '',
-			'is_mailman_mailer' : True,
+			'unsubscribe_link': self.listinfo_url,
+			'preferences_link': self.listinfo_url,
+			'browser_link': '',
+			'is_mailman_mailer': True,
 		}
 
 
@@ -264,7 +268,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		#  it might cut characters in the wrong place, so we do it char by char
 
 		if len(value.encode('utf-8')) <= limit:
-				return value
+			return value
 
 		while len(value.encode('utf-8')) > limit - 3:
 			value = value[:-1]
@@ -300,7 +304,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			'match': 'all',
 			'conditions': [{
 				'field': 'interests-%d' % id,
-				'op': 'all'	if language else 'none',
+				'op': 'all' if language else 'none',
 				'value': language if language else ','.join(mc_languages),
 			}]
 		}
@@ -308,7 +312,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		# Test the segment
 		r = self.ml.connection.campaignSegmentTest(list_id=self.ml.list_id, options=segment_opts)
 		if isinstance(r, dict) and 'error' in r:
-			raise Exception('Testing segment "%s" failed: "%s"' % (str(segment_opts),  r['error']))
+			raise Exception('Testing segment "%s" failed: "%s"' % (str(segment_opts), r['error']))
 
 		if not self.ml.connection.campaignUpdate(cid=campaign.campaign_id,
 				name='segment_opts', value=segment_opts):
@@ -321,14 +325,14 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		self._check_languages(nl)
 
-		campaigns = self.ml.connection.campaigns( filters={ 'list_id' : self.ml.list_id, 'campaign_id' : campaign_id } )
+		campaigns = self.ml.connection.campaigns( filters={ 'list_id': self.ml.list_id, 'campaign_id': campaign_id } )
 
 		if lang:
 			# Fetch the local version of the newsletter
 			# for the given language
 			local = nl.get_local_version(lang)
 			if not local:
-				raise Exception('Can\'t find Local newsletter for Newsletter %d for language ""' % (nl.id, lang))
+				raise Exception('Can\'t find Local newsletter for Newsletter %d for language "%s"' % (nl.id, lang))
 
 			#  Add the mailer_context to the newsletter:
 			local.render( self.get_mailer_context() )
@@ -357,7 +361,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_email', value=from_email ) )
 			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_name', value=from_name ) )
 			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='title', value=self._chop( subject, 100 ) ) )
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='content', value={ 'html' : html, 'text' : text } ) )
+			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='content', value={ 'html': html, 'text': text } ) )
 
 			if False in vals:
 				raise Exception( "Couldn't update campaign" )
@@ -377,7 +381,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			# for the given language
 			local = nl.get_local_version(lang)
 			if not local:
-				raise Exception('Can\'t find Local newsletter for Newsletter %d for language ""' % (nl.id, lang))
+				raise Exception('Can\'t find Local newsletter for Newsletter %d for language "%s"' % (nl.id, lang))
 
 			#  Add the mailer_context to the newsletter:
 			local.render( self.get_mailer_context() )
@@ -399,22 +403,22 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			text = nl.text
 
 		val = self.ml.connection.campaignCreate(
-			type = 'regular',
-			options = {
-				'list_id' : self.ml.list_id,
-				'subject' : self._chop( subject, 150 ),
-				'from_email' : from_email,
-				'from_name' : from_name,
-				'tracking' : { 'opens' : True, 'html_clicks' : True, 'text_clicks' : False },
-				'title' : self._chop( subject, 100 ),
-				'authenticate' : True,
-				'auto_footer' : False,
-				'inline_css' : True,
-				'fb_comments' : True,
+			type='regular',
+			options={
+				'list_id': self.ml.list_id,
+				'subject': self._chop( subject, 150 ),
+				'from_email': from_email,
+				'from_name': from_name,
+				'tracking': { 'opens': True, 'html_clicks': True, 'text_clicks': False },
+				'title': self._chop( subject, 100 ),
+				'authenticate': True,
+				'auto_footer': False,
+				'inline_css': True,
+				'fb_comments': True,
 			},
-			content = {
-				'html' : html,
-				'text' : text,
+			content={
+				'html': html,
+				'text': text,
 			}
 		)
 
@@ -533,7 +537,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			if language:
 				local = newsletter.get_local_version(language)
 				if not local:
-					raise Exception('Can\'t find Local newsletter for Newsletter %d for language ""' % (newsletter.id, language))
+					raise Exception('Can\'t find Local newsletter for Newsletter %d for language "%s"' % (newsletter.id, language))
 
 				if not local.translation_ready:
 					continue
@@ -543,7 +547,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				campaign = MailChimpCampaign.objects.get(newsletter=newsletter,
 								list_id=self.ml.list_id, lang=language)
 			except MailChimpCampaign.DoesNotExist:
-				raise Exception('Could not find MailChimpCampaign for list "%d" with language "%s"' % (newsletters.id, language))
+				raise Exception('Could not find MailChimpCampaign for list "%d" with language "%s"' % (newsletter.id, language))
 
 			campaigns.append((language, campaign))
 
@@ -551,10 +555,10 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 	def get_mailer_context(self):
 		return {
-			'unsubscribe_link' : '*|UNSUB|*', # MailChimp will automatically replace the tag *|...|*-tags with a lists unsubscribe link etc.
-			'preferences_link' : '*|UPDATE_PROFILE|*',
-			'browser_link' : '*|ARCHIVE|*' if self.enable_browser_link else '',
-			'is_mailchimp_mailer' : True,
+			'unsubscribe_link': '*|UNSUB|*',  # MailChimp will automatically replace the tag *|...|*-tags with a lists unsubscribe link etc.
+			'preferences_link': '*|UPDATE_PROFILE|*',
+			'browser_link': '*|ARCHIVE|*' if self.enable_browser_link else '',
+			'is_mailchimp_mailer': True,
 		}
 
 	def on_scheduled( self, newsletter ):
