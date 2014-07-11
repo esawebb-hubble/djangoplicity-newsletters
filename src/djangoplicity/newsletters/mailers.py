@@ -310,11 +310,11 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		}
 
 		# Test the segment
-		r = self.ml.connection.campaignSegmentTest(list_id=self.ml.list_id, options=segment_opts)
+		r = self.ml.connection.campaigns.segment_test(list_id=self.ml.list_id, options=segment_opts)
 		if isinstance(r, dict) and 'error' in r:
 			raise Exception('Testing segment "%s" failed: "%s"' % (str(segment_opts), r['error']))
 
-		if not self.ml.connection.campaignUpdate(cid=campaign.campaign_id,
+		if not self.ml.connection.campaigns.update(cid=campaign.campaign_id,
 				name='segment_opts', value=segment_opts):
 			raise Exception('Updating segment "%s" failed' % str(segment_opts))
 
@@ -325,7 +325,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		self._check_languages(nl)
 
-		campaigns = self.ml.connection.campaigns( filters={ 'list_id': self.ml.list_id, 'campaign_id': campaign_id } )
+		campaigns = self.ml.connection.campaigns.list( filters={ 'list_id': self.ml.list_id, 'campaign_id': campaign_id } )
 
 		if lang:
 			# Fetch the local version of the newsletter
@@ -357,11 +357,11 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		# be 1 or 0 as we filter on campaign_id)
 		if 'total' in campaigns and campaigns['total'] > 0:
 			vals = []
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='subject', value=self._chop( subject, 150 ) ) )
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_email', value=from_email ) )
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='from_name', value=from_name ) )
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='title', value=self._chop( subject, 100 ) ) )
-			vals.append( self.ml.connection.campaignUpdate( cid=campaign_id, name='content', value={ 'html': html, 'text': text } ) )
+			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='subject', value=self._chop( subject, 150 ) ) )
+			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='from_email', value=from_email ) )
+			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='from_name', value=from_name ) )
+			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='title', value=self._chop( subject, 100 ) ) )
+			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='content', value={ 'html': html, 'text': text } ) )
 
 			if False in vals:
 				raise Exception( "Couldn't update campaign" )
@@ -402,7 +402,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			html = nl.html
 			text = nl.text
 
-		val = self.ml.connection.campaignCreate(
+		val = self.ml.connection.campaigns.create(
 			type='regular',
 			options={
 				'list_id': self.ml.list_id,
@@ -471,7 +471,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		"""
 		id = -1
 		mc_languages = []
-		groups = self.ml.connection.listInterestGroupings(id=self.ml.list_id)
+		groups = self.ml.connection.lists.interest_groupings(id=self.ml.list_id)
 
 		#  'groups' will be a list on success, or a dict on error:
 		if isinstance(groups, dict) and 'error' in groups:
@@ -587,7 +587,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		# We loop a second time to make sure all segments are updated
 		# correctly before trying to actually send the newsletter
 		for language, campaign in campaigns:
-			r = self.ml.connection.campaignSendNow( cid=campaign.campaign_id )
+			r = self.ml.connection.campaigns.send( cid=campaign.campaign_id )
 			# Test for errors
 			try:
 				if 'error' in r:
@@ -605,7 +605,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		campaigns = self._get_campaigns(newsletter)
 
 		for language, campaign in campaigns:
-			r = self.ml.connection.campaignSendTest( cid=campaign.campaign_id, test_emails=emails )
+			r = self.ml.connection.campaigns.send_test( cid=campaign.campaign_id, test_emails=emails )
 			# Test for errors
 			try:
 				if 'error' in r:

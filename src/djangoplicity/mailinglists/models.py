@@ -478,9 +478,9 @@ class MailChimpList( models.Model ):
 				raise Exception( "Invalid merge var %s - allowed variables are %s" % ( k, ", ".join( allowed_vars ) ) )
 
 		# Send subscribe
-		res = self.connection.listSubscribe(
+		res = self.connection.lists.subscribe(
 			id=self.list_id,
-			email_address=email,
+			email={'email': email},
 			email_type=email_type,
 			double_optin=double_optin,
 			update_existing=False,
@@ -508,9 +508,9 @@ class MailChimpList( models.Model ):
 		validate_email( email )
 
 		# Send subscribe
-		res = self.connection.listUnsubscribe(
+		res = self.connection.lists.unsubscribe(
 			id=self.list_id,
-			email_address=email,
+			email={'email': email},
 			delete_member=delete_member,
 			send_goodbye=send_goodbye,
 			send_notify=send_notify,
@@ -551,9 +551,9 @@ class MailChimpList( models.Model ):
 			del merge_vars['NEW_EMAIL']
 
 		# Send subscribe
-		res = self.connection.listUpdateMember(
+		res = self.connection.lists.update_member(
 			id=self.list_id,
-			email_address=email,
+			email={'email': email},
 			email_type=email_type,
 			replace_interests=replace_interests,
 			merge_vars=merge_vars,
@@ -581,11 +581,10 @@ class MailChimpList( models.Model ):
 		"""
 		Synchronize information from MailChimp list to Djangoplicity
 
-		Mailchimp.lists - see http://apidocs.mailchimp.com/1.3/lists.func.php
-		FIXME: link correct api doc
+		Mailchimp.lists - see http://apidocs.mailchimp.com/api/2.0/lists/list.php
 		"""
 		try:
-			res = self.connection.lists( filters={ 'list_id': self.list_id } )
+			res = self.connection.lists.list( filters={ 'list_id': self.list_id } )
 			if res['total'] == 1:
 				info = res['data'][0]
 
@@ -616,7 +615,7 @@ class MailChimpList( models.Model ):
 
 				# Try to get Merge Vars
 				pks = []
-				for v in self.connection.listMergeVars( id=self.list_id ):
+				for v in self.connection.lists.merge_vars([self.list_id] )['data'][0]['merge_vars']:
 					( obj, created ) = MailChimpMergeVar.objects.get_or_create(
 						list=self,
 						name=v['name'],
@@ -639,7 +638,7 @@ class MailChimpList( models.Model ):
 				groups_pks = []
 				groupings_pks = []
 				try:
-					for v in self.connection.listInterestGroupings( id=self.list_id ):
+					for v in self.connection.lists.interest_groupings( id=self.list_id ):
 						( obj, created ) = MailChimpGroup.objects.get_or_create( list=self, group_id=v['id'] )
 						if obj.name != v['name']:
 							obj.name = v['name']
@@ -669,8 +668,8 @@ class MailChimpList( models.Model ):
 		Retrieve info of a member identified by the email address.
 		"""
 		if email:
-			res = self.connection.listMemberInfo( id=self.list_id, email_address=email )
-			if 'success' in res and res['success'] == 1:
+			res = self.connection.lists.member_info(id=self.list_id, emails=[email] )
+			if 'success_count' in res and res['success_count'] == 1:
 				return res['data'][0]
 		return {}
 
@@ -712,18 +711,18 @@ class MailChimpList( models.Model ):
 					obj = Model.find_object( **objdict )
 
 				if obj:
-					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: _object_identifier( obj ), } )  # 'EMAIL_TYPE': data['EMAIL_TYPE'],
+					batch.append( {'email': {'email': data[email_field_name]}, self.primary_key_field.tag: _object_identifier( obj ), } )  # 'EMAIL_TYPE': data['EMAIL_TYPE'],
 				elif data[self.primary_key_field.name] != '':
-					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: '', } )  # 'EMAIL_TYPE': data['EMAIL_TYPE'],
+					batch.append( {'email': {'email': data[email_field_name]}, self.primary_key_field.tag: '', } )  # 'EMAIL_TYPE': data['EMAIL_TYPE'],
 
 				# Send updates in batches of 200
 				if len( batch ) >= 200:
-					self.connection.listBatchSubscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
+					self.connection.lists.batch_subscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
 					batch = []
 
 			# Send the last batch
 			if len( batch ) > 0:
-				self.connection.listBatchSubscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
+				self.connection.lists.batch_subscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
 
 	def parse_export_vars( self, data, mapping=None ):
 		"""
@@ -809,12 +808,12 @@ class MailChimpList( models.Model ):
 		data = []
 
 		total = self.member_count
-		limit = 1000
+		limit = 100
 		start = 0
 
 		while total > 0:
 			try:
-				res = self.connection.listMembers( id=self.list_id, status=status, start=start, limit=1000 )
+				res = self.connection.lists.members( id=self.list_id, status=status, opts={'start': start, 'limit': 100} )
 				grand_total += res['total']
 				data += res['data']
 
