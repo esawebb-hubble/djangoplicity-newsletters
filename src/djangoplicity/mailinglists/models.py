@@ -46,7 +46,7 @@ from django.utils.encoding import smart_unicode
 from djangoplicity.actions.models import EventAction
 from djangoplicity.mailinglists.exceptions import MailChimpError
 from djangoplicity.mailinglists.mailman import MailmanList
-from mailsnake import MailSnake
+from mailchimp import Mailchimp
 from urllib import urlencode
 from urllib2 import HTTPError, URLError
 import hashlib
@@ -200,7 +200,7 @@ class List( models.Model ):
 		"""
 		Update the list of subscribers to match a list of emails.
 		"""
-		emails = dict( [( x, 1 ) for x in emails] ) # Remove duplicates
+		emails = dict( [( x, 1 ) for x in emails] )  # Remove duplicates
 
 		for sub in Subscription.objects.filter( list=self ).select_related( depth=1 ):
 			if sub.subscriber.email in emails:
@@ -213,7 +213,7 @@ class List( models.Model ):
 		emails = set( emails.keys() )
 
 		# Subscribe all emails not in subscribers.
-		for email in ( emails - bad_emails ):
+		for email in emails - bad_emails:
 			( subscriber, created ) = Subscriber.objects.get_or_create( email=email )
 			sub = Subscription( list=self, subscriber=subscriber )
 			sub.save()
@@ -329,10 +329,10 @@ class MailChimpList( models.Model ):
 
 	def _get_connection( self ):
 		"""
-		Return a mailsnake object that can be used to interact with
+		Return a Mailchimp object that can be used to interact with
 		the MailChimp API.
 		"""
-		return MailSnake( self.api_key )
+		return Mailchimp( self.api_key )
 	connection = property( _get_connection )
 
 	def get_merge_vars( self ):
@@ -452,9 +452,9 @@ class MailChimpList( models.Model ):
 
 		Mailchimp descriptions of flags:
 
-		  * email_type - email type preference for the email ( html, text, or mobile defaults to html )
-		  * double_optin - flag to control whether a double opt-in confirmation message is sent, defaults to true. Abusing this may cause your account to be suspended.
-		  * send_welcome -  if your double_optin is false and this is true, we will send your lists Welcome Email if this subscribe succeeds - this will *not* fire if we end up updating an existing subscriber. If double_optin is true, this has no effect. defaults to false.
+		* email_type - email type preference for the email ( html, text, or mobile defaults to html )
+		* double_optin - flag to control whether a double opt-in confirmation message is sent, defaults to true. Abusing this may cause your account to be suspended.
+		* send_welcome -  if your double_optin is false and this is true, we will send your lists Welcome Email if this subscribe succeeds - this will *not* fire if we end up updating an existing subscriber. If double_optin is true, this has no effect. defaults to false.
 		"""
 		# validate email address
 		validate_email( email )
@@ -499,10 +499,10 @@ class MailChimpList( models.Model ):
 
 		Mailchimp descriptions of flags:
 
-		  * email_address	the email address to unsubscribe OR the email "id" returned from listMemberInfo, Webhooks, and Campaigns
-		  * delete_member	flag to completely delete the member from your list instead of just unsubscribing, default to false
-		  * send_goodbye	flag to send the goodbye email to the email address, defaults to true
-		  * send_notify	flag to send the unsubscribe notification email to the address defined in the list email notification settings, defaults to true
+		* email_address	the email address to unsubscribe OR the email "id" returned from listMemberInfo, Webhooks, and Campaigns
+		* delete_member	flag to completely delete the member from your list instead of just unsubscribing, default to false
+		* send_goodbye	flag to send the goodbye email to the email address, defaults to true
+		* send_notify	flag to send the unsubscribe notification email to the address defined in the list email notification settings, defaults to true
 		"""
 		# validate email address
 		validate_email( email )
@@ -581,7 +581,8 @@ class MailChimpList( models.Model ):
 		"""
 		Synchronize information from MailChimp list to Djangoplicity
 
-		mailsnake.lists - see http://apidocs.mailchimp.com/1.3/lists.func.php
+		Mailchimp.lists - see http://apidocs.mailchimp.com/1.3/lists.func.php
+		FIXME: link correct api doc
 		"""
 		try:
 			res = self.connection.lists( filters={ 'list_id': self.list_id } )
@@ -711,9 +712,9 @@ class MailChimpList( models.Model ):
 					obj = Model.find_object( **objdict )
 
 				if obj:
-					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: _object_identifier( obj ), } ) # 'EMAIL_TYPE': data['EMAIL_TYPE'],
+					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: _object_identifier( obj ), } )  # 'EMAIL_TYPE': data['EMAIL_TYPE'],
 				elif data[self.primary_key_field.name] != '':
-					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: '', } ) # 'EMAIL_TYPE': data['EMAIL_TYPE'],
+					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: '', } )  # 'EMAIL_TYPE': data['EMAIL_TYPE'],
 
 				# Send updates in batches of 200
 				if len( batch ) >= 200:
@@ -961,7 +962,7 @@ class GroupMapping(models.Model):
 		if not val:
 			return
 
-		val = unicode( val ).encode( "utf8" ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
+		val = unicode( val ).encode( "utf8" )  # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
 		return {'id': self.group.group_id, 'groups': val}
 
 	def __unicode__( self ):
@@ -1047,7 +1048,7 @@ class MergeVarMapping( models.Model ):
 				pass
 
 		if val and field_type in ['text', 'dropdown', 'radio', 'phone', 'url', 'imageurl', 'zip']:
-			val = unicode( val ).encode( "utf8" ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
+			val = unicode( val ).encode( "utf8" )  # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
 
 		return ( self.merge_var.tag, val )
 
