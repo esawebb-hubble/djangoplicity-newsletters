@@ -245,7 +245,7 @@ def mailchimp_send_subscribe( list_name=None, email=None ):
 	for l in MailChimpListSource.objects.filter( list__name=list_name ).exclude( mailchimplist__in=excludes ):
 		l = l.mailchimplist
 		if l.synchronize:
-			res = l.connection.listSubscribe( id=l.list_id, email_address=email, double_optin=False, send_welcome=False )
+			res = l.connection.lists.subscribe( id=l.list_id, email={'email': email}, double_optin=False, send_welcome=False )
 
 
 @task( name="mailinglists.mailchimp_send_unsubscribe", ignore_result=True )
@@ -259,7 +259,7 @@ def mailchimp_send_unsubscribe( list_name=None, email=None ):
 	for l in MailChimpListSource.objects.filter( list__name=list_name ):
 		l = l.mailchimplist
 		if l.synchronize:
-			res = l.connection.listUnsubscribe( id=l.list_id, delete_member=True, email_address=email, send_notify=False, send_goodbye=False )
+			res = l.connection.lists.unsubscribe( id=l.list_id, delete_member=True, email={'email': email}, send_notify=False, send_goodbye=False )
 
 
 # =============
@@ -287,7 +287,7 @@ def mailchimp_cleanup( api_key=None, list_id=None ):
 
 		# Delete all hooks
 		for hook in res:
-			connection.listWebhookDel( id=list_id, url=hook['url'] )
+			connection.lists.webhook_del( id=list_id, url=hook['url'] )
 	except MailChimpList.DoesNotExist:
 		logger.warn( "List with list id %s does not exists" % list_id )
 
@@ -340,7 +340,7 @@ def webhooks( list_id=None ):
 			actions = { 'subscribe': True, 'unsubscribe': True, 'upemail': True, 'cleaned': True, 'profile': True, 'campaign': True }
 
 			# Install hook in MailChimp
-			res = l.connection.listWebhookAdd( id=l.list_id, url=hookurl, actions=actions, sources={ 'user': True, 'admin': True, 'api': False } )
+			res = l.connection.lists.webhook_add( id=l.list_id, url=hookurl, actions=actions, sources={ 'user': True, 'admin': True, 'api': False } )
 			if res is not True:
 				e = MailChimpError( response=res )
 				errors.append( e )
@@ -355,7 +355,7 @@ def webhooks( list_id=None ):
 		# Delete old hooks for list
 		try:
 			# Get list of all hooks
-			res = l.connection.listWebhooks( id=l.list_id )
+			res = l.connection.lists.webhooks( id=l.list_id )
 			if 'code' in res:
 				raise MailChimpError( response=res )
 
@@ -363,7 +363,7 @@ def webhooks( list_id=None ):
 			for hook in res:
 				if hook['url'] != hookurl:
 					try:
-						l.connection.listWebhookDel( id=l.list_id, url=hook['url'] )
+						l.connection.lists.webhook_del( id=list_id, url=hook['url'] )
 					except Exception, e:
 						logger.error( unicode( e ) )
 						errors.append( e )
@@ -431,11 +431,11 @@ def synchronize_mailchimplist( list_id ):
 		BATCH_SIZE = 1000
 
 		results = []
-		batch = [{ 'EMAIL': email, 'EMAIL_TYPE': 'html', } for email in subscribe_emails]
+		batch = [{ 'email': {'email': email}, 'email_type': 'html', } for email in subscribe_emails]
 
 		while len( batch ) > 0:
 			batch_part = batch[:BATCH_SIZE]
-			res = chimplist.connection.listBatchSubscribe( id=chimplist.list_id, batch=batch_part, double_optin=False )
+			res = chimplist.connection.lists.batch_subscribe( id=chimplist.list_id, batch=batch_part, double_optin=False )
 			# TODO check result
 			results.append( res )
 			batch = batch[BATCH_SIZE:]
@@ -457,5 +457,5 @@ def synchronize_mailchimplist( list_id ):
 	# Send unsubscribe emails
 	#
 	if len( unsubscribe_emails ) > 0:
-		emails = list( unsubscribe_emails )
-		res = chimplist.connection.listBatchUnsubscribe( id=chimplist.list_id, emails=emails, delete=True, send_goodbye=False, send_notify=False )
+		emails = [ {'email': email} for email in list( unsubscribe_emails )]
+		res = chimplist.connection.lists.batch_unsubscribe( id=chimplist.list_id, batch=emails, delete_member=True, send_goodbye=False, send_notify=False )
