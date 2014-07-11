@@ -579,7 +579,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 		t_html = Template( self.type.html_template )
 		t_text = Template( self.type.text_template )
-		t_subject = Template( self.type.subject_template )
+		t_subject = Template( self.type.subject_template ) if self.type.subject_template else None
 
 		# Flag to check if we have a custom editorial
 		custom_editorial = False
@@ -625,7 +625,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		data = {
 			'html': t_html.render( ctx ),
 			'text': t_text.render( ctx ),
-			'subject': t_subject.render( ctx ),
+			'subject': t_subject.render( ctx ) if t_subject else self.subject,
 		}
 		translation.deactivate()
 
