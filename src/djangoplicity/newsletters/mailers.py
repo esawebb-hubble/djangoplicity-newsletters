@@ -356,15 +356,27 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		# Total is the number of campaigns matching the query (should only ever
 		# be 1 or 0 as we filter on campaign_id)
 		if 'total' in campaigns and campaigns['total'] > 0:
-			vals = []
-			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='subject', value=self._chop( subject, 150 ) ) )
-			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='from_email', value=from_email ) )
-			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='from_name', value=from_name ) )
-			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='title', value=self._chop( subject, 100 ) ) )
-			vals.append( self.ml.connection.campaigns.update( cid=campaign_id, name='content', value={ 'html': html, 'text': text } ) )
 
-			if False in vals:
-				raise Exception( "Couldn't update campaign" )
+			values = {
+				'subject': self._chop(subject, 150),
+				'from_email': from_email,
+				'from_name': from_name,
+				'title': self._chop(subject, 100),
+			}
+
+			result = self.ml.connection.campaigns.update(cid=campaign_id, name='options', value=values)
+			if 'errors' in result and result['errors']:
+				raise Exception("MailChimp could not update the campaign, error: %s'." % result['errors'])
+
+			values = {
+				'html': html,
+				'text': text,
+			}
+
+			result = self.ml.connection.campaigns.update(cid=campaign_id, name='content', value=values)
+			if 'errors' in result and result['errors']:
+				raise Exception("MailChimp could not update the campaign, error: %s'." % result['errors'])
+
 			return ( campaign_id, False )
 		else:
 			return ( self._create_campaign( nl, lang ), True )
@@ -424,7 +436,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		if 'error' in val:
 			raise Exception("MailChimp could not create the campaign, error %d: '%s'." % (val['code'], val['error']))
-		return val
+		return val['id']
 
 	def _upload_newsletter( self, newsletter ):
 		"""
