@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -31,73 +31,8 @@
 #
 
 from celery.task import task
-from datetime import datetime, timedelta
 from django.conf import settings
-from django.contrib.sites.models import Site
-from django.core.urlresolvers import reverse
-from urllib import urlencode
 
-
-#__all__ = ['clean_subscribers', 'synchronize_mailman', 'mailman_send_unsubscribe', 'mailman_send_subscribe']
-
-
-#@task( name='mailinglists.clean_subscribers', ignore_result=True )
-#def clean_subscribers():
-#	"""
-#	Remove subscribers which no longer have any subscriptions or is on an exclude list.
-#	"""
-#	from djangoplicity.mailinglists.models import Subscription, MailChimpSubscriberExclude
-#	
-#	logger = clean_subscribers.get_logger()
-#
-#	#TODO - Remove all subscribers not having a subscription nor being excluded.
-#	
-#
-#@task( name="mailinglists.synchronize_mailman", ignore_result=True )
-#def synchronize_mailman( list_name ):
-#	"""
-#	Task to synchronise a mailman list into djangoplicity.
-#	"""
-#	from djangoplicity.mailinglists.models import List, Subscriber, BadEmailAddress
-#	
-#	logger = synchronize_mailman.get_logger()
-#
-#	try:
-#		list = List.objects.get( name=list_name )
-#		list.last_sync = datetime.now()
-#		list.save()
-#	except List.DoesNotExist:
-#		raise Exception( "List %s does not exist." % list_name )
-#
-#	logger.debug( "Found list %s" % list_name )
-#	
-#	( subscribe_emails, unsubscribe_emails, current_list_subscribers, mailman_unsubscribe_emails ) = list.incoming_changes()
-#	
-#	existing_subscribers = dict( [( s.email, s ) for s in Subscriber.objects.filter( email__in=subscribe_emails )] )
-#	current_list_subscribers = dict( [( s.email, s ) for s in current_list_subscribers] )
-#	
-#	# Subscribe to django
-#	for e in subscribe_emails:
-#		if e in existing_subscribers:
-#			subscriber = existing_subscribers[e]
-#		else:
-#			subscriber, created = Subscriber.objects.get_or_create( email=e )
-#
-#		logger.info( "Subscribe %s to %s" % ( subscriber.email, list.name ) )
-#		list.subscribe( subscriber, source=list )
-#
-#	# Unsubscribe from django
-#	for e in unsubscribe_emails:
-#		if e in current_list_subscribers:
-#			subscriber = current_list_subscribers[e]
-#			
-#			logger.info( "Unsubscribe %s from %s" % ( subscriber.email, list.name ) )
-#			list.unsubscribe( subscriber, source=list )
-#	
-#	# Unsubscribe from mailman
-#	for e in mailman_unsubscribe_emails:
-#		mailman_send_unsubscribe.delay( list_name, e )
-			
 
 @task( name="mailinglists.mailman_send_subscribe", ignore_result=True )
 def mailman_send_subscribe( subscription_pk ):
@@ -105,31 +40,39 @@ def mailman_send_subscribe( subscription_pk ):
 	Task to subscribe an email to a mailman list. Task is executed
 	when e.g. a person subscribes via e.g. mailchimp.
 	"""
+	# Only run on production
+	if settings.DEBUG:
+		return
+
 	from djangoplicity.mailinglists.models import Subscription
-	
+
 	logger = mailman_send_unsubscribe.get_logger()
-	
+
 	sub = Subscription.objects.get( pk=subscription_pk )
 	sub.list.mailman._subscribe( sub.subscriber.email )
-	
+
 	logger.info( "Subscribed %s to mailman list %s" % ( sub.subscriber.email, sub.list.name ) )
-		
-	
+
+
 @task( name="mailinglists.mailman_send_unsubscribe", ignore_result=True )
 def mailman_send_unsubscribe( subscription_pk ):
 	"""
 	Task to subscribe an email to a mailman list. Task is executed
 	when e.g. a person subscribes via e.g. mailchimp.
 	"""
+	# Only run on production
+	if settings.DEBUG:
+		return
+
 	from djangoplicity.mailinglists.models import Subscription
-	
+
 	logger = mailman_send_unsubscribe.get_logger()
-	
+
 	sub = Subscription.objects.get( pk=subscription_pk )
 	email = sub.subscriber.email
 	list_name = sub.list.name
 	sub.delete()
-	
+
 	sub.list.mailman._unsubscribe( sub.subscriber.email )
-	
-	logger.info( "Unsubscribed %s from mailman list %s" % ( email, name ) )
+
+	logger.info( "Unsubscribed %s from mailman list %s" % email )

@@ -32,17 +32,17 @@
 
 from celery.task import task
 from datetime import datetime, timedelta
+from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.encoding import smart_unicode
 from urllib import urlencode
-from djangoplicity.mailinglists.models import MailChimpList, MailChimpListSource, \
-		MailChimpSubscriberExclude, MailChimpListToken
+from djangoplicity.mailinglists.models import MailChimpList, MailChimpListToken
 
 
 __all__ = ['mailchimp_subscribe', 'mailchimp_unsubscribe', 'mailchimp_upemail', 'mailchimp_cleaned', 'mailchimp_profile', 'mailchimp_campaign', 'webhooks',
-			'clean_tokens', 'mailchimp_send_subscribe', 'mailchimp_send_subscribe', 'mailchimp_cleanup', 'synchronize_mailchimplist', 'mailchimplist_fetch_info' ]
+			'clean_tokens', 'mailchimp_cleanup', 'synchronize_mailchimplist', 'mailchimplist_fetch_info' ]
 
 
 # ===========
@@ -87,6 +87,10 @@ def mailchimp_subscribe( list=None, fired_at=None, params={}, ip=None, user_agen
 	logger = mailchimp_subscribe.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'subscribe', list, "" )
 
+	# Only run on production
+	if settings.DEBUG:
+		return
+
 	#
 	# Deregister bad email address if exists.
 	#
@@ -123,6 +127,10 @@ def mailchimp_unsubscribe( list=None, fired_at=None, params={}, ip=None, user_ag
 	logger = mailchimp_unsubscribe.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'unsubscribe', list, "" )
 
+	# Only run on production
+	if settings.DEBUG:
+		return
+
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
 	list = _get_list( list )
@@ -144,6 +152,10 @@ def mailchimp_cleaned( list=None, fired_at=None, params={}, ip=None, user_agent=
 	"""
 	logger = mailchimp_cleaned.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'cleaned', list, "" )
+
+	# Only run on production
+	if settings.DEBUG:
+		return
 
 	#
 	# Register bad email address
@@ -184,6 +196,10 @@ def mailchimp_upemail( list=None, fired_at=None, params={}, ip=None, user_agent=
 	logger = mailchimp_upemail.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'upemail', list, "" )
 
+	# Only run on production
+	if settings.DEBUG:
+		return
+
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
 	list = _get_list( list )
@@ -202,6 +218,10 @@ def mailchimp_profile( list=None, fired_at=None, params={}, ip=None, user_agent=
 	"""
 	logger = mailchimp_profile.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'profile', list, "" )
+
+	# Only run on production
+	if settings.DEBUG:
+		return
 
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
@@ -222,44 +242,14 @@ def mailchimp_campaign( list=None, fired_at=None, params={}, ip=None, user_agent
 	logger = mailchimp_campaign.get_logger()
 	_log_webhook_action( logger, ip, user_agent, 'campaign', list, "" )
 
+	# Only run on production
+	if settings.DEBUG:
+		return
+
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
 	for a in MailChimpEventAction.get_actions( list, on_event='on_campaign' ):
 		a.dispatch( **keys2str(params) )
-
-
-# ===================
-# Mailman event tasks
-# ===================
-@task( name="mailinglists.mailchimp_send_subscribe", ignore_result=True )
-def mailchimp_send_subscribe( list_name=None, email=None ):
-	"""
-	A user was subscribed via mailman, so send subscription to mailchimp
-	"""
-	logger = mailchimp_send_subscribe.get_logger()
-
-	# Find lists, that this email should be excluded from.
-	excludes = [e.mailchimplist for e in MailChimpSubscriberExclude.objects.filter( subscriber__email=email )]
-
-	# Iterate over each list, that the email needs to be include on.
-	for l in MailChimpListSource.objects.filter( list__name=list_name ).exclude( mailchimplist__in=excludes ):
-		l = l.mailchimplist
-		if l.synchronize:
-			res = l.connection.lists.subscribe( id=l.list_id, email={'email': email}, double_optin=False, send_welcome=False )
-
-
-@task( name="mailinglists.mailchimp_send_unsubscribe", ignore_result=True )
-def mailchimp_send_unsubscribe( list_name=None, email=None ):
-	"""
-	A user was unsubscribed via mailman, so send subscription to mailchimp
-	"""
-	logger = mailchimp_send_unsubscribe.get_logger()
-
-	# Iterate over each list, that the email needs to be include on.
-	for l in MailChimpListSource.objects.filter( list__name=list_name ):
-		l = l.mailchimplist
-		if l.synchronize:
-			res = l.connection.lists.unsubscribe( id=l.list_id, delete_member=True, email={'email': email}, send_notify=False, send_goodbye=False )
 
 
 # =============
@@ -275,6 +265,10 @@ def mailchimp_cleanup( api_key=None, list_id=None ):
 	from mailchimp import Mailchimp
 
 	logger = mailchimp_cleanup.get_logger()
+
+	# Only run on production
+	if settings.DEBUG:
+		return
 
 	try:
 		connection = Mailchimp( api_key )
@@ -390,6 +384,10 @@ def mailchimplist_fetch_info( list_id=None ):
 	"""
 	logger = mailchimplist_fetch_info.get_logger()
 
+	# Only run on production
+	if settings.DEBUG:
+		return
+
 	try:
 
 		if list_id:
@@ -411,6 +409,10 @@ def synchronize_mailchimplist( list_id ):
 	Celery task to synchronise a MailChimp list
 	"""
 	logger = synchronize_mailchimplist.get_logger()
+
+	# Only run on production
+	if settings.DEBUG:
+		return
 
 	try:
 		chimplist = MailChimpList.objects.get( list_id=list_id )
