@@ -489,7 +489,7 @@ class MailChimpList( models.Model ):
 			merge_vars=merge_vars,
 		)
 
-		if res is not True:
+		if 'error' in res:
 			raise MailChimpError( response=res )
 		return True
 
@@ -516,7 +516,7 @@ class MailChimpList( models.Model ):
 			send_notify=send_notify,
 		)
 
-		if res is not True:
+		if 'error' in res:
 			raise MailChimpError( response=res )
 		return True
 
@@ -559,7 +559,7 @@ class MailChimpList( models.Model ):
 			merge_vars=merge_vars,
 		)
 
-		if res is not True:
+		if 'error' in res:
 			raise MailChimpError( response=res )
 		return True
 

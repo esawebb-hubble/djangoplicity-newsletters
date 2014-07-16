@@ -311,11 +311,11 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		# Test the segment
 		r = self.ml.connection.campaigns.segment_test(list_id=self.ml.list_id, options=segment_opts)
-		if isinstance(r, dict) and 'error' in r:
+		if 'error' in r:
 			raise Exception('Testing segment "%s" failed: "%s"' % (str(segment_opts), r['error']))
 
-		if not self.ml.connection.campaigns.update(cid=campaign.campaign_id,
-				name='segment_opts', value=segment_opts):
+		if 'error' in self.ml.connection.campaigns.update(cid=campaign.campaign_id,
+															name='segment_opts', value=segment_opts):
 			raise Exception('Updating segment "%s" failed' % str(segment_opts))
 
 	def _update_campaign( self, nl, campaign_id, lang ):
@@ -365,8 +365,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			}
 
 			result = self.ml.connection.campaigns.update(cid=campaign_id, name='options', value=values)
-			if 'errors' in result and result['errors']:
-				raise Exception("MailChimp could not update the campaign, error: %s'." % result['errors'])
+			if 'error' in result:
+				raise Exception("MailChimp could not update the campaign, error: %s'." % result['error'])
 
 			values = {
 				'html': html,
@@ -374,8 +374,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			}
 
 			result = self.ml.connection.campaigns.update(cid=campaign_id, name='content', value=values)
-			if 'errors' in result and result['errors']:
-				raise Exception("MailChimp could not update the campaign, error: %s'." % result['errors'])
+			if 'error' in result:
+				raise Exception("MailChimp could not update the campaign, error: %s'." % result['error'])
 
 			return ( campaign_id, False )
 		else:

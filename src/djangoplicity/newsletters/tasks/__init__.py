@@ -181,7 +181,7 @@ def abuse_reports():
 			content += '-' * len(title) + '\n'
 			for complaint in complaints['data']:
 				member = ml.connection.lists.member_info(id=ml.list_id, emails=[{'email': complaint['member']['email']}])
-				if 'code' in member:
+				if 'error' in member:
 					logger.critical('Error running listMemberInfo: "%s"' % member['error'])
 					continue
 				if member['success_count'] != 1:
