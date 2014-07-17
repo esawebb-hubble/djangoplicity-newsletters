@@ -30,6 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE
 
 from django.conf import settings
+from django.contrib.auth.views import redirect_to_login
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 if settings.USE_I18N:
@@ -54,9 +55,6 @@ class NewsletterDetailView(DetailView):
 		try:
 			obj = Newsletter.objects.get(type=newsletter_type, pk=pk)
 
-			if not obj.published and not (self.request.user.is_superuser or self.request.user.is_staff):
-				raise Http404
-
 			if settings.USE_I18N:
 				lang = translation.get_language()
 				if lang != settings.LANGUAGE_CODE:
@@ -65,6 +63,22 @@ class NewsletterDetailView(DetailView):
 			raise Http404
 
 		return obj
+
+	def get(self, request, *args, **kwargs):
+		'''
+		Check that the current user has permissions if the newsletter is
+		not yet published
+		'''
+		self.object = self.get_object()
+
+		if not self.object.published and not (request.user.is_superuser or request.user.is_staff):
+			if request.user.is_authenticated():
+				raise Http404
+			else:
+				return redirect_to_login(self.request.path)
+
+		context = self.get_context_data(object=self.object)
+		return self.render_to_response(context)
 
 	def get_context_data(self, **kwargs):
 		'''
