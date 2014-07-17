@@ -52,7 +52,11 @@ class NewsletterDetailView(DetailView):
 		newsletter_type = get_object_or_404(NewsletterType, slug=slug, archive=True)
 
 		try:
-			obj = Newsletter.objects.get(type=newsletter_type, pk=pk, published=True)
+			obj = Newsletter.objects.get(type=newsletter_type, pk=pk)
+
+			if not obj.published and not (self.request.user.is_superuser or self.request.user.is_staff):
+				raise Http404
+
 			if settings.USE_I18N:
 				lang = translation.get_language()
 				if lang != settings.LANGUAGE_CODE:
