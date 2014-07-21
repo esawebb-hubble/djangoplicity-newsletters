@@ -335,7 +335,7 @@ def webhooks( list_id=None ):
 
 			# Install hook in MailChimp
 			res = l.connection.lists.webhook_add( id=l.list_id, url=hookurl, actions=actions, sources={ 'user': True, 'admin': True, 'api': False } )
-			if res is not True:
+			if 'error' in res:
 				e = MailChimpError( response=res )
 				errors.append( e )
 				logger.error( unicode( e ) )
