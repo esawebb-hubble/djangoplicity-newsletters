@@ -350,14 +350,14 @@ def webhooks( list_id=None ):
 		try:
 			# Get list of all hooks
 			res = l.connection.lists.webhooks( id=l.list_id )
-			if 'code' in res:
+			if 'error' in res:
 				raise MailChimpError( response=res )
 
 			# Delete all hooks except the one we just installed
 			for hook in res:
 				if hook['url'] != hookurl:
 					try:
-						l.connection.lists.webhook_del( id=list_id, url=hook['url'] )
+						l.connection.lists.webhook_del( id=l.list_id, url=hook['url'] )
 					except Exception, e:
 						logger.error( unicode( e ) )
 						errors.append( e )
