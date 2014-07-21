@@ -173,7 +173,13 @@ class List( models.Model ):
 		Method that will directly subscribe an email to this list (normally called from
 		a background task.)
 		"""
-		self.mailman.subscribe( email )
+		try:
+			self.mailman.subscribe( email )
+		except Exception as e:
+			# django-mailman raises a standard exception if the member
+			# already exists so we check the exception message:
+			if e.message != 'Error subscribing: %s -- Already a member' % email.lower():
+				raise e
 
 	def _unsubscribe( self, email ):
 		"""
