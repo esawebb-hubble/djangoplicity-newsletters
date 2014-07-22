@@ -46,7 +46,7 @@ from django.utils.encoding import smart_unicode
 from djangoplicity.actions.models import EventAction
 from djangoplicity.mailinglists.exceptions import MailChimpError
 from djangoplicity.mailinglists.mailman import MailmanList
-from mailchimp import Mailchimp
+from mailchimp import Mailchimp, ListInvalidOptionError
 from urllib import urlencode
 from urllib2 import HTTPError, URLError
 import hashlib
@@ -656,8 +656,9 @@ class MailChimpList( models.Model ):
 								obj.name = v['name']
 								obj.save()
 							groupings_pks.append( obj.pk )
-				except TypeError:
-					# listInterestGroupings will return a dict on error, that in turn will result in a TypeError when trying to be used in the for-loop.
+				except ListInvalidOptionError:
+					# lists.interest_groupings triggers ListInvalidOptionError if
+					# interests groups are not enabled
 					pass
 
 				MailChimpGroup.objects.filter( list=self ).exclude( pk__in=groups_pks ).delete()
