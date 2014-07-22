@@ -46,11 +46,11 @@ from django.utils.encoding import smart_unicode
 from djangoplicity.actions.models import EventAction
 from djangoplicity.mailinglists.exceptions import MailChimpError
 from djangoplicity.mailinglists.mailman import MailmanList
-from mailchimp import Mailchimp, ListInvalidOptionError
 from urllib import urlencode
 from urllib2 import HTTPError, URLError
 import hashlib
 import uuid as uuidmod
+import mailchimp
 
 # Work around fix - see http://stackoverflow.com/questions/1210458/how-can-i-generate-a-unique-id-in-python
 uuidmod._uuid_generate_time = None
@@ -178,7 +178,7 @@ class List( models.Model ):
 		except Exception as e:
 			# django-mailman raises a standard exception if the member
 			# already exists so we check the exception message:
-			if e.message != 'Error subscribing: %s -- Already a member' % email.lower():
+			if e.message.lower() != 'error subscribing: %s -- already a member' % email.lower():
 				raise e
 
 	def _unsubscribe( self, email ):
@@ -338,7 +338,7 @@ class MailChimpList( models.Model ):
 		Return a Mailchimp object that can be used to interact with
 		the MailChimp API.
 		"""
-		return Mailchimp( self.api_key )
+		return mailchimp.Mailchimp( self.api_key )
 	connection = property( _get_connection )
 
 	def get_merge_vars( self ):
@@ -513,17 +513,22 @@ class MailChimpList( models.Model ):
 		# validate email address
 		validate_email( email )
 
-		# Send subscribe
-		res = self.connection.lists.unsubscribe(
-			id=self.list_id,
-			email={'email': email},
-			delete_member=delete_member,
-			send_goodbye=send_goodbye,
-			send_notify=send_notify,
-		)
+		# Send unsubscribe
+		try:
+			res = self.connection.lists.unsubscribe(
+				id=self.list_id,
+				email={'email': email},
+				delete_member=delete_member,
+				send_goodbye=send_goodbye,
+				send_notify=send_notify,
+			)
+		except mailchimp.ListNotSubscribedError:
+			# 'email' is not currently subscribed to the list, ignore.
+			return True
 
 		if 'error' in res:
 			raise MailChimpError( response=res )
+
 		return True
 
 	def update_profile( self, email, new_email, merge_vars={}, email_type=None, replace_interests=True, async=True ):
@@ -656,7 +661,7 @@ class MailChimpList( models.Model ):
 								obj.name = v['name']
 								obj.save()
 							groupings_pks.append( obj.pk )
-				except ListInvalidOptionError:
+				except mailchimp.ListInvalidOptionError:
 					# lists.interest_groupings triggers ListInvalidOptionError if
 					# interests groups are not enabled
 					pass
