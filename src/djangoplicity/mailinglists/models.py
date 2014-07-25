@@ -484,16 +484,20 @@ class MailChimpList( models.Model ):
 				raise Exception( "Invalid merge var %s - allowed variables are %s" % ( k, ", ".join( allowed_vars ) ) )
 
 		# Send subscribe
-		res = self.connection.lists.subscribe(
-			id=self.list_id,
-			email={'email': email},
-			email_type=email_type,
-			double_optin=double_optin,
-			update_existing=False,
-			replace_interests=False,
-			send_welcome=send_welcome,
-			merge_vars=merge_vars,
-		)
+		try:
+			res = self.connection.lists.subscribe(
+				id=self.list_id,
+				email={'email': email},
+				email_type=email_type,
+				double_optin=double_optin,
+				update_existing=False,
+				replace_interests=False,
+				send_welcome=send_welcome,
+				merge_vars=merge_vars,
+			)
+		except mailchimp.ListAlreadySubscribedError:
+			# Nothing to do here
+			return True
 
 		if 'error' in res:
 			raise MailChimpError( response=res )
@@ -535,6 +539,10 @@ class MailChimpList( models.Model ):
 		"""
 		Update the profile of an existing member
 		"""
+		if email == '' or new_email == '':
+			# Contact has no email and won't be in Mailchimp
+			return True
+
 		# validate email address
 		validate_email( email )
 		validate_email( new_email )
@@ -561,14 +569,17 @@ class MailChimpList( models.Model ):
 		if 'NEW_EMAIL' in merge_vars:
 			del merge_vars['NEW_EMAIL']
 
-		# Send subscribe
-		res = self.connection.lists.update_member(
-			id=self.list_id,
-			email={'email': email},
-			email_type=email_type,
-			replace_interests=replace_interests,
-			merge_vars=merge_vars,
-		)
+		# Send update_member
+		try:
+			res = self.connection.lists.update_member(
+				id=self.list_id,
+				email={'email': email},
+				email_type=email_type,
+				replace_interests=replace_interests,
+				merge_vars=merge_vars,
+			)
+		except mailchimp.EmailNotExistsError:
+			pass
 
 		if 'error' in res:
 			raise MailChimpError( response=res )
