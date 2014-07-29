@@ -30,10 +30,6 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-# Using distribute instead of setuptools
-import distribute_setup
-distribute_setup.use_setuptools()
-
 import os
 from setuptools import setup, find_packages
 
@@ -42,14 +38,10 @@ setup(
 	version = '0.1.0',
 	packages = find_packages('src'),
 	package_dir = { '': 'src' },
+    install_requires = ['setuptools'],
 	include_package_data = True,
 	zip_safe = False,
 	namespace_packages = ['djangoplicity'],
-	#entry_points = {
-	#	'console_scripts': [
-	#			'somescriptname = djangoplicity.newsletters.script:main',
-	#		],		
-	#	},
 	
 	# metadata for upload to PyPI
 	author = 'European Southern Observatory',

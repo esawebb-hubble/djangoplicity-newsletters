@@ -2,7 +2,7 @@
 {% load djangoplicity_datetime %}
 {% if potws %}
 <h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">
-	<a href="{{feed_url}}"><img border="0"  src="{{base_url}}{{MEDIA_URL}}djangoplicity/images/rssicon.png"></a>&nbsp;<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="{{base_url}}{% url potw_defaultquery %}">{% if potws|length > 1 %}{% trans "Pictures of the Week" %}{% else %}{% trans "Picture of the Week" %}{% endif %}</a>
+	<a href="{{feed_url}}"><img border="0"  src="{{base_url}}{{MEDIA_URL}}djangoplicity/images/rssicon.png"></a>&nbsp;<a style="color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;" href="{{base_url}}{% url 'potw_defaultquery' %}">{% if potws|length > 1 %}{% trans "Pictures of the Week" %}{% else %}{% trans "Picture of the Week" %}{% endif %}</a>
 </h3> 
 
 {% for obj in potws %}

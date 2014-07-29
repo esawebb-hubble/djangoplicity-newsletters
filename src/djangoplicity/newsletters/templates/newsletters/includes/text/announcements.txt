@@ -7,4 +7,4 @@
 
 {{ obj.release_date|date }}: {{ obj.description|striptags|truncatewords:50|unescape|safe }} [read more on {{base_url}}{{ obj.get_absolute_url }}]
 {% endfor %}
-{% blocktrans %}See latest {{org}} announcements on{% endblocktrans %} {{base_url}}{% url announcements_defaultquery %}
+{% blocktrans %}See latest {{org}} announcements on{% endblocktrans %} {{base_url}}{% url 'announcements_defaultquery' %}

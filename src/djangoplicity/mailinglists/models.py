@@ -46,11 +46,11 @@ from django.utils.encoding import smart_unicode
 from djangoplicity.actions.models import EventAction
 from djangoplicity.mailinglists.exceptions import MailChimpError
 from djangoplicity.mailinglists.mailman import MailmanList
-from mailsnake import MailSnake
 from urllib import urlencode
 from urllib2 import HTTPError, URLError
 import hashlib
 import uuid as uuidmod
+import mailchimp
 
 # Work around fix - see http://stackoverflow.com/questions/1210458/how-can-i-generate-a-unique-id-in-python
 uuidmod._uuid_generate_time = None
@@ -173,7 +173,13 @@ class List( models.Model ):
 		Method that will directly subscribe an email to this list (normally called from
 		a background task.)
 		"""
-		self.mailman.subscribe( email )
+		try:
+			self.mailman.subscribe( email )
+		except Exception as e:
+			# django-mailman raises a standard exception if the member
+			# already exists so we check the exception message:
+			if e.message.lower() != 'error subscribing: %s -- already a member' % email.lower():
+				raise e
 
 	def _unsubscribe( self, email ):
 		"""
@@ -200,7 +206,7 @@ class List( models.Model ):
 		"""
 		Update the list of subscribers to match a list of emails.
 		"""
-		emails = dict( [( x, 1 ) for x in emails] ) # Remove duplicates
+		emails = dict( [( x, 1 ) for x in emails] )  # Remove duplicates
 
 		for sub in Subscription.objects.filter( list=self ).select_related( depth=1 ):
 			if sub.subscriber.email in emails:
@@ -213,7 +219,7 @@ class List( models.Model ):
 		emails = set( emails.keys() )
 
 		# Subscribe all emails not in subscribers.
-		for email in ( emails - bad_emails ):
+		for email in emails - bad_emails:
 			( subscriber, created ) = Subscriber.objects.get_or_create( email=email )
 			sub = Subscription( list=self, subscriber=subscriber )
 			sub.save()
@@ -329,10 +335,10 @@ class MailChimpList( models.Model ):
 
 	def _get_connection( self ):
 		"""
-		Return a mailsnake object that can be used to interact with
+		Return a Mailchimp object that can be used to interact with
 		the MailChimp API.
 		"""
-		return MailSnake( self.api_key )
+		return mailchimp.Mailchimp( self.api_key )
 	connection = property( _get_connection )
 
 	def get_merge_vars( self ):
@@ -452,9 +458,9 @@ class MailChimpList( models.Model ):
 
 		Mailchimp descriptions of flags:
 
-		  * email_type - email type preference for the email ( html, text, or mobile defaults to html )
-		  * double_optin - flag to control whether a double opt-in confirmation message is sent, defaults to true. Abusing this may cause your account to be suspended.
-		  * send_welcome -  if your double_optin is false and this is true, we will send your lists Welcome Email if this subscribe succeeds - this will *not* fire if we end up updating an existing subscriber. If double_optin is true, this has no effect. defaults to false.
+		* email_type - email type preference for the email ( html, text, or mobile defaults to html )
+		* double_optin - flag to control whether a double opt-in confirmation message is sent, defaults to true. Abusing this may cause your account to be suspended.
+		* send_welcome -  if your double_optin is false and this is true, we will send your lists Welcome Email if this subscribe succeeds - this will *not* fire if we end up updating an existing subscriber. If double_optin is true, this has no effect. defaults to false.
 		"""
 		# validate email address
 		validate_email( email )
@@ -478,18 +484,22 @@ class MailChimpList( models.Model ):
 				raise Exception( "Invalid merge var %s - allowed variables are %s" % ( k, ", ".join( allowed_vars ) ) )
 
 		# Send subscribe
-		res = self.connection.listSubscribe(
-			id=self.list_id,
-			email_address=email,
-			email_type=email_type,
-			double_optin=double_optin,
-			update_existing=False,
-			replace_interests=False,
-			send_welcome=send_welcome,
-			merge_vars=merge_vars,
-		)
+		try:
+			res = self.connection.lists.subscribe(
+				id=self.list_id,
+				email={'email': email},
+				email_type=email_type,
+				double_optin=double_optin,
+				update_existing=False,
+				replace_interests=False,
+				send_welcome=send_welcome,
+				merge_vars=merge_vars,
+			)
+		except mailchimp.ListAlreadySubscribedError:
+			# Nothing to do here
+			return True
 
-		if res is not True:
+		if 'error' in res:
 			raise MailChimpError( response=res )
 		return True
 
@@ -499,31 +509,40 @@ class MailChimpList( models.Model ):
 
 		Mailchimp descriptions of flags:
 
-		  * email_address	the email address to unsubscribe OR the email "id" returned from listMemberInfo, Webhooks, and Campaigns
-		  * delete_member	flag to completely delete the member from your list instead of just unsubscribing, default to false
-		  * send_goodbye	flag to send the goodbye email to the email address, defaults to true
-		  * send_notify	flag to send the unsubscribe notification email to the address defined in the list email notification settings, defaults to true
+		* email_address	the email address to unsubscribe OR the email "id" returned from listMemberInfo, Webhooks, and Campaigns
+		* delete_member	flag to completely delete the member from your list instead of just unsubscribing, default to false
+		* send_goodbye	flag to send the goodbye email to the email address, defaults to true
+		* send_notify	flag to send the unsubscribe notification email to the address defined in the list email notification settings, defaults to true
 		"""
 		# validate email address
 		validate_email( email )
 
-		# Send subscribe
-		res = self.connection.listUnsubscribe(
-			id=self.list_id,
-			email_address=email,
-			delete_member=delete_member,
-			send_goodbye=send_goodbye,
-			send_notify=send_notify,
-		)
+		# Send unsubscribe
+		try:
+			res = self.connection.lists.unsubscribe(
+				id=self.list_id,
+				email={'email': email},
+				delete_member=delete_member,
+				send_goodbye=send_goodbye,
+				send_notify=send_notify,
+			)
+		except mailchimp.ListNotSubscribedError:
+			# 'email' is not currently subscribed to the list, ignore.
+			return True
 
-		if res is not True:
+		if 'error' in res:
 			raise MailChimpError( response=res )
+
 		return True
 
 	def update_profile( self, email, new_email, merge_vars={}, email_type=None, replace_interests=True, async=True ):
 		"""
 		Update the profile of an existing member
 		"""
+		if email == '' or new_email == '':
+			# Contact has no email and won't be in Mailchimp
+			return True
+
 		# validate email address
 		validate_email( email )
 		validate_email( new_email )
@@ -550,16 +569,19 @@ class MailChimpList( models.Model ):
 		if 'NEW_EMAIL' in merge_vars:
 			del merge_vars['NEW_EMAIL']
 
-		# Send subscribe
-		res = self.connection.listUpdateMember(
-			id=self.list_id,
-			email_address=email,
-			email_type=email_type,
-			replace_interests=replace_interests,
-			merge_vars=merge_vars,
-		)
+		# Send update_member
+		try:
+			res = self.connection.lists.update_member(
+				id=self.list_id,
+				email={'email': email},
+				email_type=email_type,
+				replace_interests=replace_interests,
+				merge_vars=merge_vars,
+			)
+		except mailchimp.EmailNotExistsError:
+			pass
 
-		if res is not True:
+		if 'error' in res:
 			raise MailChimpError( response=res )
 		return True
 
@@ -581,10 +603,10 @@ class MailChimpList( models.Model ):
 		"""
 		Synchronize information from MailChimp list to Djangoplicity
 
-		mailsnake.lists - see http://apidocs.mailchimp.com/1.3/lists.func.php
+		Mailchimp.lists - see http://apidocs.mailchimp.com/api/2.0/lists/list.php
 		"""
 		try:
-			res = self.connection.lists( filters={ 'list_id': self.list_id } )
+			res = self.connection.lists.list( filters={ 'list_id': self.list_id } )
 			if res['total'] == 1:
 				info = res['data'][0]
 
@@ -615,7 +637,7 @@ class MailChimpList( models.Model ):
 
 				# Try to get Merge Vars
 				pks = []
-				for v in self.connection.listMergeVars( id=self.list_id ):
+				for v in self.connection.lists.merge_vars([self.list_id] )['data'][0]['merge_vars']:
 					( obj, created ) = MailChimpMergeVar.objects.get_or_create(
 						list=self,
 						name=v['name'],
@@ -638,7 +660,7 @@ class MailChimpList( models.Model ):
 				groups_pks = []
 				groupings_pks = []
 				try:
-					for v in self.connection.listInterestGroupings( id=self.list_id ):
+					for v in self.connection.lists.interest_groupings( id=self.list_id ):
 						( obj, created ) = MailChimpGroup.objects.get_or_create( list=self, group_id=v['id'] )
 						if obj.name != v['name']:
 							obj.name = v['name']
@@ -650,8 +672,9 @@ class MailChimpList( models.Model ):
 								obj.name = v['name']
 								obj.save()
 							groupings_pks.append( obj.pk )
-				except TypeError:
-					# listInterestGroupings will return a dict on error, that in turn will result in a TypeError when trying to be used in the for-loop.
+				except mailchimp.ListInvalidOptionError:
+					# lists.interest_groupings triggers ListInvalidOptionError if
+					# interests groups are not enabled
 					pass
 
 				MailChimpGroup.objects.filter( list=self ).exclude( pk__in=groups_pks ).delete()
@@ -668,8 +691,8 @@ class MailChimpList( models.Model ):
 		Retrieve info of a member identified by the email address.
 		"""
 		if email:
-			res = self.connection.listMemberInfo( id=self.list_id, email_address=email )
-			if 'success' in res and res['success'] == 1:
+			res = self.connection.lists.member_info(id=self.list_id, emails=[email] )
+			if 'success_count' in res and res['success_count'] == 1:
 				return res['data'][0]
 		return {}
 
@@ -711,18 +734,18 @@ class MailChimpList( models.Model ):
 					obj = Model.find_object( **objdict )
 
 				if obj:
-					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: _object_identifier( obj ), } ) # 'EMAIL_TYPE': data['EMAIL_TYPE'],
+					batch.append( {'email': {'email': data[email_field_name]}, self.primary_key_field.tag: _object_identifier( obj ), } )  # 'EMAIL_TYPE': data['EMAIL_TYPE'],
 				elif data[self.primary_key_field.name] != '':
-					batch.append( {'EMAIL': data[email_field_name], self.primary_key_field.tag: '', } ) # 'EMAIL_TYPE': data['EMAIL_TYPE'],
+					batch.append( {'email': {'email': data[email_field_name]}, self.primary_key_field.tag: '', } )  # 'EMAIL_TYPE': data['EMAIL_TYPE'],
 
 				# Send updates in batches of 200
 				if len( batch ) >= 200:
-					self.connection.listBatchSubscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
+					self.connection.lists.batch_subscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
 					batch = []
 
 			# Send the last batch
 			if len( batch ) > 0:
-				self.connection.listBatchSubscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
+				self.connection.lists.batch_subscribe( id=self.list_id, batch=batch, double_optin=False, update_existing=True )
 
 	def parse_export_vars( self, data, mapping=None ):
 		"""
@@ -808,12 +831,12 @@ class MailChimpList( models.Model ):
 		data = []
 
 		total = self.member_count
-		limit = 1000
+		limit = 100
 		start = 0
 
 		while total > 0:
 			try:
-				res = self.connection.listMembers( id=self.list_id, status=status, start=start, limit=1000 )
+				res = self.connection.lists.members( id=self.list_id, status=status, opts={'start': start, 'limit': 100} )
 				grand_total += res['total']
 				data += res['data']
 
@@ -961,7 +984,7 @@ class GroupMapping(models.Model):
 		if not val:
 			return
 
-		val = unicode( val ).encode( "utf8" ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
+		val = unicode( val ).encode( "utf8" )  # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
 		return {'id': self.group.group_id, 'groups': val}
 
 	def __unicode__( self ):
@@ -1047,7 +1070,7 @@ class MergeVarMapping( models.Model ):
 				pass
 
 		if val and field_type in ['text', 'dropdown', 'radio', 'phone', 'url', 'imageurl', 'zip']:
-			val = unicode( val ).encode( "utf8" ) # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
+			val = unicode( val ).encode( "utf8" )  # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
 
 		return ( self.merge_var.tag, val )
 

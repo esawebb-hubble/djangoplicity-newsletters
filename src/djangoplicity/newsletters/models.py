@@ -103,7 +103,7 @@ class Mailer( models.Model ):
 		Set choices for plugin field dynamically based on registered plugins.
 		"""
 		super( Mailer, self ).__init__( *args, **kwargs )
-		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices() # lazy( Mailer.get_plugin_choices, list )
+		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices()  # lazy( Mailer.get_plugin_choices, list )
 
 	def get_plugincls( self ):
 		"""
@@ -579,7 +579,19 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 		t_html = Template( self.type.html_template )
 		t_text = Template( self.type.text_template )
-		t_subject = Template( self.type.subject_template )
+		t_subject = Template( self.type.subject_template ) if self.type.subject_template else None
+
+		# Flag to check if we have a custom editorial
+		custom_editorial = False
+		if self.is_translation():
+			try:
+				language = NewsletterLanguage.objects.get(language__lang=self.lang, newsletter_type=self.source.type)
+				if self.editorial != language.default_editorial:
+					custom_editorial = True
+			except NewsletterLanguage.DoesNotExist:
+				# This happens if we're accessing a NL for a language which
+				# is no longer configured so we can just ignore it
+				pass
 
 		defaults = {
 			'base_url': "http://%s" % Site.objects.get_current().domain,
@@ -593,6 +605,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			'editorial_subject': self.editorial_subject,
 			'editorial': self.editorial,
 			'editorial_text': self.editorial_text,
+			'custom_editorial': custom_editorial,
 			'enable_sharing': self.type.sharing,
 			'enable_archive': self.type.archive,
 			'use_local_archive': self.type.local_archive,
@@ -612,7 +625,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		data = {
 			'html': t_html.render( ctx ),
 			'text': t_text.render( ctx ),
-			'subject': t_subject.render( ctx ),
+			'subject': t_subject.render( ctx ) if t_subject else self.subject,
 		}
 		translation.deactivate()
 
@@ -807,6 +820,8 @@ class NewsletterContent( models.Model ):
 				try:
 					if datasrc.list:
 						data = modelcls.objects.filter( pk__in=allpks )
+						if datasrc.ordering:
+							data = data.order_by( *datasrc.ordering.get_order_by() )
 					else:
 						if len( allpks ) > 0:
 							data = modelcls.objects.get( pk=allpks[0] )

@@ -30,7 +30,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 from django.core.exceptions import ImproperlyConfigured
 
 from djangoplicity.archives.contrib.browsers import ListBrowser

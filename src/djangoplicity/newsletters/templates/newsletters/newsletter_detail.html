@@ -1,8 +1,8 @@
 <style type="text/css">
 	#nl_detail_header {
-		width: 100%; 
-		background: #000146; 
-		padding: 10px; 
+		width: 100%;
+		background: #000146;
+		padding: 10px 0 10px 0;
 		text-align: center;
 		font-family: Arial, sans-serif, 'Helvetica Neue', Verdana;
 		margin-bottom: 10px;
@@ -11,9 +11,21 @@
 		color: #ee6600;
 		text-decoration: none;
 	}
+	div.embargo_notice {
+		background-color: #f4c819;
+		font-weight: bold;
+		font-size: 18px;
+		text-align: center;
+		padding: 10px;
+		width: 700px;
+		margin: 0 auto;
+	}
 </style>
 
 <div id="nl_detail_header">
+{% if not newsletter.published %}
+	<div class="embargo_notice">PREVIEW ONLY - ITEM NOT PUBLISHED</div>
+{% endif %}
 	<p><a href="../../">Back to {{ newsletter_type }} index</a> </p>
 </div>
 {{ newsletter_html|safe }}

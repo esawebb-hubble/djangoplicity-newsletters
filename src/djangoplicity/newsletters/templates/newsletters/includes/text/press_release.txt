@@ -22,7 +22,7 @@ password: {{data.release.get_embargo_login.1}}{% endif %}
  * {{translation.name}}: http://www.eso.org{{translation.object.get_absolute_url}}{%endfor%}
 {% endif %}{% if data.release.kids_title and data.release.kids_description %} 
 {% trans "Space Scoop - the children's version of this release is available at:" %}
-http://www.eso.org{% url releases_detail_kids data.release.id %}
+http://www.eso.org{% url 'releases_detail_kids' data.release.id %}
 {% endif%} 
 
 {% if editorial_text %}

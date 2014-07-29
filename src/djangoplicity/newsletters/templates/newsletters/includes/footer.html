@@ -17,7 +17,7 @@
                                                                 {% endif %}{% if obj.comparison %}
 																<a href="{{base_url}}{{obj.comparison.get_absolute_url}}"><img style="border:0px;margin:2px;" src="{{base_url}}{{obj.comparison.resource_wallpaperthumbs.url}}" alt="{{obj.comparison.title}}"></img></a>&nbsp;{% endif %}
                                                                 {% endfor %}
-																<div style="font-size:15px;color:white; padding-top: 5px;"><a href="{{potw_feed_url}}"><img border="0" src="{{base_url}}{{MEDIA_URL}}djangoplicity/images/rssicon.png"></a>&nbsp;<a style="font-size:15px;color:white;text-decoration:none;" href="{{base_url}}{% url potw_defaultquery %}">{{ org }} {% trans "Pictures of the Week" %}</a>
+																<div style="font-size:15px;color:white; padding-top: 5px;"><a href="{{potw_feed_url}}"><img border="0" src="{{base_url}}{{MEDIA_URL}}djangoplicity/images/rssicon.png"></a>&nbsp;<a style="font-size:15px;color:white;text-decoration:none;" href="{{base_url}}{% url 'potw_defaultquery' %}">{{ org }} {% trans "Pictures of the Week" %}</a>
                                                                 <hr size="1" style="color: #bbbbbb; background-color: #bbbbbb; border: 0; height: 1px;" /> 
                                                                 </div>
                                                                 {% endif %} 

@@ -7,4 +7,4 @@
 
 {{ obj.release_date|date }}: {% if obj.image %}{{ obj.image.description|striptags|truncatewords:50|unescape|safe }}{% endif %}{% if obj.comparison %}{{ obj.comparison.description|striptags|truncatewords:50|unescape|safe }}{% endif %} [read more on {{base_url}}{{ obj.get_absolute_url }}]
 {% endfor %}
-{% blocktrans %}See latest {{org}} Pictures of the Week on{% endblocktrans %} {{base_url}}{% url potw_defaultquery %}
+{% blocktrans %}See latest {{org}} Pictures of the Week on{% endblocktrans %} {{base_url}}{% url 'potw_defaultquery' %}
