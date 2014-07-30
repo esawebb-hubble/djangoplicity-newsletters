@@ -580,9 +580,6 @@ class MailChimpList( models.Model ):
 			)
 		except mailchimp.EmailNotExistsError:
 			pass
-
-		if 'error' in res:
-			raise MailChimpError( response=res )
 		return True
 
 	def save( self, *args, **kwargs ):
