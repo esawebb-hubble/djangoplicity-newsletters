@@ -578,7 +578,7 @@ class MailChimpList( models.Model ):
 				replace_interests=replace_interests,
 				merge_vars=merge_vars,
 			)
-		except mailchimp.EmailNotExistsError:
+		except (mailchimp.EmailNotExistsError, mailchimp.ListNotSubscribedError):
 			pass
 		return True
 
