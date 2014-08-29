@@ -570,7 +570,8 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		"""
 		Render the newsletter
 		"""
-		if self.is_source() and self.frozen:
+		if self.is_source() and self.frozen or \
+			self.is_translation() and self.source.frozen:
 			return {
 				'html': self.html,
 				'text': self.text,
