@@ -34,6 +34,7 @@ from django.db import models
 from django.utils.encoding import smart_unicode
 from djangoplicity.actions.plugins import ActionPlugin
 
+
 class MailmanAction(ActionPlugin):
 	"""
 	An action plugin is a configureable celery task,
@@ -60,8 +61,7 @@ class MailmanAction(ActionPlugin):
 					email = v.email
 					break
 
-		return ( [], { 'email' : email } )
-
+		return ( [], { 'email': email } )
 
 	def _get_list(self, list_name):
 		from djangoplicity.mailinglists.models import List
@@ -93,6 +93,7 @@ class MailmanUnsubscribeAction(MailmanAction):
 			list.unsubscribe( email=email, async=False )
 			self.get_logger().info("Unsubscribed %s to mailman list %s" % ( email, list.name ) )
 
+
 class MailmanUpdateAction( MailmanAction ):
 	action_name = 'Mailman update subscription'
 
@@ -111,6 +112,9 @@ class MailmanUpdateAction( MailmanAction ):
 		"""
 		Email address was updated so change subscriber
 		"""
+		if not 'email' in changes:
+			return
+
 		from_email, to_email = changes['email']
 
 		if from_email != to_email and from_email is not None and to_email is not None:
@@ -139,8 +143,7 @@ class MailmanSyncAction( MailmanAction ):
 				model_identifier = smart_unicode( v._meta )
 				pk = smart_unicode( v._get_pk_val(), strings_only=True )
 				break
-		return ( [], { 'model_identifier' : model_identifier, 'pk' : pk } )
-
+		return ( [], { 'model_identifier': model_identifier, 'pk': pk } )
 
 	def _get_emails( self, model_identifier, pk ):
 		"""
@@ -158,7 +161,6 @@ class MailmanSyncAction( MailmanAction ):
 			mlist = self._get_list( conf['list_name'] )
 			mlist.update_subscribers( emails )
 			mlist.push( remove_existing=conf['remove_existing'] )
-
 
 
 MailmanSubscribeAction.register()
