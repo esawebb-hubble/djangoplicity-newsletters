@@ -257,14 +257,17 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		from djangoplicity.mailinglists.models import MailChimpList
 		self.ml = MailChimpList.objects.get( list_id=list_id )
 
-	def connection( self, function, kwargs):
+	def connection( self, call, kwargs):
 		'''
 		The API throws random "SSLError: [Errno 8] _ssl.c:504: EOF occurred in violation of protocol"
 		This method is a wrapper around the self.ml to catch such errors and keep trying
 		'''
+		section, function = call.split('.')
+		section = getattr(self.ml.connection, section)
+
 		while True:
 			try:
-				res = getattr(self.ml.connection, function)(**kwargs)
+				res = getattr(section, function)(**kwargs)
 				return res
 			except SSLError:
 				print 'Caught SSLError for %s (%s)' % (function, kwargs)
