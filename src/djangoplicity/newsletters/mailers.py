@@ -428,23 +428,25 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			html = nl.html
 			text = nl.text
 
-		value = self.connection('campaigns.create',
-			'type': 'regular'
-			'options': {
-				'list_id': self.ml.list_id,
-				'subject': self._chop( subject, 150 ),
-				'from_email': from_email,
-				'from_name': from_name,
-				'tracking': { 'opens': True, 'html_clicks': True, 'text_clicks': False },
-				'title': self._chop( subject, 100 ),
-				'authenticate': True,
-				'auto_footer': False,
-				'inline_css': True,
-				'fb_comments': True,
-			},
-			'content': {
-				'html': html,
-				'text': text,
+		val = self.connection('campaigns.create',
+			{
+				'type': 'regular',
+				'options': {
+					'list_id': self.ml.list_id,
+					'subject': self._chop( subject, 150 ),
+					'from_email': from_email,
+					'from_name': from_name,
+					'tracking': { 'opens': True, 'html_clicks': True, 'text_clicks': False },
+					'title': self._chop( subject, 100 ),
+					'authenticate': True,
+					'auto_footer': False,
+					'inline_css': True,
+					'fb_comments': True,
+				},
+				'content': {
+					'html': html,
+					'text': text,
+				}
 			}
 		)
 
