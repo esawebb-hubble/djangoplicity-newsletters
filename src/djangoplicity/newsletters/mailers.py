@@ -270,7 +270,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				res = getattr(section, function)(**kwargs)
 				return res
 			except SSLError:
-				print 'Caught SSLError for %s (%s)' % (function, kwargs)
+				print 'Caught SSLError for "%s", retrying' % function
 				continue
 
 	def _chop( self, value, limit ):
