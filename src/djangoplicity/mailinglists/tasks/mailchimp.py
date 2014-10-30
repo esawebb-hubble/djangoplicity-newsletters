@@ -166,7 +166,7 @@ def mailchimp_cleaned( list=None, fired_at=None, params={}, ip=None, user_agent=
 
 	# Exclude subscriber from being put any list again, unless explicitly subscribing again.
 	if email:
-		badaddress, created = BadEmailAddress.objects.get_or_create( email=email )
+		BadEmailAddress.objects.get_or_create( email=email )
 
 	#
 	# Dispatch actions
@@ -334,7 +334,14 @@ def webhooks( list_id=None ):
 			actions = { 'subscribe': True, 'unsubscribe': True, 'upemail': True, 'cleaned': True, 'profile': True, 'campaign': True }
 
 			# Install hook in MailChimp
-			res = l.connection.lists.webhook_add( id=l.list_id, url=hookurl, actions=actions, sources={ 'user': True, 'admin': True, 'api': False } )
+			res = l.connection('lists.webhook_add',
+				{
+					'id': l.list_id,
+					'url': hookurl,
+					'actions': actions,
+					'sources': { 'user': True, 'admin': True, 'api': False },
+				}
+			)
 			if 'error' in res:
 				e = MailChimpError( response=res )
 				errors.append( e )
@@ -349,7 +356,7 @@ def webhooks( list_id=None ):
 		# Delete old hooks for list
 		try:
 			# Get list of all hooks
-			res = l.connection.lists.webhooks( id=l.list_id )
+			res = l.connection('lists.webhooks', {'id': l.list_id} )
 			if 'error' in res:
 				raise MailChimpError( response=res )
 
@@ -357,7 +364,7 @@ def webhooks( list_id=None ):
 			for hook in res:
 				if hook['url'] != hookurl:
 					try:
-						l.connection.lists.webhook_del( id=l.list_id, url=hook['url'] )
+						l.connection('lists.webhook_del', {'id': l.list_id, 'url': hook['url']} )
 					except Exception, e:
 						logger.error( unicode( e ) )
 						errors.append( e )
@@ -437,7 +444,13 @@ def synchronize_mailchimplist( list_id ):
 
 		while len( batch ) > 0:
 			batch_part = batch[:BATCH_SIZE]
-			res = chimplist.connection.lists.batch_subscribe( id=chimplist.list_id, batch=batch_part, double_optin=False )
+			res = chimplist.connection('lists.batch_subscribe',
+				{
+					'id': chimplist.list_id,
+					'batch': batch_part,
+					'double_optin': False,
+				}
+			)
 			# TODO check result
 			results.append( res )
 			batch = batch[BATCH_SIZE:]
@@ -460,4 +473,12 @@ def synchronize_mailchimplist( list_id ):
 	#
 	if len( unsubscribe_emails ) > 0:
 		emails = [ {'email': email} for email in list( unsubscribe_emails )]
-		res = chimplist.connection.lists.batch_unsubscribe( id=chimplist.list_id, batch=emails, delete_member=True, send_goodbye=False, send_notify=False )
+		res = chimplist.connection('lists.batch_unsubscribe',
+			{
+				'id': chimplist.list_id,
+				'batch': emails,
+				'delete_member': True,
+				'send_goodbye': False,
+				'send_notify': False,
+			}
+		)

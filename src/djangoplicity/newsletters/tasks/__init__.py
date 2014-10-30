@@ -156,15 +156,23 @@ def abuse_reports():
 
 	for ml in MailChimpList.objects.all():
 		#  Fetch the list of campaigns sent within the last 4 weeks
-		campaigns = ml.connection.campaigns.list(filters={'list_id': ml.list_id, 'sendtime_start': start_date.strftime('%Y-%m-%d %H:%M:%S')},
-											limit=1000)
+		campaigns = ml.connection('campaigns.list',
+						{
+							'filters':
+								{
+									'list_id': ml.list_id,
+									'sendtime_start': start_date.strftime('%Y-%m-%d %H:%M:%S')
+								},
+							'limit': 1000,
+							}
+						)
 		if campaigns['total'] == 0:
 			continue
 
 		content = ''
 
 		for campaign in campaigns['data']:
-			complaints = ml.connection.reports.abuse(cid=campaign['id'], opts={'since': week_ago.strftime('%Y-%m-%d %H:%M:%S')})
+			complaints = ml.connection('reports.abuse', {'cid': campaign['id'], 'opts': {'since': week_ago.strftime('%Y-%m-%d %H:%M:%S')}})
 			if complaints['total'] == 0:
 				continue
 			else:
@@ -180,7 +188,7 @@ def abuse_reports():
 			content += '\n' + title + '\n'
 			content += '-' * len(title) + '\n'
 			for complaint in complaints['data']:
-				member = ml.connection.lists.member_info(id=ml.list_id, emails=[{'email': complaint['member']['email']}])
+				member = ml.connection('lists.member_info', {'id': ml.list_id, 'emails': [{'email': complaint['member']['email']}]})
 				if 'error' in member:
 					logger.critical('Error running listMemberInfo: "%s"' % member['error'])
 					continue

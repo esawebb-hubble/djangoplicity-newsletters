@@ -72,7 +72,6 @@ The parameters are stored in MailerParameter, and are automatically created by t
 
 from django.core.mail import EmailMultiAlternatives
 from email import charset as Charset
-from requests.exceptions import SSLError
 
 
 class MailerPlugin():
@@ -257,22 +256,6 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		from djangoplicity.mailinglists.models import MailChimpList
 		self.ml = MailChimpList.objects.get( list_id=list_id )
 
-	def connection( self, call, kwargs):
-		'''
-		The API throws random "SSLError: [Errno 8] _ssl.c:504: EOF occurred in violation of protocol"
-		This method is a wrapper around the self.ml to catch such errors and keep trying
-		'''
-		section, function = call.split('.')
-		section = getattr(self.ml.connection, section)
-
-		while True:
-			try:
-				res = getattr(section, function)(**kwargs)
-				return res
-			except SSLError:
-				print 'Caught SSLError for "%s", retrying' % function
-				continue
-
 	def _chop( self, value, limit ):
 		"""
 		Chop off parts of a string if needed to ensure
@@ -327,11 +310,11 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		}
 
 		# Test the segment
-		r = self.connection('campaigns.segment_test', {'list_id': self.ml.list_id, 'options': segment_opts})
+		r = self.ml.connection('campaigns.segment_test', {'list_id': self.ml.list_id, 'options': segment_opts})
 		if 'error' in r:
 			raise Exception('Testing segment "%s" failed: "%s"' % (str(segment_opts), r['error']))
 
-		r = self.connection('campaigns.update', {'cid': campaign.campaign_id, 'name': 'segment_opts', 'value': segment_opts})
+		r = self.ml.connection('campaigns.update', {'cid': campaign.campaign_id, 'name': 'segment_opts', 'value': segment_opts})
 		if 'error' in r:
 			raise Exception('Updating segment "%s" failed' % str(segment_opts))
 
@@ -342,7 +325,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		self._check_languages(nl)
 
-		campaigns = self.connection('campaigns.list', {'filters': { 'list_id': self.ml.list_id, 'campaign_id': campaign_id }})
+		campaigns = self.ml.connection('campaigns.list', {'filters': { 'list_id': self.ml.list_id, 'campaign_id': campaign_id }})
 
 		if lang:
 			# Fetch the local version of the newsletter
@@ -381,7 +364,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				'title': self._chop(subject, 100),
 			}
 
-			result = self.connection('campaigns.update', {'cid': campaign_id, 'name': 'options', 'value': values})
+			result = self.ml.connection('campaigns.update', {'cid': campaign_id, 'name': 'options', 'value': values})
 			if 'error' in result:
 				raise Exception("MailChimp could not update the campaign, error: %s'." % result['error'])
 
@@ -390,7 +373,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				'text': text,
 			}
 
-			result = self.connection('campaigns.update', {'cid': campaign_id, 'name': 'content', 'value': values})
+			result = self.ml.connection('campaigns.update', {'cid': campaign_id, 'name': 'content', 'value': values})
 			if 'error' in result:
 				raise Exception("MailChimp could not update the campaign, error: %s'." % result['error'])
 
@@ -431,7 +414,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			html = nl.html
 			text = nl.text
 
-		val = self.connection('campaigns.create',
+		val = self.ml.connection('campaigns.create',
 			{
 				'type': 'regular',
 				'options': {
@@ -502,7 +485,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		"""
 		id = -1
 		mc_languages = []
-		groups = self.connection('lists.interest_groupings', {'id': self.ml.list_id})
+		groups = self.ml.connection('lists.interest_groupings', {'id': self.ml.list_id})
 
 		#  'groups' will be a list on success, or a dict on error:
 		if isinstance(groups, dict) and 'error' in groups:
@@ -618,7 +601,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		# We loop a second time to make sure all segments are updated
 		# correctly before trying to actually send the newsletter
 		for language, campaign in campaigns:
-			r = self.connection('campaigns.send', {'cid': campaign.campaign_id})
+			r = self.ml.connection('campaigns.send', {'cid': campaign.campaign_id})
 			# Test for errors
 			try:
 				if 'error' in r:
@@ -636,7 +619,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		campaigns = self._get_campaigns(newsletter)
 
 		for language, campaign in campaigns:
-			r = self.connection('campaigns.send_test', {'cid': campaign.campaign_id, 'test_emails': emails})
+			r = self.ml.connection('campaigns.send_test', {'cid': campaign.campaign_id, 'test_emails': emails})
 			# Test for errors
 			try:
 				if 'error' in r:
