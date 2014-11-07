@@ -66,8 +66,11 @@ from djangoplicity.newsletters.tasks import send_newsletter, \
 from djangoplicity.translation.models import TranslationModel, translation_permalink
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 from tinymce import models as tinymce_models
+import logging
 import traceback
 from django.utils import translation
+
+logger = logging.getLogger(__name__)
 
 
 def make_nl_id():
@@ -501,6 +504,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 				raise Exception( 'Won\'t send Newsletter: Scheduling status is "%s"' % self.scheduled_status)
 
 			for m in self.type.mailers.all():
+				logger.info('Starting sending with mailer "%s"', m)
 				res = m.send_now( self )
 				if res:
 					raise Exception(res)
