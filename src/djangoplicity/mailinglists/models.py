@@ -937,10 +937,10 @@ class MailChimpMergeVar( models.Model ):
 	"""
 	list = models.ForeignKey( MailChimpList )
 	name = models.CharField( max_length=255 )
-	required = models.BooleanField()
+	required = models.BooleanField( default=False )
 	field_type = models.CharField( max_length=20, choices=MERGEVAR_DATATYPES, blank=True )
-	public = models.BooleanField()
-	show = models.BooleanField()
+	public = models.BooleanField( default=False )
+	show = models.BooleanField( default=False )
 	order = models.CharField( max_length=255, blank=True )
 	default = models.CharField( max_length=255, blank=True )
 	size = models.CharField( max_length=255, blank=True )
