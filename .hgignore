@@ -3,3 +3,4 @@ syntax: regexp
 ^src/djangoplicity_newsletters\.egg-info$
 syntax: glob
 *.pyc
+.nfs*
