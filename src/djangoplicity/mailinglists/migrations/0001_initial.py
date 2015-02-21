@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('actions', '__first__'),
+        ('actions', '0001_initial'),
         ('contenttypes', '0001_initial'),
     ]
 
