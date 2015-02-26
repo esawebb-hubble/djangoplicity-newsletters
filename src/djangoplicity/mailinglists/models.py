@@ -209,7 +209,7 @@ class List( models.Model ):
 		"""
 		emails = dict( [( x, 1 ) for x in emails] )  # Remove duplicates
 
-		for sub in Subscription.objects.filter( list=self ).select_related( depth=1 ):
+		for sub in Subscription.objects.filter( list=self ).select_related('subscriber', 'list'):
 			if sub.subscriber.email in emails:
 				del emails[sub.subscriber.email]
 			else:
