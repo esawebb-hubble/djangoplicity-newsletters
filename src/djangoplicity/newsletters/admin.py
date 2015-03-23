@@ -152,7 +152,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 				raise Http404
 
 		data = newsletter.render( {}, store=False )
-		return HttpResponse( data['html'], mimetype="text/html" )
+		return HttpResponse( data['html'], content_type="text/html" )
 
 	@classmethod
 	def text_newsletter_view( cls, request, pk=None ):
