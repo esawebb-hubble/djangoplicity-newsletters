@@ -86,6 +86,7 @@ def make_nl_id():
 			continue
 		if id > max_id:
 			max_id = id
+
 	return str(max_id + 1)
 
 
@@ -401,7 +402,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		('ON', 'Scheduled')
 	)
 
-	id = models.SlugField( primary_key=True, default=make_nl_id )
+	id = models.SlugField( primary_key=True )
 
 	# Status
 	type = models.ForeignKey( NewsletterType )
@@ -641,8 +642,12 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		return data
 
 	def save( self, *args, **kwargs ):
-		"""
-		"""
+		if not self.pk:
+			self.pk = make_nl_id()
+
+		if not self.created:
+			self.created = datetime.today()
+
 		if self.is_source() and not self.frozen:
 			if self.from_name == '':
 				self.from_name = self.type.default_from_name
