@@ -65,7 +65,6 @@ from djangoplicity.newsletters.tasks import send_newsletter, \
 	send_scheduled_newsletter
 from djangoplicity.translation.models import TranslationModel, translation_permalink
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
-from tinymce import models as tinymce_models
 import logging
 import traceback
 from django.utils import translation
@@ -381,7 +380,7 @@ class NewsletterLanguage( models.Model ):
 	language = models.ForeignKey(Language)
 	default_from_name = models.CharField( max_length=255, blank=True, null=True )
 	default_from_email = models.EmailField( blank=True, null=True)
-	default_editorial = tinymce_models.HTMLField( blank=True )
+	default_editorial = models.TextField( blank=True )
 	default_editorial_text = models.TextField( blank=True )
 
 	def __unicode__( self ):
@@ -426,7 +425,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 	# Editorial if needed
 	editorial_subject = models.CharField( max_length=255, blank=True )
-	editorial = tinymce_models.HTMLField( blank=True )
+	editorial = models.TextField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
 	def _schedule( self ):
@@ -864,7 +863,7 @@ class NewsletterContent( models.Model ):
 						if '-' in country:
 							country = country.split('-')[1]
 						if lang == settings.LANGUAGE_CODE or \
-								not d.country or \
+							not d.country or \
 								(d.country and d.country.isocode == country):
 							tmpdata.append(d)
 					else:

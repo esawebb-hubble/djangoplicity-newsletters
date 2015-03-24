@@ -37,7 +37,6 @@ Administration interface for Newsletters. The major extra views includes:
 	* Viewing HTML/text versions of newsletters
 	* Scheduling of newsletters.
 """
-
 from datetime import datetime, timedelta
 from django.conf.urls import patterns
 from django.contrib import admin
@@ -49,9 +48,13 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
+
 from djangoplicity.contrib import admin as dpadmin
 from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
 	TranslationDuplicateAdmin, ArchiveAdmin, DisplaysAdmin
+from djangoplicity.newsletters.forms import NewsletterForm, \
+	GenerateNewsletterForm, TestEmailsForm, SendNewsletterForm, \
+	ScheduleNewsletterForm, UnscheduleNewsletterForm, NewsletterLanguageInlineForm
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
 	MailerParameter, Mailer, MailerLog, Language, NewsletterProxy, NewsletterLanguage
@@ -115,6 +118,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		),
 	)
 	inlines = [NewsletterContentInlineAdmin]
+	form = NewsletterForm
 
 	def get_urls( self ):
 		"""
@@ -174,7 +178,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Generate a new newsletter
 		"""
-		from djangoplicity.newsletters.forms import GenerateNewsletterForm
 		if request.method == "POST":
 			form = GenerateNewsletterForm( request.POST )
 			if form.is_valid():
@@ -207,8 +210,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Send a newsletter test
 		"""
-		from djangoplicity.newsletters.forms import TestEmailsForm
-
 		nl = get_object_or_404( Newsletter, pk=pk )
 
 		if request.method == "POST":
@@ -233,8 +234,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Send a newsletter right away.
 		"""
-		from djangoplicity.newsletters.forms import SendNewsletterForm
-
 		nl = get_object_or_404( Newsletter, pk=pk )
 
 		if request.method == "POST":
@@ -266,8 +265,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Schedule a newsletter for sending.
 		"""
-		from djangoplicity.newsletters.forms import ScheduleNewsletterForm
-
 		nl = get_object_or_404( Newsletter, pk=pk )
 
 		if request.method == "POST":
@@ -300,8 +297,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Cancel a scheduled newsletter.
 		"""
-		from djangoplicity.newsletters.forms import UnscheduleNewsletterForm
-
 		nl = get_object_or_404( Newsletter, pk=pk )
 
 		if request.method == "POST":
@@ -345,6 +340,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 class NewsletterLanguageInlineAdmin(admin.TabularInline):
 	model = NewsletterLanguage
 	extra = 1
+	form = NewsletterLanguageInlineForm
 
 
 class NewsletterTypeAdmin( admin.ModelAdmin ):
