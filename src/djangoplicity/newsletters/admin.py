@@ -115,9 +115,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		),
 	)
 	inlines = [NewsletterContentInlineAdmin]
-#	formfield_overrides = {
-#        models.TextField: {'widget': TinyMCE( attrs={'cols': 80, 'rows': 20}, )},
-#    }
 
 	def get_urls( self ):
 		"""
