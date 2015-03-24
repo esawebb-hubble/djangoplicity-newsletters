@@ -177,7 +177,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('default_from_name', models.CharField(max_length=255, null=True, blank=True)),
                 ('default_from_email', models.EmailField(max_length=75, null=True, blank=True)),
-                ('default_editorial', tinymce.models.HTMLField(blank=True)),
+                ('default_editorial', models.TextField(blank=True)),
                 ('default_editorial_text', models.TextField(blank=True)),
                 ('language', models.ForeignKey(to='newsletters.Language')),
             ],
