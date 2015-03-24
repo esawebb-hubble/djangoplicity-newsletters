@@ -6,7 +6,6 @@ import djangoplicity.archives.base
 import djangoplicity.newsletters.models
 import djangoplicity.translation.fields
 import djangoplicity.archives.fields
-import tinymce.models
 import djangoplicity.archives.translation
 
 
@@ -131,7 +130,7 @@ class Migration(migrations.Migration):
                 ('text', models.TextField(blank=True)),
                 ('html', models.TextField(verbose_name=b'HTML', blank=True)),
                 ('editorial_subject', models.CharField(max_length=255, blank=True)),
-                ('editorial', tinymce.models.HTMLField(blank=True)),
+                ('editorial', models.TextField(blank=True)),
                 ('editorial_text', models.TextField(blank=True)),
                 ('release_date', djangoplicity.archives.fields.ReleaseDateTimeField(db_index=True, null=True, blank=True)),
                 ('published', models.BooleanField(default=False, db_index=True, verbose_name='Published')),
