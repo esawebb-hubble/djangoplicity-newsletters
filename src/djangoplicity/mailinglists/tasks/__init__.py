@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from djangoplicity.mailinglists.tasks.mailchimp import *
+from djangoplicity.mailinglists.tasks.mailchimp_tasks import *
 from djangoplicity.mailinglists.tasks.mailman import *
 from djangoplicity.mailinglists.tasks.mailman_actions import *
 from djangoplicity.mailinglists.tasks.mailchimp_actions import *
