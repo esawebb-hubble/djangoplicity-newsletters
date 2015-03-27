@@ -41,7 +41,7 @@ from djangoplicity.mailinglists.models import BadEmailAddress, Subscriber, \
 class MailChimpListForm( forms.ModelForm ):
 	def __init__( self, *args, **kwargs ):
 		super( MailChimpListForm, self ).__init__( *args, **kwargs )
-		if 'primary_key_field' in self.fields and 'instance' in kwargs:
+		if 'primary_key_field' in self.fields and 'instance' in kwargs and kwargs['instance']:
 			self.fields['primary_key_field'].queryset = MailChimpMergeVar.objects.filter( list=kwargs['instance'].id, public=False )
 
 
@@ -116,8 +116,8 @@ class ListAdmin( admin.ModelAdmin ):
 	admin_url.allow_tags = True
 
 	def action_sync( self, request, queryset ):
-		for obj in queryset:
-			pass # synchronize_mailman.delay( obj.name )
+		for _obj in queryset:
+			pass  # synchronize_mailman.delay( obj.name )
 		self.message_user( request, "Started synchronization of mailman lists %s." % ", ".join( [l.name for l in queryset] ) )
 	action_sync.short_description = "Synchronize lists"
 
