@@ -37,7 +37,7 @@ a newsletter.
 """
 
 from django import forms
-from django.contrib.admin import widgets
+from django.contrib.admin.widgets import AdminSplitDateTime
 from django.core.validators import validate_email
 
 from djangoplicity.contrib.admin.widgets import AdminRichTextAreaWidget
@@ -77,17 +77,17 @@ class GenerateNewsletterForm( forms.ModelForm ):
 		model = Newsletter
 		fields = [ 'type', 'start_date', 'end_date' ]
 		widgets = {
-			'start_date': widgets.AdminSplitDateTime(),
-			'end_date': widgets.AdminSplitDateTime(),
+			'start_date': AdminSplitDateTime(),
+			'end_date': AdminSplitDateTime(),
 		}
 
 
 class NewsletterForm( forms.ModelForm ):
-	editorial = forms.CharField(widget=AdminRichTextAreaWidget({'rows': '30'}))
+	editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '30'}))
 
 
 class NewsletterLanguageInlineForm( forms.ModelForm ):
-	default_editorial = forms.CharField(widget=AdminRichTextAreaWidget({'rows': '20'}))
+	default_editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '20'}))
 
 
 class TestEmailsForm( forms.Form ):
