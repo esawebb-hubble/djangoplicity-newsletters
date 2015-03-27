@@ -307,7 +307,7 @@ class Language( models.Model ):
 	"""
 	Available languages for Local newsletters
 	"""
-	lang = models.CharField(primary_key=True, verbose_name=_( 'Language' ), max_length=5, choices=settings.LANGUAGES)
+	lang = models.CharField(primary_key=True, verbose_name=_( 'Language' ), max_length=7, choices=settings.LANGUAGES)
 
 	def __unicode__( self ):
 		for lang, name in settings.LANGUAGES:
@@ -1108,7 +1108,7 @@ class MailChimpCampaign( models.Model ):
 	newsletter = models.ForeignKey( Newsletter )
 	list_id = models.CharField( max_length=50 )
 	campaign_id = models.CharField( max_length=50 )
-	lang = models.CharField( max_length=5, choices=settings.LANGUAGES, default='' )
+	lang = models.CharField( max_length=7, choices=settings.LANGUAGES, default='' )
 
 	class Meta:
 		unique_together = ['newsletter', 'list_id', 'lang']
