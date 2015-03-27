@@ -17,8 +17,6 @@ def category_extra_templates(model, query, query_name, query_data):
 
 
 class NewsletterCategoryQuery(CategoryQuery):
-	"""
-	"""
 	def __init__(self, *args, **kwargs):
 		defaults = {
 			'extra_templates': category_extra_templates,

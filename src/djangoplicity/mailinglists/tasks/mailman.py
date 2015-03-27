@@ -70,7 +70,6 @@ def mailman_send_unsubscribe( subscription_pk ):
 
 	sub = Subscription.objects.get( pk=subscription_pk )
 	email = sub.subscriber.email
-	list_name = sub.list.name
 	sub.delete()
 
 	sub.list.mailman._unsubscribe( sub.subscriber.email )

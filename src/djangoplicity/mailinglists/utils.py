@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -32,30 +32,31 @@
 
 import re
 
+
 class DataQueryParser( object ):
 	"""
 	Parse incoming POST or GET parameters into a dictionary. Example::
-	
+
 	>>> DataQueryParser.parse( {
 	....	"data[merges][GROUPINGS][0][name]"	: "Tick the category you qualify for:",
 	....	"data[merges][GROUPINGS][0][id]" : "1",
 	....} )
 	{ u'merges': { u'GROUPINGS': [{u'id': u'1', u'name': u'Tick the category you qualify for:'}] } }
-	
+
 	This is similar to PHP's style of parsing of query strings. This is however only used
 	for MailChimp webhooks incoming data.
 	"""
-	
+
 	@staticmethod
 	def parse( querydict ):
 		"""
 		Algorithm:
-		  
+
 		    1) Generate a trail like ('merges','GROUPINGS','0','name')
 		    2) Follow trail into the dictionary and set the value dict['merges']['GROUPINGS'][0]['name'] = val
 		"""
 		queryvars = {}
-		for k,v in querydict.items():
+		for k, v in querydict.items():
 			trail = DataQueryParser._parse_key( k )
 			if trail and len(trail) > 0:
 				DataQueryParser._set_value( queryvars, trail, v )
@@ -66,19 +67,19 @@ class DataQueryParser( object ):
 		"""
 		Parse the query key - e.g. data[merges][GROUPINGS][0][id]
 		"""
-		def parse_key2( k, regexp=re.compile( "^\[([a-zA-Z0-9_]+)\]" ) ):
+		def parse_key2( k, regexp=re.compile( r"^\[([a-zA-Z0-9_]+)\]" ) ):
 			m = regexp.search( k )
 			if m:
 				return [m.group(1)] + parse_key2( k[len(m.group(0)):] )
 			else:
 				return []
-	
-		return parse_key2( k, regexp=re.compile( "^data\[([a-zA-Z0-9_]+)\]" ) )
-		
+
+		return parse_key2( k, regexp=re.compile( r"^data\[([a-zA-Z0-9_]+)\]" ) )
+
 	@staticmethod
 	def _set_value( qdict, trail, val ):
 		"""
-		Set the query value using the found trail. 
+		Set the query value using the found trail.
 		"""
 		if len(trail) == 1:
 			if isinstance( qdict, dict ):
@@ -104,5 +105,5 @@ class DataQueryParser( object ):
 						qdict[idx] = []
 					except ValueError:
 						qdict.insert( idx, {} )
-					
+
 				DataQueryParser._set_value( qdict[idx], trail[1:], val )
