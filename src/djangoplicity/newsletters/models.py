@@ -63,7 +63,8 @@ from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 from djangoplicity.newsletters.tasks import send_newsletter, \
 	send_newsletter_test, schedule_newsletter, unschedule_newsletter, \
 	send_scheduled_newsletter
-from djangoplicity.translation.models import TranslationModel, translation_permalink
+from djangoplicity.translation.models import TranslationModel, \
+	translation_reverse
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 import logging
 import traceback
@@ -361,10 +362,9 @@ class NewsletterType( models.Model ):
 	def get_generator( self ):
 		return NewsletterGenerator( type=self )
 
-	@translation_permalink
 	def get_absolute_url( self ):
 		lang = translation.get_language()
-		return ( lang, 'newsletters_defaultquery', [self.slug, ] )
+		return translation_reverse( 'newsletters_defaultquery', args=[self.slug], lang=lang )
 
 	def __unicode__( self ):
 		return self.name
@@ -709,9 +709,8 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			return "Not present"
 	edit.allow_tags = True
 
-	@translation_permalink
 	def get_absolute_url( self ):
-		return ( self.lang, 'newsletters_detail_html', [self.type.slug, self.id if self.is_source() else self.source.id ] )
+		return translation_reverse( 'newsletters_detail_html', args=[self.type.slug, self.id if self.is_source() else self.source.id ], lang=self.lang )
 
 	def get_local_version( self, language ):
 		"""
