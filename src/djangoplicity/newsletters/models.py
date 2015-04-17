@@ -487,11 +487,11 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		the task send_newsletter
 		"""
 		if self.scheduled_status == 'OFF':
-			self._send()
+			self._send(check_scheduled=False)
 		else:
 			raise Exception( "Newsletter is scheduled for sending. To send now, you must first cancel the current schedule." )
 
-	def _send( self ):
+	def _send( self, check_scheduled=True ):
 		"""
 		Send newsletter
 		"""
@@ -500,7 +500,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			if self.type.archive:
 				self.published = True
 
-			if self.scheduled_status != 'ON':
+			if check_scheduled and self.scheduled_status != 'ON':
 				raise Exception( 'Won\'t send Newsletter: Scheduling status is "%s"' % self.scheduled_status)
 
 			for m in self.type.mailers.all():
