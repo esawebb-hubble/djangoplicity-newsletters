@@ -27,16 +27,16 @@
 						margin-right: 2px;
 				}
 			</style>
-			<a id="rotate" href="{{link_url}}">{{title}}{% if subtitle %}&mdash; {{subtitle}}{% endif %}</a>
+			<a id="rotate" href="{{link_url}}?lang">{{title}}{% if subtitle %}&mdash; {{subtitle}}{% endif %}</a>
 	{% else %}
 		<div style="padding:20px;color:white;font-size:22px;">
 			<div style="font-size:14px;">
 			<span style="background:black;padding:2px;">
-				<a style="color:white; font-size:14px; text-decoration: none; font-weight: bold;" href="{{link_url}}">{% if release_date %}{{release_date|datetime:"DATE"}}{% endif %}{% if release_date and pretitle %} &mdash; {% endif %}{% if pretitle %}{{ pretitle }}{% endif %}{% if embargo %} &mdash; <span style="color: #f4c819;">{% trans "UNDER EMBARGO"%}</span>{% endif %}</a>
+				<a style="color:white; font-size:14px; text-decoration: none; font-weight: bold;" href="{{link_url}}?lang">{% if release_date %}{{release_date|datetime:"DATE"}}{% endif %}{% if release_date and pretitle %} &mdash; {% endif %}{% if pretitle %}{{ pretitle }}{% endif %}{% if embargo %} &mdash; <span style="color: #f4c819;">{% trans "UNDER EMBARGO"%}</span>{% endif %}</a>
 			</span>
 			</div>
 			<span style="background:black;padding:2px;">
-				<a style="color:white;font-size:22px; line-height: 29px; text-decoration: none; font-weight: bold;" href="{{link_url}}">{{title}}{% if subtitle %}&mdash; {{subtitle}}{% endif %}</a>
+				<a style="color:white;font-size:22px; line-height: 29px; text-decoration: none; font-weight: bold;" href="{{link_url}}?lang">{{title}}{% if subtitle %}&mdash; {{subtitle}}{% endif %}</a>
 			</span>
 		</div> 
 	{% endif %}
