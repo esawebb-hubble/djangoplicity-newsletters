@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -30,7 +30,6 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-import os
 from setuptools import setup, find_packages
 
 setup(
@@ -38,11 +37,14 @@ setup(
 	version = '0.1.0',
 	packages = find_packages('src'),
 	package_dir = { '': 'src' },
-    install_requires = ['setuptools'],
+    install_requires = [
+		'setuptools',
+		'certifi==2015.04.28',
+	],
 	include_package_data = True,
 	zip_safe = False,
 	namespace_packages = ['djangoplicity'],
-	
+
 	# metadata for upload to PyPI
 	author = 'European Southern Observatory',
 	author_email = 'information@eso.org',
