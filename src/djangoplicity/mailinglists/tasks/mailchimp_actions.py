@@ -35,7 +35,7 @@ from django.utils.encoding import smart_unicode
 from django.db.models.fields import FieldDoesNotExist
 from django.core.exceptions import ValidationError
 
-from djangoplicity.actions.plugins import ActionPlugin
+from djangoplicity.actions.plugins import ActionPlugin  # pylint: disable=E0611
 from djangoplicity.mailinglists.exceptions import MailChimpError
 
 
@@ -66,7 +66,11 @@ class MailChimpAction( ActionPlugin ):
 				except FieldDoesNotExist:
 					pass
 
-		return ( [], { 'model_identifier': model_identifier, 'pk': pk } )
+		result = {'model_identifier': model_identifier, 'pk': pk}
+		if 'email' in kwargs:
+			result['email'] = kwargs['email']
+
+		return ( [], result)
 
 	def _get_object( self, model_identifier, pk ):
 		"""
@@ -132,15 +136,21 @@ class MailChimpUnsubscribeAction( MailChimpAction ):
 		( 'send_goodbye', 'Flag to send the goodbye email to the email address, defaults to true.', 'bool' ),
 	]
 
-	def run( self, conf, model_identifier=None, pk=None ):
+	def run( self, conf, model_identifier=None, pk=None, email=None ):
 		"""
 		Unsubscribe from MailChimp list
 		"""
 		if model_identifier and pk:
-			obj = self._get_object( model_identifier, pk )
-			list = self._get_list( conf['list_id'] )
-			list.unsubscribe( obj.email, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], async=False )
-			self.get_logger().info( "Unsubscribed %s from MailChimp list %s" % ( obj.email, list.name ) )
+			try:
+				email = self._get_object(model_identifier, pk).email
+			except:  # pylint: disable=W0702
+				# Couldn't find matching object, try with the email
+				email = email if email else ''
+
+			if email:
+				list = self._get_list( conf['list_id'] )
+				list.unsubscribe( email, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], async=False )
+				self.get_logger().info( "Unsubscribed %s from MailChimp list %s" % ( email, list.name ) )
 
 
 class MailChimpUpdateAction( MailChimpAction ):
