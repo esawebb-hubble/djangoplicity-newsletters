@@ -30,13 +30,15 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+import time
+from mailchimp import ListAlreadySubscribedError, TooManyConnectionsError
+
 from django.db import models
 from django.utils.encoding import smart_unicode
 from django.db.models.fields import FieldDoesNotExist
 from django.core.exceptions import ValidationError
 
 from djangoplicity.actions.plugins import ActionPlugin  # pylint: disable=E0611
-from djangoplicity.mailinglists.exceptions import MailChimpError
 
 
 class MailChimpAction( ActionPlugin ):
@@ -109,12 +111,11 @@ class MailChimpSubscribeAction( MailChimpAction ):
 			try:
 				mlist.subscribe( obj.email, merge_vars=merge_vars, double_optin=conf['double_optin'], send_welcome=conf['send_welcome'], async=False )
 				self.get_logger().info( "Subscribed %s to MailChimp list %s" % ( obj.email, mlist.name ) )
-			except MailChimpError, e:
-				if e.code == 214:
-					#  List_AlreadySubscribed
-					self.get_logger().info( "%s is already a member of MailChimp list %s" % ( obj.email, mlist.name ) )
-				else:
-					raise e
+			except TooManyConnectionsError:
+				time.sleep(10)
+				self.run(conf, model_identifier, pk)
+			except ListAlreadySubscribedError:
+				self.get_logger().info( "%s is already a member of MailChimp list %s" % ( obj.email, mlist.name ) )
 			except ValidationError, e:
 				if 'Enter a valid e-mail address.' in e.messages:
 					self.get_logger().info( "Invalid email address %s trying to subscribe to MailChimp list %s" % ( obj.email, mlist.name ) )
