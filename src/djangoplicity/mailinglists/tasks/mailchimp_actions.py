@@ -31,7 +31,6 @@
 #
 
 import time
-from mailchimp import ListAlreadySubscribedError, TooManyConnectionsError
 
 from django.db import models
 from django.utils.encoding import smart_unicode
@@ -99,6 +98,7 @@ class MailChimpSubscribeAction( MailChimpAction ):
 		"""
 		Subscribe to MailChimp list
 		"""
+		from mailchimp import ListAlreadySubscribedError, TooManyConnectionsError
 		if model_identifier and pk:
 			obj = self._get_object( model_identifier, pk )
 			mlist = self._get_list( conf['list_id'] )
