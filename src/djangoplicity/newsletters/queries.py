@@ -43,7 +43,7 @@ class NewsletterCategoryQuery(CategoryQuery):
 		except FieldError:
 			raise ImproperlyConfigured( 'URL field does not exist on category model.' )
 		except AttributeError:
-			raise ImproperlyConfigured( 'Related query set attribute %s_set does not exist on category model.' % model._meta.module_name )
+			raise ImproperlyConfigured( 'Related query set attribute %s_set does not exist on category model.' % model._meta.model_name )
 
 		# If the archive is restricted to internal access only we return a 404
 		# if the client is outside the internal network
