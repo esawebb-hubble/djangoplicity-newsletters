@@ -49,6 +49,7 @@ from django.template import RequestContext
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
 
+# pylint: disable=E0611
 from djangoplicity.contrib import admin as dpadmin
 from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
 	TranslationDuplicateAdmin, ArchiveAdmin, DisplaysAdmin
@@ -77,6 +78,28 @@ class MailerParameterInlineAdmin( admin.TabularInline ):
 class NewsletterContentInlineAdmin( admin.TabularInline ):
 	model = NewsletterContent
 	extra = 0
+
+	def formfield_for_foreignkey(self, db_field, request, **kwargs):
+		'''
+		Select related newsletter type to speed up admin view
+		'''
+		if db_field.name == "data_source":
+			kwargs["queryset"] = NewsletterDataSource.objects.all().select_related('type')
+		return super(NewsletterContentInlineAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+	def formfield_for_dbfield(self, db_field, **kwargs):
+		'''
+		Cache the data_source choices to speed up admin view
+		'''
+		request = kwargs['request']
+		formfield = super(NewsletterContentInlineAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+		if db_field.name in ('data_source', ):
+			choices_cache = getattr(request, '%s_choices_cache' % db_field.name, None)
+			if choices_cache is not None:
+				formfield.choices = choices_cache
+			else:
+				setattr(request, '%s_choices_cache' % db_field.name, formfield.choices)
+		return formfield
 
 
 #hack: Injecting Newsletter Options into DisplaysAdmin
