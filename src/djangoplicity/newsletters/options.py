@@ -30,9 +30,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
 
-from django.conf.urls import patterns, url
-from django.core.exceptions import ImproperlyConfigured
-
 from djangoplicity.archives.contrib.browsers import ListBrowser
 from djangoplicity.archives.contrib.templater import DisplayTemplate
 from djangoplicity.newsletters.queries import NewsletterCategoryQuery
@@ -76,7 +73,4 @@ class NewsletterOptions(ArchiveOptions):
 		]
 
 	class Display():
-		esonews = DisplayTemplate( 'file', 'archives/newsletters/translations_list.html', name = 'Translations list' )
-
-
-
+		esonews = DisplayTemplate( 'file', 'archives/newsletters/translations_list.html', name='Translations list' )

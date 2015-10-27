@@ -14,7 +14,7 @@
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
 #
-#    * Neither the name of the European Southern Observatory nor the names 
+#    * Neither the name of the European Southern Observatory nor the names
 #      of its contributors may be used to endorse or promote products derived
 #      from this software without specific prior written permission.
 #
@@ -30,9 +30,8 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from BeautifulSoup import BeautifulSoup
-	
 from django_mailman.models import List as OriginalMailmanList
+
 
 class MailmanList( object ):
 	"""
@@ -41,14 +40,13 @@ class MailmanList( object ):
 	def __init__( self, name=None, password=None, main_url=None ):
 		self._mailman = OriginalMailmanList( name=name, password=password, email='noreply+%s@eso.org' % name, main_url=main_url, encoding='utf-8' )
 		self.base_url = main_url
-		
+
 	def __getattr__( self, name ):
 		return getattr( self._mailman, name )
-		
+
 	def get_members( self ):
 		return self._mailman.get_all_members()
-	
+
 	def get_admin_url( self ):
 		""" Get mailman admin URL """
 		return "%s/admin/%s/?adminpw=%s" % ( self.main_url, self.name, self.password )
-

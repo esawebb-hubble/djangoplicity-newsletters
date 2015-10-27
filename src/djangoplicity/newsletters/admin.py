@@ -37,7 +37,6 @@ Administration interface for Newsletters. The major extra views includes:
 	* Viewing HTML/text versions of newsletters
 	* Scheduling of newsletters.
 """
-
 from datetime import datetime, timedelta
 from django.conf.urls import patterns
 from django.contrib import admin
@@ -49,9 +48,14 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
+
+# pylint: disable=E0611
 from djangoplicity.contrib import admin as dpadmin
 from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
 	TranslationDuplicateAdmin, ArchiveAdmin, DisplaysAdmin
+from djangoplicity.newsletters.forms import NewsletterForm, \
+	GenerateNewsletterForm, TestEmailsForm, SendNewsletterForm, \
+	ScheduleNewsletterForm, UnscheduleNewsletterForm, NewsletterLanguageInlineForm
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
 	MailerParameter, Mailer, MailerLog, Language, NewsletterProxy, NewsletterLanguage
@@ -74,6 +78,28 @@ class MailerParameterInlineAdmin( admin.TabularInline ):
 class NewsletterContentInlineAdmin( admin.TabularInline ):
 	model = NewsletterContent
 	extra = 0
+
+	def formfield_for_foreignkey(self, db_field, request, **kwargs):
+		'''
+		Select related newsletter type to speed up admin view
+		'''
+		if db_field.name == "data_source":
+			kwargs["queryset"] = NewsletterDataSource.objects.all().select_related('type')
+		return super(NewsletterContentInlineAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+	def formfield_for_dbfield(self, db_field, **kwargs):
+		'''
+		Cache the data_source choices to speed up admin view
+		'''
+		request = kwargs['request']
+		formfield = super(NewsletterContentInlineAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+		if db_field.name in ('data_source', ):
+			choices_cache = getattr(request, '%s_choices_cache' % db_field.name, None)
+			if choices_cache is not None:
+				formfield.choices = choices_cache
+			else:
+				setattr(request, '%s_choices_cache' % db_field.name, formfield.choices)
+		return formfield
 
 
 #hack: Injecting Newsletter Options into DisplaysAdmin
@@ -115,9 +141,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		),
 	)
 	inlines = [NewsletterContentInlineAdmin]
-#	formfield_overrides = {
-#        models.TextField: {'widget': TinyMCE( attrs={'cols': 80, 'rows': 20}, )},
-#    }
+	form = NewsletterForm
 
 	def get_urls( self ):
 		"""
@@ -177,7 +201,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Generate a new newsletter
 		"""
-		from djangoplicity.newsletters.forms import GenerateNewsletterForm
 		if request.method == "POST":
 			form = GenerateNewsletterForm( request.POST )
 			if form.is_valid():
@@ -210,8 +233,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Send a newsletter test
 		"""
-		from djangoplicity.newsletters.forms import TestEmailsForm
-
 		nl = get_object_or_404( Newsletter, pk=pk )
 
 		if request.method == "POST":
@@ -236,8 +257,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Send a newsletter right away.
 		"""
-		from djangoplicity.newsletters.forms import SendNewsletterForm
-
 		nl = get_object_or_404( Newsletter, pk=pk )
 
 		if request.method == "POST":
@@ -269,8 +288,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Schedule a newsletter for sending.
 		"""
-		from djangoplicity.newsletters.forms import ScheduleNewsletterForm
-
 		nl = get_object_or_404( Newsletter, pk=pk )
 
 		if request.method == "POST":
@@ -303,8 +320,6 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		Cancel a scheduled newsletter.
 		"""
-		from djangoplicity.newsletters.forms import UnscheduleNewsletterForm
-
 		nl = get_object_or_404( Newsletter, pk=pk )
 
 		if request.method == "POST":
@@ -348,6 +363,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 class NewsletterLanguageInlineAdmin(admin.TabularInline):
 	model = NewsletterLanguage
 	extra = 1
+	form = NewsletterLanguageInlineForm
 
 
 class NewsletterTypeAdmin( admin.ModelAdmin ):

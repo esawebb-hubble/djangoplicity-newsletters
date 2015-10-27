@@ -63,9 +63,9 @@ from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 from djangoplicity.newsletters.tasks import send_newsletter, \
 	send_newsletter_test, schedule_newsletter, unschedule_newsletter, \
 	send_scheduled_newsletter
-from djangoplicity.translation.models import TranslationModel, translation_permalink
+from djangoplicity.translation.models import TranslationModel, \
+	translation_reverse
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
-from tinymce import models as tinymce_models
 import logging
 import traceback
 from django.utils import translation
@@ -87,6 +87,7 @@ def make_nl_id():
 			continue
 		if id > max_id:
 			max_id = id
+
 	return str(max_id + 1)
 
 
@@ -307,7 +308,7 @@ class Language( models.Model ):
 	"""
 	Available languages for Local newsletters
 	"""
-	lang = models.CharField(primary_key=True, verbose_name=_( 'Language' ), max_length=5, choices=settings.LANGUAGES)
+	lang = models.CharField(primary_key=True, verbose_name=_( 'Language' ), max_length=7, choices=settings.LANGUAGES)
 
 	def __unicode__( self ):
 		for lang, name in settings.LANGUAGES:
@@ -361,10 +362,9 @@ class NewsletterType( models.Model ):
 	def get_generator( self ):
 		return NewsletterGenerator( type=self )
 
-	@translation_permalink
 	def get_absolute_url( self ):
 		lang = translation.get_language()
-		return ( lang, 'newsletters_defaultquery', [self.slug, ] )
+		return translation_reverse( 'newsletters_defaultquery', args=[self.slug], lang=lang )
 
 	def __unicode__( self ):
 		return self.name
@@ -381,7 +381,7 @@ class NewsletterLanguage( models.Model ):
 	language = models.ForeignKey(Language)
 	default_from_name = models.CharField( max_length=255, blank=True, null=True )
 	default_from_email = models.EmailField( blank=True, null=True)
-	default_editorial = tinymce_models.HTMLField( blank=True )
+	default_editorial = models.TextField( blank=True )
 	default_editorial_text = models.TextField( blank=True )
 
 	def __unicode__( self ):
@@ -402,7 +402,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		('ON', 'Scheduled')
 	)
 
-	id = models.SlugField( primary_key=True, default=make_nl_id )
+	id = models.SlugField( primary_key=True )
 
 	# Status
 	type = models.ForeignKey( NewsletterType )
@@ -426,7 +426,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 
 	# Editorial if needed
 	editorial_subject = models.CharField( max_length=255, blank=True )
-	editorial = tinymce_models.HTMLField( blank=True )
+	editorial = models.TextField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
 	def _schedule( self ):
@@ -487,11 +487,11 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		the task send_newsletter
 		"""
 		if self.scheduled_status == 'OFF':
-			self._send()
+			self._send(check_scheduled=False)
 		else:
 			raise Exception( "Newsletter is scheduled for sending. To send now, you must first cancel the current schedule." )
 
-	def _send( self ):
+	def _send( self, check_scheduled=True ):
 		"""
 		Send newsletter
 		"""
@@ -500,7 +500,7 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			if self.type.archive:
 				self.published = True
 
-			if self.scheduled_status != 'ON':
+			if check_scheduled and self.scheduled_status != 'ON':
 				raise Exception( 'Won\'t send Newsletter: Scheduling status is "%s"' % self.scheduled_status)
 
 			for m in self.type.mailers.all():
@@ -642,8 +642,12 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		return data
 
 	def save( self, *args, **kwargs ):
-		"""
-		"""
+		if not self.pk:
+			self.pk = make_nl_id()
+
+		if not self.created:
+			self.created = datetime.today()
+
 		if self.is_source() and not self.frozen:
 			if self.from_name == '':
 				self.from_name = self.type.default_from_name
@@ -705,9 +709,8 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			return "Not present"
 	edit.allow_tags = True
 
-	@translation_permalink
 	def get_absolute_url( self ):
-		return ( self.lang, 'newsletters_detail_html', [self.type.slug, self.id if self.is_source() else self.source.id ] )
+		return translation_reverse( 'newsletters_detail_html', args=[self.type.slug, self.id if self.is_source() else self.source.id ], lang=self.lang )
 
 	def get_local_version( self, language ):
 		"""
@@ -864,7 +867,7 @@ class NewsletterContent( models.Model ):
 						if '-' in country:
 							country = country.split('-')[1]
 						if lang == settings.LANGUAGE_CODE or \
-								not d.country or \
+							not d.country or \
 								(d.country and d.country.isocode == country):
 							tmpdata.append(d)
 					else:
@@ -1104,7 +1107,7 @@ class MailChimpCampaign( models.Model ):
 	newsletter = models.ForeignKey( Newsletter )
 	list_id = models.CharField( max_length=50 )
 	campaign_id = models.CharField( max_length=50 )
-	lang = models.CharField( max_length=5, choices=settings.LANGUAGES, default='' )
+	lang = models.CharField( max_length=7, choices=settings.LANGUAGES, default='' )
 
 	class Meta:
 		unique_together = ['newsletter', 'list_id', 'lang']

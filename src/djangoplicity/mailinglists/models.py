@@ -28,11 +28,6 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
-#
-
-"""
-
-"""
 
 from datetime import datetime, timedelta
 from django.conf import settings
@@ -431,7 +426,7 @@ class MailChimpList( models.Model ):
 		"""
 		val = self.get_modelpk_from_identifier( object_identifier )
 		if val:
-			app_label, model_name, pk = val
+			app_label, model_name, pk = val  # pylint: disable=W0633
 			Model = models.get_model( app_label, model_name )
 			return Model.objects.get( pk=pk )
 		return None
@@ -1053,7 +1048,7 @@ class MergeVarMapping( models.Model ):
 
 		val = params[tag]
 
-		if self.merge_var.field_type == 'address':
+		if self.merge_var.field_type == 'address' and val:
 			try:
 				res = {}
 				fields = self._field_list()

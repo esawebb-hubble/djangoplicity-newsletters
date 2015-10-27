@@ -14,7 +14,7 @@
 #	  notice, this list of conditions and the following disclaimer in the
 #	  documentation and/or other materials provided with the distribution.
 #
-#	* Neither the name of the European Southern Observatory nor the names 
+#	* Neither the name of the European Southern Observatory nor the names
 #	  of its contributors may be used to endorse or promote products derived
 #	  from this software without specific prior written permission.
 #
@@ -30,23 +30,19 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from django.shortcuts import render_to_response
-from django.template import RequestContext
-from django.core.mail import EmailMultiAlternatives
-from django.conf import settings
-
-from djangoplicity.mailinglists.models import MailChimpListToken, MailChimpList, Subscriber
-from djangoplicity.mailinglists.tasks import mailchimp_subscribe, mailchimp_unsubscribe, mailchimp_upemail, mailchimp_cleaned, mailchimp_profile, mailchimp_campaign 
+from djangoplicity.mailinglists.models import MailChimpListToken, MailChimpList
+from djangoplicity.mailinglists.tasks import mailchimp_subscribe, mailchimp_unsubscribe, mailchimp_upemail, mailchimp_cleaned, mailchimp_profile, mailchimp_campaign
 from djangoplicity.mailinglists.utils import DataQueryParser
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
 
-import re
 import logging
 
 logger = logging.getLogger( 'djangoplicity' )
 
+
 class WebHookError( Exception ):
 	pass
+
 
 def _get_parameters( request ):
 	"""
@@ -57,33 +53,33 @@ def _get_parameters( request ):
 
 def subscribe_event( request, list, fired_at, **kwargs ):
 	"""
-	"type": "subscribe", 
-	"fired_at": "2009-03-26 21:35:57", 
-	"data[id]": "8a25ff1d98", 
+	"type": "subscribe",
+	"fired_at": "2009-03-26 21:35:57",
+	"data[id]": "8a25ff1d98",
 	"data[list_id]": "a6b5da1054",
-	"data[email]": "api@mailchimp.com", 
-	"data[email_type]": "html", 
-	"data[merges][EMAIL]": "api@mailchimp.com", 
-	"data[merges][FNAME]": "MailChimp", 
-	"data[merges][LNAME]": "API", 
-	"data[merges][INTERESTS]": "Group1,Group2", 
-	"data[ip_opt]": "10.20.10.30", 
+	"data[email]": "api@mailchimp.com",
+	"data[email_type]": "html",
+	"data[merges][EMAIL]": "api@mailchimp.com",
+	"data[merges][FNAME]": "MailChimp",
+	"data[merges][LNAME]": "API",
+	"data[merges][INTERESTS]": "Group1,Group2",
+	"data[ip_opt]": "10.20.10.30",
 	"data[ip_signup]": "10.20.10.30"
-	
+
 	exists on default list:
 	- do nothing
-	
+
 	exists on secondary mailman list but not default:
 	- remove email from exclude lists
 	- add to default mailman list.
-	
+
 	does not exists on mailman list:
 	- subscribe to default mailman list
 	"""
-	mailchimp_subscribe.delay( 
-		list = list.pk,
-		fired_at = fired_at,
-		params = _get_parameters( request ),
+	mailchimp_subscribe.delay(
+		list=list.pk,
+		fired_at=fired_at,
+		params=_get_parameters( request ),
 		**kwargs
 	)
 	return HttpResponse( "" )
@@ -91,136 +87,141 @@ def subscribe_event( request, list, fired_at, **kwargs ):
 
 def unsubscribe_event( request, list, fired_at, **kwargs ):
 	"""
-	"type": "unsubscribe", 
-	"fired_at": "2009-03-26 21:40:57",  
-	"data[id]": "8a25ff1d98", 
+	"type": "unsubscribe",
+	"fired_at": "2009-03-26 21:40:57",
+	"data[id]": "8a25ff1d98",
 	"data[list_id]": "a6b5da1054",
-	"data[email]": "api+unsub@mailchimp.com", 
-	"data[email_type]": "html", 
-	"data[merges][EMAIL]": "api+unsub@mailchimp.com", 
-	"data[merges][FNAME]": "MailChimp", 
-	"data[merges][LNAME]": "API", 
-	"data[merges][INTERESTS]": "Group1,Group2", 
+	"data[email]": "api+unsub@mailchimp.com",
+	"data[email_type]": "html",
+	"data[merges][EMAIL]": "api+unsub@mailchimp.com",
+	"data[merges][FNAME]": "MailChimp",
+	"data[merges][LNAME]": "API",
+	"data[merges][INTERESTS]": "Group1,Group2",
 	"data[ip_opt]": "10.20.10.30",
 	"data[campaign_id]": "cb398d21d2",
 	"data[reason]": "hard"
-	
+
 	exists on default mailman list:
 	- remove from default list
 
 	exists on secondary mailman list:
-	- add to exclude 
-	
+	- add to exclude
+
 	does not exists on mailman list:
 	- subscribe to default mailman list
 	"""
-	mailchimp_unsubscribe.delay( 
-		list = list.pk,
-		fired_at = fired_at,
-		params = _get_parameters( request ),
+	mailchimp_unsubscribe.delay(
+		list=list.pk,
+		fired_at=fired_at,
+		params=_get_parameters( request ),
 		**kwargs
 	)
 	return HttpResponse( "" )
+
 
 def profile_event( request, list, fired_at, **kwargs ):
 	"""
-	"type": "profile", 
-	"fired_at": "2009-03-26 21:31:21", 
-	"data[id]": "8a25ff1d98", 
+	"type": "profile",
+	"fired_at": "2009-03-26 21:31:21",
+	"data[id]": "8a25ff1d98",
 	"data[list_id]": "a6b5da1054",
-	"data[email]": "api@mailchimp.com", 
-	"data[email_type]": "html", 
-	"data[merges][EMAIL]": "api@mailchimp.com", 
-	"data[merges][FNAME]": "MailChimp", 
-	"data[merges][LNAME]": "API", 
-	"data[merges][INTERESTS]": "Group1,Group2", 
+	"data[email]": "api@mailchimp.com",
+	"data[email_type]": "html",
+	"data[merges][EMAIL]": "api@mailchimp.com",
+	"data[merges][FNAME]": "MailChimp",
+	"data[merges][LNAME]": "API",
+	"data[merges][INTERESTS]": "Group1,Group2",
 	"data[ip_opt]": "10.20.10.30"
 	"""
-	mailchimp_profile.delay( 
-		list = list.pk,
-		fired_at = fired_at,
-		params = _get_parameters( request ),
+	mailchimp_profile.delay(
+		list=list.pk,
+		fired_at=fired_at,
+		params=_get_parameters( request ),
 		**kwargs
 	)
 	return HttpResponse( "" )
 
+
 def upemail_event( request, list, fired_at, **kwargs ):
-	"""
-	"type": "upemail", 
-	"fired_at": "2009-03-26\ 22:15:09", 
+	r"""
+	"type": "upemail",
+	"fired_at": "2009-03-26\ 22:15:09",
 	"data[list_id]": "a6b5da1054",
-	"data[new_id]": "51da8c3259", 
-	"data[new_email]": "api+new@mailchimp.com", 
+	"data[new_id]": "51da8c3259",
+	"data[new_email]": "api+new@mailchimp.com",
 	"data[old_email]": "api+old@mailchimp.com"
 	"""
-	mailchimp_upemail.delay( 
-		list = list.pk,
-		fired_at = fired_at,
-		params = _get_parameters( request ),
+	mailchimp_upemail.delay(
+		list=list.pk,
+		fired_at=fired_at,
+		params=_get_parameters( request ),
 		**kwargs
 	)
 	return HttpResponse( "" )
+
 
 def cleaned_event( request, list, fired_at, **kwargs ):
 	"""
-	"type": "cleaned", 
-	"fired_at": "2009-03-26 22:01:00", 
+	"type": "cleaned",
+	"fired_at": "2009-03-26 22:01:00",
 	"data[list_id]": "a6b5da1054",
 	"data[campaign_id]": "4fjk2ma9xd",
 	"data[reason]": "hard",
 	"data[email]": "api+cleaned@mailchimp.com"
 	"""
-	mailchimp_cleaned.delay( 
-		list = list.pk,
-		fired_at = fired_at,
-		params = _get_parameters( request ),
+	mailchimp_cleaned.delay(
+		list=list.pk,
+		fired_at=fired_at,
+		params=_get_parameters( request ),
 		**kwargs
 	)
 	return HttpResponse( "" )
 
+
 def campaign_event( request, list, fired_at, **kwargs ):
 	"""
-	"type": "campaign", 
-	"fired_at": "2009-03-26 21:31:21", 
+	"type": "campaign",
+	"fired_at": "2009-03-26 21:31:21",
 	"data[id]": "5aa2102003",
-	"data[subject]": "Test Campaign Subject", 
+	"data[subject]": "Test Campaign Subject",
 	"data[status]": "sent",
-	"data[reason]": "", 
+	"data[reason]": "",
 	"data[list_id]": "a6b5da105
 	"""
-	mailchimp_campaign.delay( 
-		list = list.pk,
-		fired_at = fired_at,
-		params = _get_parameters( request ),
+	mailchimp_campaign.delay(
+		list=list.pk,
+		fired_at=fired_at,
+		params=_get_parameters( request ),
 		**kwargs
 	)
 	return HttpResponse( "" )
 
 
 EVENT_HANDLERS = {
-	'subscribe' : subscribe_event,
-	'unsubscribe' : unsubscribe_event,
-	'upemail' : upemail_event,
-	'cleaned' : cleaned_event,
-	'profile' : profile_event,
-	'campaign' : campaign_event,
+	'subscribe': subscribe_event,
+	'unsubscribe': unsubscribe_event,
+	'upemail': upemail_event,
+	'cleaned': cleaned_event,
+	'profile': profile_event,
+	'campaign': campaign_event,
 }
+
 
 def mailchimp_webhook( request, require_secure=False ):
 	"""
 	MailChimp webhook view (see http://apidocs.mailchimp.com/webhooks/)
-	
+
 	Validates the request to ensure it is from MailChimp, and delegates
-	event processing to event handlers. 
-	
+	event processing to event handlers.
+
 	Validation checks::
 	  * POST request
 	  * HTTPS request
 	  * Validate token (not expired, and belongs to list being updated)
 	  * Validate that list exists
-	  
-	A request to mailchimp_webook must be completed within 15 seconds, thus 
-	event handlers should only gather the data they need, and send the rest 
+
+	A request to mailchimp_webook must be completed within 15 seconds, thus
+	event handlers should only gather the data they need, and send the rest
 	for background processing.
 	"""
 	try:
@@ -237,7 +238,7 @@ def mailchimp_webhook( request, require_secure=False ):
 			t = MailChimpListToken.get_token( token )
 
 			if t is None:
-				logger.debug( "[Webhook] Token %s not found" % token )
+				logger.debug( "[Webhook] Token %s not found", token )
 				return HttpResponse( "" )
 		except KeyError:
 			logger.debug( "[Webhook] No 'token' GET parameter" )
@@ -247,7 +248,7 @@ def mailchimp_webhook( request, require_secure=False ):
 		user_agent = request.META.get( 'HTTP_USER_AGENT', '' )
 
 		if user_agent != 'MailChimp.com':
-			logger.debug( "[Webhook] User-agent not MailChimp.com - was %s" % user_agent )
+			logger.debug( "[Webhook] User-agent not MailChimp.com - was %s", user_agent )
 			return HttpResponse( "" )
 
 		try:
@@ -262,7 +263,7 @@ def mailchimp_webhook( request, require_secure=False ):
 		except KeyError:
 			raise WebHookError( "Parameters missing" )
 
-		# Check webhook type 
+		# Check webhook type
 		if type not in ['subscribe', 'unsubscribe', 'profile', 'upemail', 'cleaned', 'campaign']:
 			raise WebHookError( "Unknown webhook type %s" % type )
 
@@ -286,7 +287,5 @@ def mailchimp_webhook( request, require_secure=False ):
 		logger.debug( " [Webhook] Request accepted" )
 		return view( request, list, fired_at, ip=ip, user_agent=user_agent, )
 	except WebHookError, e:
-		logger.debug( "[Webhook] %s" % unicode( e ) )
+		logger.debug( "[Webhook] %s", unicode( e ) )
 		return HttpResponse( "" )
-
-

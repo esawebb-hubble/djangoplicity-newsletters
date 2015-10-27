@@ -25,7 +25,7 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{{ STATIC_URL}}/admin/{% e
 
 
 {% block content %}<div id="content-main">
-<form action="." method="post" id="{{ opts.module_name }}_form">{% csrf_token %}{% block form_top %}{% endblock %}
+<form action="." method="post" id="{{ opts.model_name }}_form">{% csrf_token %}{% block form_top %}{% endblock %}
 <div>
 {% if is_popup %}<input type="hidden" name="_popup" value="1" />{% endif %}
 {% if adminform.errors %}

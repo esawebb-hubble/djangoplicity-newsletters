@@ -41,7 +41,7 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{{ STATIC_URL}}/admin/{% e
 {% else %}{% if is_past %}
 <p class="errornote">Release date {{original.release_date}} is in the past. Please change to a future date, or alternatively <a href="../send_now/">send now</a>.</p>
 {% else %}
-<form action="." method="post" id="{{ opts.module_name }}_form">{% csrf_token %}{% block form_top %}{% endblock %}
+<form action="." method="post" id="{{ opts.model_name }}_form">{% csrf_token %}{% block form_top %}{% endblock %}
 <div>
 {% if is_popup %}<input type="hidden" name="_popup" value="1" />{% endif %}
 {% if adminform.errors %}

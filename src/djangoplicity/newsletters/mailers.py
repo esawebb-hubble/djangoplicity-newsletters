@@ -618,7 +618,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		campaigns = self._get_campaigns(newsletter)
 
-		for language, campaign in campaigns:
+		for _language, campaign in campaigns:
 			r = self.ml.connection('campaigns.send_test', {'cid': campaign.campaign_id, 'test_emails': emails})
 			# Test for errors
 			try:

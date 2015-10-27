@@ -30,13 +30,14 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+import time
+
 from django.db import models
 from django.utils.encoding import smart_unicode
 from django.db.models.fields import FieldDoesNotExist
 from django.core.exceptions import ValidationError
 
-from djangoplicity.actions.plugins import ActionPlugin
-from djangoplicity.mailinglists.exceptions import MailChimpError
+from djangoplicity.actions.plugins import ActionPlugin  # pylint: disable=E0611
 
 
 class MailChimpAction( ActionPlugin ):
@@ -66,7 +67,11 @@ class MailChimpAction( ActionPlugin ):
 				except FieldDoesNotExist:
 					pass
 
-		return ( [], { 'model_identifier': model_identifier, 'pk': pk } )
+		result = {'model_identifier': model_identifier, 'pk': pk}
+		if 'email' in kwargs:
+			result['email'] = kwargs['email']
+
+		return ( [], result)
 
 	def _get_object( self, model_identifier, pk ):
 		"""
@@ -93,6 +98,7 @@ class MailChimpSubscribeAction( MailChimpAction ):
 		"""
 		Subscribe to MailChimp list
 		"""
+		from mailchimp import ListAlreadySubscribedError, TooManyConnectionsError
 		if model_identifier and pk:
 			obj = self._get_object( model_identifier, pk )
 			mlist = self._get_list( conf['list_id'] )
@@ -105,12 +111,11 @@ class MailChimpSubscribeAction( MailChimpAction ):
 			try:
 				mlist.subscribe( obj.email, merge_vars=merge_vars, double_optin=conf['double_optin'], send_welcome=conf['send_welcome'], async=False )
 				self.get_logger().info( "Subscribed %s to MailChimp list %s" % ( obj.email, mlist.name ) )
-			except MailChimpError, e:
-				if e.code == 214:
-					#  List_AlreadySubscribed
-					self.get_logger().info( "%s is already a member of MailChimp list %s" % ( obj.email, mlist.name ) )
-				else:
-					raise e
+			except TooManyConnectionsError:
+				time.sleep(10)
+				self.run(conf, model_identifier, pk)
+			except ListAlreadySubscribedError:
+				self.get_logger().info( "%s is already a member of MailChimp list %s" % ( obj.email, mlist.name ) )
 			except ValidationError, e:
 				if 'Enter a valid e-mail address.' in e.messages:
 					self.get_logger().info( "Invalid email address %s trying to subscribe to MailChimp list %s" % ( obj.email, mlist.name ) )
@@ -132,15 +137,21 @@ class MailChimpUnsubscribeAction( MailChimpAction ):
 		( 'send_goodbye', 'Flag to send the goodbye email to the email address, defaults to true.', 'bool' ),
 	]
 
-	def run( self, conf, model_identifier=None, pk=None ):
+	def run( self, conf, model_identifier=None, pk=None, email=None ):
 		"""
 		Unsubscribe from MailChimp list
 		"""
 		if model_identifier and pk:
-			obj = self._get_object( model_identifier, pk )
-			list = self._get_list( conf['list_id'] )
-			list.unsubscribe( obj.email, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], async=False )
-			self.get_logger().info( "Unsubscribed %s from MailChimp list %s" % ( obj.email, list.name ) )
+			try:
+				email = self._get_object(model_identifier, pk).email
+			except:  # pylint: disable=W0702
+				# Couldn't find matching object, try with the email
+				email = email if email else ''
+
+			if email:
+				list = self._get_list( conf['list_id'] )
+				list.unsubscribe( email, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], async=False )
+				self.get_logger().info( "Unsubscribed %s from MailChimp list %s" % ( email, list.name ) )
 
 
 class MailChimpUpdateAction( MailChimpAction ):

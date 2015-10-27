@@ -137,7 +137,6 @@ def abuse_reports():
 	from datetime import datetime, timedelta
 	from django.core.mail import EmailMessage
 	from djangoplicity.mailinglists.models import MailChimpList
-	from djangoplicity.newsletters.models import MailChimpMailerPlugin
 	from django.contrib.sites.models import Site
 
 	logger = abuse_reports.get_logger()

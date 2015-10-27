@@ -14,7 +14,7 @@
 #	  notice, this list of conditions and the following disclaimer in the
 #	  documentation and/or other materials provided with the distribution.
 #
-#	* Neither the name of the European Southern Observatory nor the names 
+#	* Neither the name of the European Southern Observatory nor the names
 #	  of its contributors may be used to endorse or promote products derived
 #	  from this software without specific prior written permission.
 #
@@ -33,19 +33,21 @@
 """
 Forms used in the admin interface for asking for email addresses to send
 test newsletters to, and for confirmation to prevent accidentially sending
-a newsletter. 
+a newsletter.
 """
 
 from django import forms
-from djangoplicity.newsletters.models import Newsletter
-from django.contrib.admin import widgets
-
+from django.contrib.admin.widgets import AdminSplitDateTime
 from django.core.validators import validate_email
+
+from djangoplicity.contrib.admin.widgets import AdminRichTextAreaWidget
+from djangoplicity.newsletters.models import Newsletter
+
 
 class MultiEmailField( forms.CharField ):
 	"""
 	Field for entering multiple email addresses.
-	
+
 	Initial code from https://docs.djangoproject.com/en/1.3/ref/forms/validation/#form-field-default-cleaning
 	"""
 	def to_python( self, value ):
@@ -73,37 +75,48 @@ class GenerateNewsletterForm( forms.ModelForm ):
 	"""
 	class Meta:
 		model = Newsletter
-		fields = [ 'id', 'type', 'start_date', 'end_date' ]
+		fields = [ 'type', 'start_date', 'end_date' ]
 		widgets = {
-			'start_date': widgets.AdminSplitDateTime(),
-			'end_date': widgets.AdminSplitDateTime(),
+			'start_date': AdminSplitDateTime(),
+			'end_date': AdminSplitDateTime(),
 		}
+
+
+class NewsletterForm( forms.ModelForm ):
+	editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '30'}))
+
+
+class NewsletterLanguageInlineForm( forms.ModelForm ):
+	default_editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '20'}))
 
 
 class TestEmailsForm( forms.Form ):
 	"""
-	Admin form for getting the emails to send the 
+	Admin form for getting the emails to send the
 	test newsletter to.
 	"""
 	emails = MultiEmailField( max_length=255 )
-	
+
+
 class SendNewsletterForm( forms.Form ):
 	"""
-	Admin form for requesting confirmation to 
+	Admin form for requesting confirmation to
 	send the newsletter.
 	"""
 	send_now = forms.BooleanField()
 
+
 class ScheduleNewsletterForm( forms.Form ):
 	"""
-	Admin form for requesting confirmation to 
+	Admin form for requesting confirmation to
 	schedule newsletter for sending.
 	"""
 	schedule = forms.BooleanField( label="Schedule newsletter for sending" )
-	
+
+
 class UnscheduleNewsletterForm( forms.Form ):
 	"""
-	Admin form for requesting confirmation to 
+	Admin form for requesting confirmation to
 	cancel an already scheduled newsletter.
 	"""
 	cancel_schedule = forms.BooleanField()
