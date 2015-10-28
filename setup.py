@@ -33,23 +33,25 @@
 from setuptools import setup, find_packages
 
 setup(
-	name = 'djangoplicity-newsletters',
-	version = '0.1.0',
-	packages = find_packages('src'),
-	package_dir = { '': 'src' },
-    install_requires = [
+	name='djangoplicity-newsletters',
+	version='0.1.0',
+	packages=find_packages('src'),
+	package_dir={ '': 'src' },
+    install_requires=[
 		'setuptools',
-		'certifi==2015.04.28',
+		'certifi == 2015.04.28',
+		'django-mailman-eso == 0.2',
+		'mailchimp == 2.0.9',
 	],
-	include_package_data = True,
-	zip_safe = False,
-	namespace_packages = ['djangoplicity'],
+	include_package_data=True,
+	zip_safe=False,
+	namespace_packages=['djangoplicity'],
 
 	# metadata for upload to PyPI
-	author = 'European Southern Observatory',
-	author_email = 'information@eso.org',
-	description = 'Djangoplicity application for ...',
-	license = "New BSD License",
-	keywords = "django djangoplicity ",
-	url = "http://www.djangoplicity.org"
+	author='European Southern Observatory',
+	author_email='information@eso.org',
+	description='Djangoplicity application for ...',
+	license="New BSD License",
+	keywords="django djangoplicity ",
+	url="http://www.djangoplicity.org"
 )

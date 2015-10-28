@@ -452,6 +452,7 @@ class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, Transl
 class NewsletterProxyInlineForm( ModelForm ):
 	class Meta:
 		model = NewsletterProxy
+		fields = '__all__'
 
 
 class NewsletterProxyInlineAdmin( admin.TabularInline ):
