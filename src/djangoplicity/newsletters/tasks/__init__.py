@@ -35,13 +35,29 @@ The celery tasks defined here are all wrapping features defined in the models.
 """
 
 from celery.task import task
+from celery.utils.log import get_task_logger
+from django.core.cache import cache
 
 
-@task( name="newsletters.send_scheduled_newsletter", ignore_result=True )
-def send_scheduled_newsletter( newsletter_pk ):
+logger = get_task_logger(__name__)
+
+
+LOCK_EXPIRE = 60 * 5  # Lock to ensure only one task at a time is run
+
+
+def acquire_lock(lock_id):
+	return cache.add(lock_id, True, LOCK_EXPIRE)
+
+
+def release_lock(lock_id):
+	return cache.delete(lock_id)
+
+
+@task(name="newsletters.send_scheduled_newsletter", ignore_result=True)
+def send_scheduled_newsletter(newsletter_pk):
 	"""
 	Task to start sending a scheduled newsletter - this task should normally
-	be invoked with the eta keyword argument (e.g apply_async( pk, eta=.. ))
+	be invoked with the eta keyword argument (e.g apply_async(pk, eta=..))
 
 	The task will be revoked if the schedule is cancelled via the admin
 	interface.
@@ -54,80 +70,104 @@ def send_scheduled_newsletter( newsletter_pk ):
 	"""
 	from djangoplicity.newsletters.models import Newsletter
 
-	logger = send_scheduled_newsletter.get_logger()
+	lock_id = 'send_scheduled_newsletter_%s' % newsletter_pk
 
-	nl = Newsletter.objects.get( pk=newsletter_pk )
+	if acquire_lock(lock_id):
+		try:
+			nl = Newsletter.objects.get(pk=newsletter_pk)
+			logger.info("Starting to send scheduled newsletter %s" % newsletter_pk)
+			nl._send()
+		finally:
+			release_lock(lock_id)
+	else:
+		logger.info('Scheduled Newsletter %s is already being sent by another worker'
+				    % newsletter_pk)
 
-	logger.info("Starting to send scheduled newsletter %s" % newsletter_pk)
 
-	nl._send()
-
-
-@task( name="newsletters.send_newsletter", ignore_result=True )
-def send_newsletter( newsletter_pk ):
+@task(name="newsletters.send_newsletter", ignore_result=True)
+def send_newsletter(newsletter_pk):
 	"""
 	Task to start sending a newsletter
 	"""
 	from djangoplicity.newsletters.models import Newsletter
 
-	logger = send_newsletter.get_logger()
+	lock_id = 'send_newsletter_%s' % newsletter_pk
 
-	nl = Newsletter.objects.get( pk=newsletter_pk )
+	if acquire_lock(lock_id):
+		try:
+			nl = Newsletter.objects.get(pk=newsletter_pk)
+			logger.info("Starting to send newsletter %s" % newsletter_pk)
+			nl._send_now()
+		finally:
+			release_lock(lock_id)
+	else:
+		logger.info('Newsletter %s is already being sent by another worker'
+				    % newsletter_pk)
 
-	logger.info("Starting to send newsletter %s" % newsletter_pk)
 
-	nl._send_now()
-
-
-@task( name="newsletters.send_newsletter_test", ignore_result=True )
-def send_newsletter_test( newsletter_pk, emails ):
+@task(name="newsletters.send_newsletter_test", ignore_result=True)
+def send_newsletter_test(newsletter_pk, emails):
 	"""
 	Task to start sending a newsletter
 	"""
 	from djangoplicity.newsletters.models import Newsletter
 
-	logger = send_newsletter.get_logger()
+	lock_id = 'send_newsletter_test_%s' % newsletter_pk
 
-	nl = Newsletter.objects.get( pk=newsletter_pk )
+	if acquire_lock(lock_id):
+		try:
+			nl = Newsletter.objects.get(pk=newsletter_pk)
+			logger.info("Starting to send test newsletter %s" % newsletter_pk)
+			nl._send_test(emails)
+		finally:
+			release_lock(lock_id)
+	else:
+		logger.info('Newsletter %s is already being sent (test)' % newsletter_pk)
 
-	logger.info( "Starting to send test newsletter %s" % newsletter_pk )
 
-	nl._send_test( emails )
-
-
-@task( name="newsletters.schedule_newsletter", ignore_result=True )
-def schedule_newsletter( newsletter_pk ):
+@task(name="newsletters.schedule_newsletter", ignore_result=True)
+def schedule_newsletter(newsletter_pk):
 	"""
 	Task to schedule a newsletter for delivery.
 	"""
 	from djangoplicity.newsletters.models import Newsletter
 
-	logger = schedule_newsletter.get_logger()
+	lock_id = 'schedule_newsletter_%s' % newsletter_pk
 
-	nl = Newsletter.objects.get( pk=newsletter_pk )
+	if acquire_lock(lock_id):
+		try:
+			nl = Newsletter.objects.get(pk=newsletter_pk)
+			logger.info("Scheduling newsletter %s" % newsletter_pk)
+			nl._schedule()
+		finally:
+			release_lock(lock_id)
+	else:
+		logger.info('Newsletter %s is already being scheduled by another worker'
+				    % newsletter_pk)
 
-	logger.info("Scheduling newsletter %s" % newsletter_pk)
 
-	nl._schedule()
-
-
-@task( name="newsletters.unschedule_newsletter", ignore_result=True )
-def unschedule_newsletter( newsletter_pk ):
+@task(name="newsletters.unschedule_newsletter", ignore_result=True)
+def unschedule_newsletter(newsletter_pk):
 	"""
 	Task to unschedule a newsletter for delivery.
 	"""
 	from djangoplicity.newsletters.models import Newsletter
 
-	logger = unschedule_newsletter.get_logger()
+	lock_id = 'unschedule_newsletter_%s' % newsletter_pk
 
-	nl = Newsletter.objects.get( pk=newsletter_pk )
+	if acquire_lock(lock_id):
+		try:
+			nl = Newsletter.objects.get(pk=newsletter_pk)
+			logger.info("Unscheduling newsletter %s" % newsletter_pk)
+			nl._unschedule()
+		finally:
+			release_lock(lock_id)
+	else:
+		logger.info('Newsletter %s is already being unscheduled by another worker'
+				    % newsletter_pk)
 
-	logger.info("Unscheduling newsletter %s" % newsletter_pk)
 
-	nl._unschedule()
-
-
-@task( name="newsletters.abuse_reports", ignore_result=True )
+@task(name="newsletters.abuse_reports", ignore_result=True)
 def abuse_reports():
 	"""
 	Generate a report for abuse reports for campaigns sent
@@ -138,8 +178,6 @@ def abuse_reports():
 	from django.core.mail import EmailMessage
 	from djangoplicity.mailinglists.models import MailChimpList
 	from django.contrib.sites.models import Site
-
-	logger = abuse_reports.get_logger()
 
 	email_from = 'no-reply@eso.org'
 	email_reply_to = 'mandre@eso.org'
@@ -155,16 +193,13 @@ def abuse_reports():
 
 	for ml in MailChimpList.objects.all():
 		#  Fetch the list of campaigns sent within the last 4 weeks
-		campaigns = ml.connection('campaigns.list',
-						{
-							'filters':
-								{
-									'list_id': ml.list_id,
-									'sendtime_start': start_date.strftime('%Y-%m-%d %H:%M:%S')
-								},
-							'limit': 1000,
-							}
-						)
+		campaigns = ml.connection('campaigns.list', {
+			'filters': {
+				'list_id': ml.list_id,
+				'sendtime_start': start_date.strftime('%Y-%m-%d %H:%M:%S')
+			},
+			'limit': 1000,
+		})
 		if campaigns['total'] == 0:
 			continue
 
