@@ -1108,7 +1108,7 @@ class MailChimpCampaign( models.Model ):
 	newsletter = models.ForeignKey( Newsletter )
 	list_id = models.CharField( max_length=50 )
 	campaign_id = models.CharField( max_length=50 )
-	lang = LanguageField( max_length=7, choices=settings.LANGUAGES, default='' )
+	lang = LanguageField( max_length=7, default='' )
 
 	class Meta:
 		unique_together = ['newsletter', 'list_id', 'lang']
