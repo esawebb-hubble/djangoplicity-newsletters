@@ -45,7 +45,7 @@ The newsletter system consists of the following components:
 
 ----
 """
-
+# pylint: disable=E0611
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -63,6 +63,7 @@ from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 from djangoplicity.newsletters.tasks import send_newsletter, \
 	send_newsletter_test, schedule_newsletter, unschedule_newsletter, \
 	send_scheduled_newsletter
+from djangoplicity.translation.fields import LanguageField
 from djangoplicity.translation.models import TranslationModel, \
 	translation_reverse
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
@@ -173,7 +174,7 @@ class Mailer( models.Model ):
 			res = plugin.send_test( newsletter, emails )
 			l.save()
 			return res
-		except:
+		except:  # pylint: disable=W0702
 			l.success = False
 			l.error = traceback.format_exc()
 			l.save()
@@ -308,7 +309,7 @@ class Language( models.Model ):
 	"""
 	Available languages for Local newsletters
 	"""
-	lang = models.CharField(primary_key=True, verbose_name=_( 'Language' ), max_length=7, choices=settings.LANGUAGES)
+	lang = LanguageField(primary_key=True, verbose_name=_( 'Language' ), max_length=7)
 
 	def __unicode__( self ):
 		for lang, name in settings.LANGUAGES:
@@ -642,10 +643,10 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		return data
 
 	def save( self, *args, **kwargs ):
-		if not self.pk:
+		if not self.pk:  # pylint: disable=E0203
 			self.pk = make_nl_id()
 
-		if not self.created:
+		if not self.created:  # pylint: disable=E0203
 			self.created = datetime.today()
 
 		if self.is_source() and not self.frozen:
@@ -1107,7 +1108,7 @@ class MailChimpCampaign( models.Model ):
 	newsletter = models.ForeignKey( Newsletter )
 	list_id = models.CharField( max_length=50 )
 	campaign_id = models.CharField( max_length=50 )
-	lang = models.CharField( max_length=7, choices=settings.LANGUAGES, default='' )
+	lang = LanguageField( max_length=7, default='' )
 
 	class Meta:
 		unique_together = ['newsletter', 'list_id', 'lang']
