@@ -166,7 +166,7 @@ class MailmanSyncAction( MailmanAction ):
 			for email in set(emails) - mailman_emails:
 				# Remove contact from the group
 				try:
-					c = obj.contact_set.filter(email=email)
+					c = obj.contact_set.get(email=email)
 				except ObjectDoesNotExist:
 					continue
 
