@@ -30,9 +30,10 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils.encoding import smart_unicode
-from djangoplicity.actions.plugins import ActionPlugin
+from djangoplicity.actions.plugins import ActionPlugin  # pylint: disable=E0611
 
 
 class MailmanAction(ActionPlugin):
@@ -64,6 +65,7 @@ class MailmanAction(ActionPlugin):
 		return ( [], { 'email': email } )
 
 	def _get_list(self, list_name):
+
 		from djangoplicity.mailinglists.models import List
 		return List.objects.get( name=list_name )
 
@@ -151,14 +153,36 @@ class MailmanSyncAction( MailmanAction ):
 		"""
 		cls = models.get_model( *model_identifier.split( "." ) )
 		obj = cls.objects.get( pk=pk )
-		return obj.get_emails()
+		return obj, obj.get_emails()
 
 	def run( self, conf, model_identifier=None, pk=None ):
 		"""
 		"""
 		if model_identifier and pk:
-			emails = self._get_emails( model_identifier, pk )
+			obj, emails = self._get_emails( model_identifier, pk )
 			mlist = self._get_list( conf['list_name'] )
+
+			mailman_emails = mlist.get_mailman_emails()
+			for email in set(emails) - mailman_emails:
+				# Remove contact from the group
+				try:
+					c = obj.contact_set.filter(email=email)
+				except ObjectDoesNotExist:
+					continue
+
+				obj.contact_set.remove(c)
+				emails.remove(email)
+				self.get_logger().info('Removed %s from %s' % (c, obj))
+
+				# Add contact to 'unsub' group if it exists
+				try:
+					l = self._get_list('unsub_' + conf['list_name'])
+				except ObjectDoesNotExist:
+					continue
+
+				c.groups.add(l)
+				self.get_logger().info('Added %s to %s' % (c, l))
+
 			mlist.update_subscribers( emails )
 			mlist.push( remove_existing=conf['remove_existing'] )
 
