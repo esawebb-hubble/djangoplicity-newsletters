@@ -179,7 +179,7 @@ class MailmanSyncAction( MailmanAction ):
 
 				# Add contact to 'unsub' group if it exists
 				try:
-					l = self._get_list('unsub_' + conf['list_name'])
+					l = self._get_list('unsub_%s' % obj.name)
 				except ObjectDoesNotExist:
 					continue
 
