@@ -162,6 +162,9 @@ class MailmanSyncAction( MailmanAction ):
 			obj, emails = self._get_emails( model_identifier, pk )
 			mlist = self._get_list( conf['list_name'] )
 
+			# Convert from ValuesListQuerySet to list:
+			emails = list(emails)
+
 			mailman_emails = mlist.get_mailman_emails()
 			for email in set(emails) - mailman_emails:
 				# Remove contact from the group
