@@ -175,7 +175,7 @@ class MailmanSyncAction( MailmanAction ):
 
 				obj.contact_set.remove(c)
 				emails.remove(email)
-				self.get_logger().info('Removed %s from %s' % (c, obj))
+				self.get_logger().info(u'Removed %s from %s' % (c, obj))
 
 				# Add contact to 'unsub' group if it exists
 				try:
@@ -184,7 +184,7 @@ class MailmanSyncAction( MailmanAction ):
 					continue
 
 				c.groups.add(l)
-				self.get_logger().info('Added %s to %s' % (c, l))
+				self.get_logger().info(u'Added %s to %s' % (c, l))
 
 			mlist.update_subscribers( emails )
 			mlist.push( remove_existing=conf['remove_existing'] )
