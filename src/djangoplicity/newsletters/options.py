@@ -34,7 +34,7 @@ from djangoplicity.archives.contrib.browsers import ListBrowser
 from djangoplicity.archives.contrib.templater import DisplayTemplate
 from djangoplicity.newsletters.queries import NewsletterCategoryQuery
 from djangoplicity.archives.importer.import_actions import move_resources, \
-	make_image_derivatives
+	process_image_derivatives
 from djangoplicity.archives.options import ArchiveOptions
 
 
@@ -60,16 +60,7 @@ class NewsletterOptions(ArchiveOptions):
 		]
 		actions = [
 			move_resources,
-			make_image_derivatives('original', [
-				'screen',
-				'news',
-				'newsmini',
-				'newsfeature',
-				'medium',
-				'mini',
-				'frontpagethumbs',
-				'thumbs',
-			]),
+			process_image_derivatives(),
 		]
 
 	class Display():
