@@ -733,10 +733,9 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		original = archives.ImageResourceManager(type=types.OriginalImageType)
 		screen = archives.ImageResourceManager(derived='original', type=types.ScreensizeJpegType)
 		news = archives.ImageResourceManager(derived='original', type=types.NewsJpegType)
-		newsmini = archives.ImageResourceManager(derived='news', type=types.NewsMiniJpegType)
-		newsfeature = archives.ImageResourceManager(derived='news', type=types.JpegType)
+		newsmini = archives.ImageResourceManager(derived='original', type=types.NewsMiniJpegType)
+		newsfeature = archives.ImageResourceManager(derived='original', type=types.NewsFeatureType)
 		medium = archives.ImageResourceManager(derived='original', type=types.MediumJpegType)
-		mini = archives.ImageResourceManager(derived='original', type=types.MiniJpegType)
 		frontpagethumbs = archives.ImageResourceManager(derived='original', type=types.FrontpageThumbnailJpegType)
 		thumbs = archives.ImageResourceManager(derived='original', type=types.ThumbnailJpegType)
 
@@ -748,11 +747,6 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 			created = True
 			published = True
 			root = settings.NEWSLETTERS_ARCHIVE_ROOT
-			# rename_pk = ('internal_internalimage', 'id')
-			# rename_fks = (
-							# ('internal_internalimage', 'source_id'),
-							# ('internal_internalimagecontact', 'image_id'),
-						# )
 
 	class Translation:
 		fields = ['subject', 'editorial', 'editorial_text', ]
@@ -788,7 +782,6 @@ class NewsletterProxy( Newsletter, TranslationProxyMixin ):
 
 	class Archive:
 		class Meta:
-#            rename_pk = ('media_image','id')
 			rename_fks = []
 
 
@@ -869,7 +862,7 @@ class NewsletterContent( models.Model ):
 							country = country.split('-')[1]
 						if lang == settings.LANGUAGE_CODE or \
 							not d.country or \
-								(d.country and d.country.isocode == country):
+							(d.country and d.country.isocode == country):
 							tmpdata.append(d)
 					else:
 						tmpdata.append(d)
