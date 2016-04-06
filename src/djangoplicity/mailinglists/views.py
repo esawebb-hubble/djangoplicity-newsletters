@@ -244,7 +244,11 @@ def mailchimp_webhook( request, require_secure=False ):
 			logger.debug( "[Webhook] No 'token' GET parameter" )
 			return HttpResponse( "" )
 
-		ip = request.META['REMOTE_ADDR']
+		if 'HTTP_X_REAL_IP' in request.META:
+			key = 'HTTP_X_REAL_IP'
+		else:
+			key = 'REMOTE_ADDR'
+		ip = request.META[key]
 		user_agent = request.META.get( 'HTTP_USER_AGENT', '' )
 
 		if user_agent != 'MailChimp.com':
