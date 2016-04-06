@@ -55,8 +55,9 @@ from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
 from django.utils.translation import ugettext as _
 from django.utils import translation
-from djangoplicity import archives
+from djangoplicity.archives.base import ArchiveModel
 from djangoplicity.archives.contrib import types
+from djangoplicity.archives.resources import ImageResourceManager
 from djangoplicity.archives.translation import TranslationProxyMixin
 from djangoplicity.newsletters.mailers import EmailMailerPlugin, MailerPlugin, \
 	MailmanMailerPlugin
@@ -392,7 +393,7 @@ class NewsletterLanguage( models.Model ):
 		ordering = ['language']
 
 
-class Newsletter( archives.ArchiveModel, TranslationModel ):
+class Newsletter( ArchiveModel, TranslationModel ):
 	"""
 	A definition of a newsletter.
 	"""
@@ -730,14 +731,14 @@ class Newsletter( archives.ArchiveModel, TranslationModel ):
 		ordering = ['-release_date']
 
 	class Archive:
-		original = archives.ImageResourceManager(type=types.OriginalImageType)
-		screen = archives.ImageResourceManager(derived='original', type=types.ScreensizeJpegType)
-		news = archives.ImageResourceManager(derived='original', type=types.NewsJpegType)
-		newsmini = archives.ImageResourceManager(derived='original', type=types.NewsMiniJpegType)
-		newsfeature = archives.ImageResourceManager(derived='original', type=types.NewsFeatureType)
-		medium = archives.ImageResourceManager(derived='original', type=types.MediumJpegType)
-		frontpagethumbs = archives.ImageResourceManager(derived='original', type=types.FrontpageThumbnailJpegType)
-		thumbs = archives.ImageResourceManager(derived='original', type=types.ThumbnailJpegType)
+		original = ImageResourceManager(type=types.OriginalImageType)
+		screen = ImageResourceManager(derived='original', type=types.ScreensizeJpegType)
+		news = ImageResourceManager(derived='original', type=types.NewsJpegType)
+		newsmini = ImageResourceManager(derived='original', type=types.NewsMiniJpegType)
+		newsfeature = ImageResourceManager(derived='original', type=types.NewsFeatureType)
+		medium = ImageResourceManager(derived='original', type=types.MediumJpegType)
+		frontpagethumbs = ImageResourceManager(derived='original', type=types.FrontpageThumbnailJpegType)
+		thumbs = ImageResourceManager(derived='original', type=types.ThumbnailJpegType)
 
 		class Meta:
 			root = ''

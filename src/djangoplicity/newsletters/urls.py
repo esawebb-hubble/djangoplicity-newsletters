@@ -33,7 +33,7 @@
 from django.conf.urls import patterns, url
 
 from djangoplicity.newsletters.views import NewsletterDetailView
-from djangoplicity.archives import urlpatterns_for_options
+from djangoplicity.archives.urls import urlpatterns_for_options
 from djangoplicity.newsletters.options import NewsletterOptions
 
 # The first view is a custom detail view as it can't use the normal template (it would
