@@ -38,7 +38,7 @@ Administration interface for Newsletters. The major extra views includes:
 	* Scheduling of newsletters.
 """
 from datetime import datetime, timedelta
-from django.conf.urls import patterns
+from django.conf.urls import url
 from django.contrib import admin
 from django.core.urlresolvers import reverse
 from django.db import models
@@ -150,15 +150,15 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		See https://docs.djangoproject.com/en/1.3/ref/contrib/admin/#django.contrib.admin.ModelAdmin.get_urls
 		"""
 		urls = super( NewsletterAdmin, self ).get_urls()
-		extra_urls = patterns( '',
-			( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), ),
-			( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ) ),
-			( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
-			( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ) ),
-			( r'^(?P<pk>[0-9]+)/schedule/$', self.admin_site.admin_view( self.schedule_newsletter_view ) ),
-			( r'^(?P<pk>[0-9]+)/unschedule/$', self.admin_site.admin_view( self.unschedule_newsletter_view ) ),
-			( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ) ),
-		)
+		extra_urls = [
+			url( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), ),
+			url( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ) ),
+			url( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
+			url( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ) ),
+			url( r'^(?P<pk>[0-9]+)/schedule/$', self.admin_site.admin_view( self.schedule_newsletter_view ) ),
+			url( r'^(?P<pk>[0-9]+)/unschedule/$', self.admin_site.admin_view( self.unschedule_newsletter_view ) ),
+			url( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ) ),
+		]
 		return extra_urls + urls
 
 	@classmethod
@@ -442,10 +442,10 @@ class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, Transl
 		See https://docs.djangoproject.com/en/1.3/ref/contrib/admin/#django.contrib.admin.ModelAdmin.get_urls
 		"""
 		urls = super( NewsletterProxyAdmin, self ).get_urls()
-		extra_urls = patterns( '',
-			( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), ),
-			( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ) ),
-		)
+		extra_urls = [
+			url( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), ),
+			url( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ) ),
+		]
 		return extra_urls + urls
 
 

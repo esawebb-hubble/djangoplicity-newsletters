@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from djangoplicity.mailinglists.views import mailchimp_webhook
 
 # URLs for MailChimp webhooks. Only install them if you really need them. Also, ensure
@@ -39,6 +39,6 @@ from djangoplicity.mailinglists.views import mailchimp_webhook
 # If you are using SSLMiddleware, this can be done by:
 # 	( r'^newsletters/', include( 'djangoplicity.mailinglists.urls', { 'SSLAllow' : True } ) ),
 
-urlpatterns = patterns( '',
+urlpatterns = [
     url( r'^webhook/$', mailchimp_webhook, name='mailchimp_webhook' ),
-)
+]

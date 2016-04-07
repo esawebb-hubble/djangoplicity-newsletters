@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from djangoplicity.newsletters.views import NewsletterDetailView
 from djangoplicity.archives.urls import urlpatterns_for_options
@@ -38,8 +38,8 @@ from djangoplicity.newsletters.options import NewsletterOptions
 
 # The first view is a custom detail view as it can't use the normal template (it would
 # break the email HTML layout).
-urlpatterns = patterns( '',
-					url(r'^(?P<category_slug>[-\w]+)/html/(?P<pk>\d+)/$', NewsletterDetailView.as_view(), name='newsletters_detail_html'),
-				)
+urlpatterns = [
+	url(r'^(?P<category_slug>[-\w]+)/html/(?P<pk>\d+)/$', NewsletterDetailView.as_view(), name='newsletters_detail_html'),
+]
 
 urlpatterns += urlpatterns_for_options( NewsletterOptions )
