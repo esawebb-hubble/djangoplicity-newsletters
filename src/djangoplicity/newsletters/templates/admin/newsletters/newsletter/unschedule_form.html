@@ -31,7 +31,7 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{{ STATIC_URL}}/admin/{% e
 <p>Newsletter have already been sent.</p>
 </div>
 </fieldset>
-{% else %}{% if original.scheduled_status = 'OFF' %}
+{% else %}{% if original.scheduled_status == 'OFF' %}
 <fieldset class="module" style="background-color: #FFC; ">
 <div class="form-row">
 <p>Newsletter is not already unscheduled</p>
