@@ -32,10 +32,11 @@
 
 import time
 
-from django.db import models
-from django.utils.encoding import smart_unicode
-from django.db.models.fields import FieldDoesNotExist
+from django.apps import apps
 from django.core.exceptions import ValidationError
+from django.db import models
+from django.db.models.fields import FieldDoesNotExist
+from django.utils.encoding import smart_unicode
 
 from djangoplicity.actions.plugins import ActionPlugin  # pylint: disable=E0611
 
@@ -78,7 +79,7 @@ class MailChimpAction( ActionPlugin ):
 		Helper method to get the object being linked to.
 		"""
 		# Same method as used in django.core.serializer.python
-		Model = models.get_model( *model_identifier.split( "." ) )
+		Model = apps.get_model( *model_identifier.split( "." ) )
 		return Model.objects.get( pk=pk )
 
 	def _get_list( self, list_id ):

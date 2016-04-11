@@ -30,9 +30,11 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils.encoding import smart_unicode
+
 from djangoplicity.actions.plugins import ActionPlugin  # pylint: disable=E0611
 
 
@@ -114,7 +116,7 @@ class MailmanUpdateAction( MailmanAction ):
 		"""
 		Email address was updated so change subscriber
 		"""
-		if not 'email' in changes:
+		if 'email' not in changes:
 			return
 
 		from_email, to_email = changes['email']
@@ -151,7 +153,7 @@ class MailmanSyncAction( MailmanAction ):
 		"""
 		Get the list of emails to synchronize
 		"""
-		cls = models.get_model( *model_identifier.split( "." ) )
+		cls = apps.get_model( *model_identifier.split( "." ) )
 		obj = cls.objects.get( pk=pk )
 		return obj, obj.get_emails()
 
