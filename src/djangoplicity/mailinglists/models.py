@@ -29,7 +29,16 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
 
+import hashlib
+import uuid as uuidmod
 from datetime import datetime, timedelta
+from urllib import urlencode
+from urllib2 import HTTPError, URLError
+
+import mailchimp
+from requests.exceptions import SSLError
+
+from django.apps import apps
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
@@ -38,15 +47,10 @@ from django.core.validators import validate_email
 from django.db import models
 from django.db.models.signals import post_save, pre_delete
 from django.utils.encoding import smart_unicode
+
 from djangoplicity.actions.models import EventAction
 from djangoplicity.mailinglists.exceptions import MailChimpError
 from djangoplicity.mailinglists.mailman import MailmanList
-from requests.exceptions import SSLError
-from urllib import urlencode
-from urllib2 import HTTPError, URLError
-import hashlib
-import uuid as uuidmod
-import mailchimp
 
 # Work around fix - see http://stackoverflow.com/questions/1210458/how-can-i-generate-a-unique-id-in-python
 uuidmod._uuid_generate_time = None
@@ -427,7 +431,7 @@ class MailChimpList( models.Model ):
 		val = self.get_modelpk_from_identifier( object_identifier )
 		if val:
 			app_label, model_name, pk = val  # pylint: disable=W0633
-			Model = models.get_model( app_label, model_name )
+			Model = apps.get_model( app_label, model_name )
 			return Model.objects.get( pk=pk )
 		return None
 
@@ -1174,10 +1178,7 @@ class MailChimpListToken( models.Model ):
 		"""
 		Validate input parameters
 		"""
-		if list and self.list.pk == list.pk:
-			return True
-		else:
-			return False
+		return list and self.list.pk == list.pk
 
 	def hook_params( self ):
 		"""
