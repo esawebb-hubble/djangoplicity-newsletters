@@ -9,8 +9,8 @@
     {% if not original.send and original.scheduled_status == 'OFF' %}<li><a href="send_now/" class="historylink">{% trans "Send now" %}</a></li>{% endif %}
     {% if not original.send and original.scheduled_status == 'OFF' %}<li><a href="schedule/" class="historylink">{% trans "Schedule" %}</a></li>{% endif %}
     {% if not original.send and original.scheduled_status != 'OFF' %}<li><a href="unschedule/" class="historylink">{% trans "Cancel schedule" %}</a></li>{% endif %}
-    <li><a href="html/" class="historylink">{% trans "View HTML" %}</a></li>
-    <li><a href="text/" class="historylink">{% trans "View text" %}</a></li>
+    <li><a href="../html/" class="historylink">{% trans "View HTML" %}</a></li>
+    <li><a href="../text/" class="historylink">{% trans "View text" %}</a></li>
 	<li><a href="displays/" class="historylink" onclick='window.open( "displays/", "displayWindow",
 		"status = 1, height = 600, width = 800, resizable = 1" );return false;'>{% trans "Displays" %}</a></li>
     <li><a href="history/" class="historylink">{% trans "History" %}</a></li>
