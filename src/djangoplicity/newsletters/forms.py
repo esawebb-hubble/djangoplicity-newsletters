@@ -73,13 +73,12 @@ class GenerateNewsletterForm( forms.ModelForm ):
 	"""
 	Form for generating a newsletter.
 	"""
+	start_date = forms.SplitDateTimeField(widget=AdminSplitDateTime())
+	end_date = forms.SplitDateTimeField(widget=AdminSplitDateTime())
+
 	class Meta:
 		model = Newsletter
 		fields = [ 'type', 'start_date', 'end_date' ]
-		widgets = {
-			'start_date': AdminSplitDateTime(),
-			'end_date': AdminSplitDateTime(),
-		}
 
 
 class NewsletterForm( forms.ModelForm ):

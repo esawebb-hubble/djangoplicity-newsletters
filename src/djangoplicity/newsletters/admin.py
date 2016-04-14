@@ -151,13 +151,13 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		"""
 		urls = super( NewsletterAdmin, self ).get_urls()
 		extra_urls = [
-			url( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), ),
-			url( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ) ),
-			url( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ) ),
-			url( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ) ),
-			url( r'^(?P<pk>[0-9]+)/schedule/$', self.admin_site.admin_view( self.schedule_newsletter_view ) ),
-			url( r'^(?P<pk>[0-9]+)/unschedule/$', self.admin_site.admin_view( self.unschedule_newsletter_view ) ),
-			url( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ) ),
+			url( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), name='html_newsletter_view' ),
+			url( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ), name='text_newsletter_view' ),
+			url( r'^(?P<pk>[0-9]+)/send_test/$', self.admin_site.admin_view( self.send_newsletter_test_view ), name='send_newsletter_test_view' ),
+			url( r'^(?P<pk>[0-9]+)/send_now/$', self.admin_site.admin_view( self.send_newsletter_view ), name='send_newsletter_view' ),
+			url( r'^(?P<pk>[0-9]+)/schedule/$', self.admin_site.admin_view( self.schedule_newsletter_view ), name='schedule_newsletter_view' ),
+			url( r'^(?P<pk>[0-9]+)/unschedule/$', self.admin_site.admin_view( self.unschedule_newsletter_view ), name='unschedule_newsletter_view' ),
+			url( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ), name='generate_newsletter_view' ),
 		]
 		return extra_urls + urls
 
