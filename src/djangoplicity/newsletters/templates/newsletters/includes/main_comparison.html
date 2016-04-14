@@ -1,13 +1,13 @@
 {% load djangoplicity_datetime i18n %}
 {% with image_url="imagecomparisons/newsfeature/"|add:main_comparison.id|add:".jpg" %}
-<tr> 
-<td colspan="2" class="headerContent" height="{{height}}px"  background="{{base_url}}{{ MEDIA_URL }}{{image_url}}" style="color: #202020;font-family: Helvetica, Arial;font-size: 24px;font-weight: bold;line-height: 100%;padding: 0;text-align: {% if titlesize = "small" %}right{% else %}left{% endif %};vertical-align: bottom;background-color:black; background-repeat: no-repeat"> 
+<tr>
+<td colspan="2" class="headerContent" height="{{height}}px"  background="{{base_url}}{{ MEDIA_URL }}{{image_url}}" style="color: #202020;font-family: Helvetica, Arial;font-size: 24px;font-weight: bold;line-height: 100%;padding: 0;text-align: {% if titlesize == "small" %}right{% else %}left{% endif %};vertical-align: bottom;background-color:black; background-repeat: no-repeat">
 <!-- Outlook 2007 only -->
 <!--[if gte mso 9]>
 <img src="{{base_url}}{{ MEDIA_URL }}{{image_url}}" width="{{width}}" height="{{height}}" />
 <![endif]-->
 	{% if title %}
-		{% if titlesize = "small" %}
+		{% if titlesize == "small" %}
 				<style type="text/css">
 					#rotate {
 							color:white;
@@ -34,9 +34,9 @@
 				<span style="background:black;padding:2px;">
 					<a style="color:white;font-size:22px; line-height: 29px; text-decoration: none; font-weight: bold;" href="{{link_url}}">{{title}}{% if subtitle %}&mdash; {{subtitle}}{% endif %}</a>
 				</span>
-			</div> 
+			</div>
 		{% endif %}
 	{% endif %}
-</td> 
+</td>
 </tr>
 {% endwith %}
