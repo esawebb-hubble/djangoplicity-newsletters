@@ -29,13 +29,14 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
 
+from django_mailman.models import List as OriginalMailmanList
+
 
 class MailmanList( object ):
 	"""
 	Proxy object to a django_mailman list.
 	"""
 	def __init__( self, name=None, password=None, main_url=None ):
-		from django_mailman.models import List as OriginalMailmanList
 		self._mailman = OriginalMailmanList( name=name, password=password, email='noreply+%s@eso.org' % name, main_url=main_url, encoding='utf-8' )
 		self.base_url = main_url
 
