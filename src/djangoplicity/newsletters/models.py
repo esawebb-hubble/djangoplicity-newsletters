@@ -46,15 +46,20 @@ The newsletter system consists of the following components:
 ----
 """
 # pylint: disable=E0611
+import logging
+import requests
+import traceback
 from datetime import datetime, timedelta
+
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.db import models
 from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
-from django.utils.translation import ugettext as _
 from django.utils import translation
+from django.utils.translation import ugettext as _
+
 from djangoplicity.archives.base import ArchiveModel
 from djangoplicity.archives.contrib import types
 from djangoplicity.archives.resources import ImageResourceManager
@@ -68,9 +73,6 @@ from djangoplicity.translation.fields import LanguageField
 from djangoplicity.translation.models import TranslationModel, \
 	translation_reverse
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
-import logging
-import traceback
-from django.utils import translation
 
 logger = logging.getLogger(__name__)
 
@@ -600,6 +602,12 @@ class Newsletter( ArchiveModel, TranslationModel ):
 				# is no longer configured so we can just ignore it
 				pass
 
+		data = {}
+		data.update(NewsletterContent.data_context(self, lang=self.lang))
+
+		for src in NewsletterFeedDataSource.data_sources(self.type):
+			data[src.name] = src.data_context(lang=self.lang)
+
 		defaults = {
 			'base_url': "http://%s" % Site.objects.get_current().domain,
 			'MEDIA_URL': settings.MEDIA_URL,
@@ -608,7 +616,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			'newsletter': self,
 			'newsletter_type': self.type,
 			'language': self.lang,
-			'data': NewsletterContent.data_context( self, lang=self.lang ),
+			'data': data,
 			'editorial_subject': self.editorial_subject,
 			'editorial': self.editorial,
 			'editorial_text': self.editorial_text,
@@ -1033,6 +1041,81 @@ class NewsletterDataSource( models.Model ):
 	class Meta:
 		unique_together = ( 'type', 'name' )
 		ordering = ['type__name', 'title']
+
+
+class NewsletterFeedDataSource(models.Model):
+	'''
+	Feed data source for a newsletter. Use to select data from a given
+	JSON feed
+	'''
+	type = models.ForeignKey(NewsletterType)
+	list = models.BooleanField(default=True, help_text=_(
+		'Return a list of items or a single element'))
+	name = models.SlugField(help_text=_('Name used to access this data source in templates'))
+	title = models.CharField(max_length=255)
+	url = models.URLField(_('URL to the JSON feed'))
+	limit = models.CharField(max_length=255, blank=True)
+	fetch_translations = models.BooleanField(default=True, help_text=_(
+		'Fetch translated version of the feed if available'))
+
+	def __unicode__(self):
+		return u'%s: %s' % (self.type, self.title)
+
+	def _limit_data(self, data):
+		limits = self.limit.split(':')[:2]
+		try:
+			start = int(limits[0])
+		except (ValueError, IndexError):
+			start = None
+
+		try:
+			end = int(limits[1])
+		except (ValueError, IndexError):
+			end = None
+
+		if end and end < len(data):
+			data = data[:end]
+
+		if start and start < len(data):
+			data = data[start:]
+
+		return data
+
+	@classmethod
+	def data_sources(cls, type):
+		return cls.objects.filter(type=type)
+
+	def data_context(self, lang):
+		'''
+		Returns a list of items from the feed
+		'''
+		url = '%s?lang=%s' % (self.url, lang)
+
+		try:
+			r = requests.get(url, timeout=5)
+		except (requests.ConnectionError, requests.Timeout):
+			return []
+
+		if r.status_code != requests.codes.ok:
+			logger.warning('Can\'t fetch feed: %s (%d)', self.url, r.status_code)
+			return []
+
+		try:
+			data = r.json()
+		except ValueError:
+			logger.warning('Invalid JSON for: %s', self.url)
+
+		if self.limit:
+			data = self._limit_data(data)
+
+		if not self.list:
+			data = data[0]
+
+		return data
+
+	class Meta:
+		unique_together = ('type', 'name')
+		ordering = ('type__name', 'title')
 
 
 # =================================

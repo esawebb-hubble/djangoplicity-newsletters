@@ -57,12 +57,18 @@ from djangoplicity.newsletters.forms import NewsletterForm, \
 	GenerateNewsletterForm, TestEmailsForm, SendNewsletterForm, \
 	ScheduleNewsletterForm, UnscheduleNewsletterForm, NewsletterLanguageInlineForm
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
-	NewsletterContent, NewsletterDataSource, DataSourceOrdering, DataSourceSelector, \
-	MailerParameter, Mailer, MailerLog, Language, NewsletterProxy, NewsletterLanguage
+	NewsletterContent, NewsletterDataSource, NewsletterFeedDataSource, \
+	DataSourceOrdering, DataSourceSelector, MailerParameter, Mailer, \
+	MailerLog, Language, NewsletterProxy, NewsletterLanguage
 
 
 class NewsletterDataSourceInlineAdmin( admin.TabularInline ):
 	model = NewsletterDataSource
+	extra = 0
+
+
+class NewsletterFeedDataSourceInlineAdmin(admin.TabularInline):
+	model = NewsletterFeedDataSource
 	extra = 0
 
 
@@ -85,6 +91,8 @@ class NewsletterContentInlineAdmin( admin.TabularInline ):
 		'''
 		if db_field.name == "data_source":
 			kwargs["queryset"] = NewsletterDataSource.objects.all().select_related('type')
+		if db_field.name == "feed_data_source":
+			kwargs["queryset"] = NewsletterFeedDataSource.objects.all().select_related('type')
 		return super(NewsletterContentInlineAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 	def formfield_for_dbfield(self, db_field, **kwargs):
@@ -305,11 +313,14 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		else:
 			form = ScheduleNewsletterForm()
 
+		requires_freeze = len(NewsletterFeedDataSource.data_sources(nl.type)) > 0
+
 		ctx = {
 			'title': _( '%s: Schedule for sending' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
 			'original': nl,
-			'is_past': datetime.now() + timedelta(minutes=2) >= nl.release_date
+			'is_past': datetime.now() + timedelta(minutes=2) >= nl.release_date,
+			'requires_freeze': requires_freeze,
 		}
 
 		nl.render( {}, store=False )
@@ -371,7 +382,7 @@ class NewsletterTypeAdmin( admin.ModelAdmin ):
 	list_editable = ['default_from_name', 'default_from_email', 'sharing', 'archive' ]
 	list_filter = ['sharing', 'archive' ]
 	search_fields = ['name', 'default_from_name', 'default_from_email', 'subject_template', 'html_template', 'text_template']
-	inlines = [NewsletterDataSourceInlineAdmin, NewsletterLanguageInlineAdmin]
+	inlines = [NewsletterDataSourceInlineAdmin, NewsletterFeedDataSourceInlineAdmin, NewsletterLanguageInlineAdmin]
 
 
 class NewsletterContentAdmin( admin.ModelAdmin ):
