@@ -59,7 +59,7 @@ class MailChimpAction( ActionPlugin ):
 		for val in list( args ) + list( kwargs.values() ):
 			if isinstance( val, models.Model ):
 				try:
-					val._meta.get_field_by_name( 'email' )
+					val._meta.get_field( 'email' )
 
 					# Same method as used in django.core.serializer.python
 					model_identifier = smart_unicode( val._meta )

@@ -1207,7 +1207,7 @@ class MailChimpEventAction( EventAction ):
 	"""
 	def __init__( self, *args, **kwargs ):
 		super( MailChimpEventAction, self ).__init__( *args, **kwargs )
-		self._meta.get_field_by_name( 'on_event' )[0]._choices = ACTION_EVENTS
+		self._meta.get_field( 'on_event' )._choices = ACTION_EVENTS
 
 	model_object = models.ForeignKey( MailChimpList )
 

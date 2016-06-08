@@ -111,7 +111,7 @@ class Mailer( models.Model ):
 		Set choices for plugin field dynamically based on registered plugins.
 		"""
 		super( Mailer, self ).__init__( *args, **kwargs )
-		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices()  # lazy( Mailer.get_plugin_choices, list )
+		self._meta.get_field( 'plugin' )._choices = Mailer.get_plugin_choices()  # lazy( Mailer.get_plugin_choices, list )
 
 	def get_plugincls( self ):
 		"""
