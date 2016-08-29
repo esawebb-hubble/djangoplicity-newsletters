@@ -1092,7 +1092,7 @@ class NewsletterFeedDataSource(models.Model):
 		url = '%s?lang=%s' % (self.url, lang)
 
 		try:
-			r = requests.get(url, timeout=5)
+			r = requests.get(url)
 		except (requests.ConnectionError, requests.Timeout):
 			return []
 
