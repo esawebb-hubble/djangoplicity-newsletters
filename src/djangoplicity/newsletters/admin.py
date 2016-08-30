@@ -148,6 +148,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 			}
 		),
 	)
+	actions = ['refresh_feed_data']
 	inlines = [NewsletterContentInlineAdmin]
 	form = NewsletterForm
 
@@ -168,6 +169,17 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 			url( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ), name='generate_newsletter_view' ),
 		]
 		return extra_urls + urls
+
+	def refresh_feed_data(self, request, queryset):
+		'''
+		Refresh the feed data for the selected newsletter and their translations
+		'''
+		for n in queryset:
+			n.get_feed_data(refresh=True)
+			for local in n.translations.all():
+				local.get_feed_data(refresh=True)
+
+	refresh_feed_data.short_description = 'Refresh remote feeds'
 
 	@classmethod
 	def html_newsletter_view( cls, request, pk=None, lang=None ):
@@ -454,8 +466,8 @@ class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, Transl
 		"""
 		urls = super( NewsletterProxyAdmin, self ).get_urls()
 		extra_urls = [
-			url( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), ),
-			url( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ) ),
+			url( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), name='html_newsletterproxy_view' ),
+			url( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ), name='text_newsletterproxy_view' ),
 		]
 		return extra_urls + urls
 
