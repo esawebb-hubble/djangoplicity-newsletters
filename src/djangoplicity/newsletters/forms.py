@@ -39,9 +39,10 @@ a newsletter.
 from django import forms
 from django.contrib.admin.widgets import AdminSplitDateTime
 from django.core.validators import validate_email
+from django.forms import ModelForm
 
 from djangoplicity.contrib.admin.widgets import AdminRichTextAreaWidget
-from djangoplicity.newsletters.models import Newsletter
+from djangoplicity.newsletters.models import Newsletter, NewsletterProxy
 
 
 class MultiEmailField( forms.CharField ):
@@ -83,6 +84,14 @@ class GenerateNewsletterForm( forms.ModelForm ):
 
 class NewsletterForm( forms.ModelForm ):
 	editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '30'}))
+
+
+class NewsletterProxyInlineForm( ModelForm ):
+	editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '30'}))
+
+	class Meta:
+		model = NewsletterProxy
+		fields = '__all__'
 
 
 class NewsletterLanguageInlineForm( forms.ModelForm ):
