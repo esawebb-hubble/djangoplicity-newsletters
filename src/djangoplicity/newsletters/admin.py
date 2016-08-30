@@ -54,7 +54,7 @@ from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
 from djangoplicity.newsletters.forms import NewsletterForm, \
 	GenerateNewsletterForm, TestEmailsForm, SendNewsletterForm, \
 	ScheduleNewsletterForm, UnscheduleNewsletterForm, \
-	NewsletterLanguageInlineForm, NewsletterProxyInlineForm
+	NewsletterLanguageInlineForm
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, NewsletterFeedDataSource, \
 	DataSourceOrdering, DataSourceSelector, MailerParameter, Mailer, \
@@ -477,8 +477,7 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	extra = 0
 	max_num = 0
 	can_delete = False
-	form = NewsletterProxyInlineForm
-	fields = ['id', 'lang', 'editorial', 'editorial_text', 'translation_ready', 'edit', 'view_html', 'view_text']
+	fields = ['id', 'lang', 'translation_ready', 'edit', 'view_html', 'view_text']
 	readonly_fields = ['lang', 'edit', 'view_html', 'view_text']
 	ordering = ['id']
 

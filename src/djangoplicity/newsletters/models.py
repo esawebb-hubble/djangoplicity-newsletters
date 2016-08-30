@@ -697,8 +697,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
 				# NewsletterLanguage doesn't exist any longer
 				pass
 
-		result = super( Newsletter, self ).save()
-		return result
+		return super( Newsletter, self ).save()
 
 	def view_html(self):
 		if self.pk:
@@ -743,15 +742,15 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		if self.frozen or (self.feed_data and not refresh):
 			return self.feed_data
 
-		self.feed_data = {}
+		feed_data = {}
 		for src in self.type.newsletterfeeddatasource_set.all():
-			self.feed_data[src.name] = src.data_context(lang=self.lang)
+			feed_data[src.name] = src.data_context(lang=self.lang)
 
 		if self.is_source():
 			cls = Newsletter
 		else:
 			cls = NewsletterProxy
-		cls.objects.filter(pk=self.pk).update(feed_data=self.feed_data)
+		cls.objects.filter(pk=self.pk).update(feed_data=feed_data)
 
 		return self.feed_data
 
@@ -782,7 +781,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
 
 	class Translation:
 		fields = ['subject', 'editorial', 'editorial_text', ]
-		excludes = ['html', 'text', 'from_name', 'from_email']
+		excludes = ['html', 'text', 'from_name', 'from_email', 'feed_data']
 
 # ========================================================================
 # Translation proxy model
