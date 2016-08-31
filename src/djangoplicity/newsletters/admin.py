@@ -477,8 +477,8 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	extra = 0
 	max_num = 0
 	can_delete = False
-	fields = ['id', 'lang', 'translation_ready', 'edit', 'view_html', 'view_text']
-	readonly_fields = ['lang', 'edit', 'view_html', 'view_text']
+	fields = ['id', 'lang', 'translation_ready', 'subject', 'edit', 'view_html', 'view_text']
+	readonly_fields = ['lang', 'subject', 'edit', 'view_html', 'view_text']
 	ordering = ['id']
 
 

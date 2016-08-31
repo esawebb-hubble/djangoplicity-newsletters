@@ -60,6 +60,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
 from django.utils import translation
+from django.utils.html import format_html
 from django.utils.translation import ugettext as _
 
 from djangoplicity.archives.base import ArchiveModel
@@ -591,10 +592,6 @@ class Newsletter( ArchiveModel, TranslationModel ):
 				'subject': self.subject,
 			}
 
-		t_html = Template( self.type.html_template )
-		t_text = Template( self.type.text_template )
-		t_subject = Template( self.type.subject_template ) if self.type.subject_template else None
-
 		# Flag to check if we have a custom editorial
 		custom_editorial = False
 		if self.is_translation():
@@ -641,6 +638,10 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		ctx = Context( defaults )
 
 		translation.activate(self.lang)
+
+		t_html = Template( self.type.html_template )
+		t_text = Template( self.type.text_template )
+		t_subject = Template( self.type.subject_template ) if self.type.subject_template else None
 
 		data = {
 			'html': t_html.render( ctx ),
@@ -701,24 +702,30 @@ class Newsletter( ArchiveModel, TranslationModel ):
 
 	def view_html(self):
 		if self.pk:
-			return '<a href="%s">View HTML</a>' % reverse('admin_site:html_newsletterproxy_view', args=[self.pk])
+			return format_html(
+				'<a href="{}">View HTML</a>',
+				reverse('admin_site:html_newsletterproxy_view', args=[self.pk])
+			)
 		else:
-			return "Not present"
-	view_html.allow_tags = True
+			return 'Not present'
 
 	def view_text(self):
 		if self.pk:
-			return '<a href="%s">View text</a>' % reverse('admin_site:text_newsletterproxy_view', args=[self.pk])
+			return format_html(
+				'<a href="{}">View text</a>',
+				reverse('admin_site:text_newsletterproxy_view', args=[self.pk])
+			)
 		else:
-			return "Not present"
-	view_text.allow_tags = True
+			return 'Not present'
 
 	def edit(self):
 		if self.pk:
-			return '<a href="%s">Edit</a>' % reverse('admin_site:newsletters_newsletterproxy_change', args=[self.pk])
+			return format_html(
+				'<a href="{}">Edit</a>',
+				reverse('admin_site:newsletters_newsletterproxy_change', args=[self.pk])
+			)
 		else:
-			return "Not present"
-	edit.allow_tags = True
+			return 'Not present'
 
 	def get_absolute_url( self ):
 		return translation_reverse( 'newsletters_detail_html', args=[self.type.slug, self.id if self.is_source() else self.source.id ], lang=self.lang )
