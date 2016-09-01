@@ -324,14 +324,11 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		else:
 			form = ScheduleNewsletterForm()
 
-		requires_freeze = len(NewsletterFeedDataSource.data_sources(nl.type)) > 0
-
 		ctx = {
 			'title': _( '%s: Schedule for sending' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
 			'original': nl,
 			'is_past': datetime.now() + timedelta(minutes=2) >= nl.release_date,
-			'requires_freeze': requires_freeze,
 		}
 
 		nl.render( {}, store=False )
