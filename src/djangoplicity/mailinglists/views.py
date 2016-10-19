@@ -224,72 +224,68 @@ def mailchimp_webhook( request, require_secure=False ):
 	event handlers should only gather the data they need, and send the rest
 	for background processing.
 	"""
+	if not request.is_secure():
+		if require_secure:
+			logger.info( "[Webhook] Not SSL request" )
+			return HttpResponse( "" )
+
+	# Get token
 	try:
-		if not request.is_secure():
-			if require_secure:
-				logger.debug( "[Webhook] Not SSL request" )
-				return HttpResponse( "" )
+		token = request.GET['token']
 
-		# Get token
-		try:
-			token = request.GET['token']
+		# Check token
+		t = MailChimpListToken.get_token( token )
 
-			# Check token
-			t = MailChimpListToken.get_token( token )
-
-			if t is None:
-				logger.debug( "[Webhook] Token %s not found", token )
-				return HttpResponse( "" )
-		except KeyError:
-			logger.debug( "[Webhook] No 'token' GET parameter" )
+		if t is None:
+			logger.info( "[Webhook] Token %s not found", token )
 			return HttpResponse( "" )
-
-		if 'HTTP_X_REAL_IP' in request.META:
-			key = 'HTTP_X_REAL_IP'
-		else:
-			key = 'REMOTE_ADDR'
-		ip = request.META[key]
-		user_agent = request.META.get( 'HTTP_USER_AGENT', '' )
-
-		if user_agent != 'MailChimp.com':
-			logger.debug( "[Webhook] User-agent not MailChimp.com - was %s", user_agent )
-			return HttpResponse( "" )
-
-		try:
-			# Check expected request type
-			if request.method != "POST":
-				raise WebHookError( "Not a POST request" )
-
-			# Get parameters
-			type = request.POST['type']
-			fired_at = request.POST['fired_at']
-			list_id = request.POST['data[list_id]']
-		except KeyError:
-			raise WebHookError( "Parameters missing" )
-
-		# Check webhook type
-		if type not in ['subscribe', 'unsubscribe', 'profile', 'upemail', 'cleaned', 'campaign']:
-			raise WebHookError( "Unknown webhook type %s" % type )
-
-		# Check if list exists
-		try:
-			list = MailChimpList.objects.get( list_id=list_id )
-		except MailChimpList.DoesNotExist:
-			raise WebHookError( "List %s does not exists" % list_id )
-
-		# Validate token for list
-		if not t.validate_token( list ):
-			raise WebHookError( "Token invalid" )
-
-		# Get event handler
-		try:
-			view = EVENT_HANDLERS[type]
-		except KeyError:
-			raise WebHookError( "Internal error - no event handler defined for %s." % type )
-
-		# Pass to event handler for processing.
-		logger.debug( " [Webhook] Request accepted" )
-		return view( request, list, fired_at, ip=ip, user_agent=user_agent, )
-	except WebHookError, e:
-		logger.debug( "[Webhook] %s", unicode( e ) )
+	except KeyError:
+		logger.info( "[Webhook] No 'token' GET parameter" )
 		return HttpResponse( "" )
+
+	if 'HTTP_X_REAL_IP' in request.META:
+		key = 'HTTP_X_REAL_IP'
+	else:
+		key = 'REMOTE_ADDR'
+	ip = request.META[key]
+	user_agent = request.META.get( 'HTTP_USER_AGENT', '' )
+
+	if user_agent != 'MailChimp.com':
+		logger.info( "[Webhook] User-agent not MailChimp.com - was %s", user_agent )
+		return HttpResponse( "" )
+
+	try:
+		# Check expected request type
+		if request.method != "POST":
+			raise WebHookError( "Not a POST request" )
+
+		# Get parameters
+		type = request.POST['type']
+		fired_at = request.POST['fired_at']
+		list_id = request.POST['data[list_id]']
+	except KeyError:
+		raise WebHookError( "Parameters missing" )
+
+	# Check webhook type
+	if type not in ['subscribe', 'unsubscribe', 'profile', 'upemail', 'cleaned', 'campaign']:
+		raise WebHookError( "Unknown webhook type %s" % type )
+
+	# Check if list exists
+	try:
+		list = MailChimpList.objects.get( list_id=list_id )
+	except MailChimpList.DoesNotExist:
+		raise WebHookError( "List %s does not exists" % list_id )
+
+	# Validate token for list
+	if not t.validate_token( list ):
+		raise WebHookError( "Token invalid" )
+
+	# Get event handler
+	try:
+		view = EVENT_HANDLERS[type]
+	except KeyError:
+		raise WebHookError( "Internal error - no event handler defined for %s." % type )
+
+	# Pass to event handler for processing.
+	logger.info( " [Webhook] Request accepted" )
+	return view( request, list, fired_at, ip=ip, user_agent=user_agent, )
