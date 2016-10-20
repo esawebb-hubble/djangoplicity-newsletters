@@ -53,11 +53,14 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import JSONField
 from django.contrib.sites.models import Site
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
 from django.utils import translation
+from django.utils.html import format_html
 from django.utils.translation import ugettext as _
 
 from djangoplicity.archives.base import ArchiveModel
@@ -428,6 +431,9 @@ class Newsletter( ArchiveModel, TranslationModel ):
 	text = models.TextField( blank=True )
 	html = models.TextField( verbose_name="HTML", blank=True )
 
+	# Feed Data "cache"
+	feed_data = JSONField(default=dict)
+
 	# Editorial if needed
 	editorial_subject = models.CharField( max_length=255, blank=True )
 	editorial = models.TextField( blank=True )
@@ -586,10 +592,6 @@ class Newsletter( ArchiveModel, TranslationModel ):
 				'subject': self.subject,
 			}
 
-		t_html = Template( self.type.html_template )
-		t_text = Template( self.type.text_template )
-		t_subject = Template( self.type.subject_template ) if self.type.subject_template else None
-
 		# Flag to check if we have a custom editorial
 		custom_editorial = False
 		if self.is_translation():
@@ -605,8 +607,8 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		data = {}
 		data.update(NewsletterContent.data_context(self, lang=self.lang))
 
-		for src in NewsletterFeedDataSource.data_sources(self.type):
-			data[src.name] = src.data_context(lang=self.lang)
+		# Include the data from Feed Data Sources
+		data.update(self.get_feed_data())
 
 		defaults = {
 			'base_url': "http://%s" % Site.objects.get_current().domain,
@@ -636,6 +638,10 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		ctx = Context( defaults )
 
 		translation.activate(self.lang)
+
+		t_html = Template( self.type.html_template )
+		t_text = Template( self.type.text_template )
+		t_subject = Template( self.type.subject_template ) if self.type.subject_template else None
 
 		data = {
 			'html': t_html.render( ctx ),
@@ -692,32 +698,34 @@ class Newsletter( ArchiveModel, TranslationModel ):
 				# NewsletterLanguage doesn't exist any longer
 				pass
 
-		result = super( Newsletter, self ).save()
-		return result
+		return super( Newsletter, self ).save()
 
 	def view_html(self):
-		if self.id:
-			#  FIXME: replace by view_link() or similar
-			return '<a href="/public/djangoplicity/admin/newsletters/newsletterproxy/%s/html">View HTML</a>' % str(self.id)
+		if self.pk:
+			return format_html(
+				'<a href="{}">View HTML</a>',
+				reverse('admin_site:html_newsletterproxy_view', args=[self.pk])
+			)
 		else:
-			return "Not present"
-	view_html.allow_tags = True
+			return 'Not present'
 
 	def view_text(self):
-		if self.id:
-			#  FIXME: replace by view_link() or similar
-			return '<a href="/public/djangoplicity/admin/newsletters/newsletterproxy/%s/text">View text</a>' % str(self.id)
+		if self.pk:
+			return format_html(
+				'<a href="{}">View text</a>',
+				reverse('admin_site:text_newsletterproxy_view', args=[self.pk])
+			)
 		else:
-			return "Not present"
-	view_text.allow_tags = True
+			return 'Not present'
 
 	def edit(self):
-		if self.id:
-			#  FIXME: replace by view_link() or similar
-			return '<a href="/public/djangoplicity/admin/newsletters/newsletterproxy/%s">Edit</a>' % str(self.id)
+		if self.pk:
+			return format_html(
+				'<a href="{}">Edit</a>',
+				reverse('admin_site:newsletters_newsletterproxy_change', args=[self.pk])
+			)
 		else:
-			return "Not present"
-	edit.allow_tags = True
+			return 'Not present'
 
 	def get_absolute_url( self ):
 		return translation_reverse( 'newsletters_detail_html', args=[self.type.slug, self.id if self.is_source() else self.source.id ], lang=self.lang )
@@ -731,6 +739,27 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			return self.translations.get( lang=language )
 		except Newsletter.DoesNotExist:
 			return None
+
+	def get_feed_data(self, refresh=False):
+		'''
+		Returns the feed data if it has been fetched already otherwise
+		fetch it from the newsletter's type sources
+		If refresh is True the data is fetched again
+		'''
+		if self.frozen or (self.feed_data and not refresh):
+			return self.feed_data
+
+		feed_data = {}
+		for src in self.type.newsletterfeeddatasource_set.all():
+			feed_data[src.name] = src.data_context(lang=self.lang)
+
+		if self.is_source():
+			cls = Newsletter
+		else:
+			cls = NewsletterProxy
+		cls.objects.filter(pk=self.pk).update(feed_data=feed_data)
+
+		return self.feed_data
 
 	def __unicode__( self ):
 		return self.subject
@@ -759,7 +788,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
 
 	class Translation:
 		fields = ['subject', 'editorial', 'editorial_text', ]
-		excludes = ['html', 'text', 'from_name', 'from_email']
+		excludes = ['html', 'text', 'from_name', 'from_email', 'feed_data']
 
 # ========================================================================
 # Translation proxy model
@@ -1059,7 +1088,7 @@ class NewsletterFeedDataSource(models.Model):
 		'Fetch translated version of the feed if available'))
 
 	def __unicode__(self):
-		return u'%s: %s' % (self.type, self.title)
+		return self.title
 
 	def _limit_data(self, data):
 		limits = self.limit.split(':')[:2]
@@ -1092,7 +1121,7 @@ class NewsletterFeedDataSource(models.Model):
 		url = '%s?lang=%s' % (self.url, lang)
 
 		try:
-			r = requests.get(url, timeout=5)
+			r = requests.get(url)
 		except (requests.ConnectionError, requests.Timeout):
 			return []
 

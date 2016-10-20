@@ -41,8 +41,6 @@ from datetime import datetime, timedelta
 from django.conf.urls import url
 from django.contrib import admin
 from django.core.urlresolvers import reverse
-from django.db import models
-from django.forms import ModelForm, widgets
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -55,7 +53,8 @@ from djangoplicity.archives.contrib.admin.defaults import RenameAdmin, \
 	TranslationDuplicateAdmin, ArchiveAdmin, DisplaysAdmin
 from djangoplicity.newsletters.forms import NewsletterForm, \
 	GenerateNewsletterForm, TestEmailsForm, SendNewsletterForm, \
-	ScheduleNewsletterForm, UnscheduleNewsletterForm, NewsletterLanguageInlineForm
+	ScheduleNewsletterForm, UnscheduleNewsletterForm, \
+	NewsletterLanguageInlineForm
 from djangoplicity.newsletters.models import NewsletterType, Newsletter, \
 	NewsletterContent, NewsletterDataSource, NewsletterFeedDataSource, \
 	DataSourceOrdering, DataSourceSelector, MailerParameter, Mailer, \
@@ -148,6 +147,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 			}
 		),
 	)
+	actions = ['refresh_feed_data']
 	inlines = [NewsletterContentInlineAdmin]
 	form = NewsletterForm
 
@@ -168,6 +168,17 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 			url( r'^new/$', self.admin_site.admin_view( self.generate_newsletter_view ), name='generate_newsletter_view' ),
 		]
 		return extra_urls + urls
+
+	def refresh_feed_data(self, request, queryset):
+		'''
+		Refresh the feed data for the selected newsletter and their translations
+		'''
+		for n in queryset:
+			n.get_feed_data(refresh=True)
+			for local in n.translations.all():
+				local.get_feed_data(refresh=True)
+
+	refresh_feed_data.short_description = 'Refresh remote feeds'
 
 	@classmethod
 	def html_newsletter_view( cls, request, pk=None, lang=None ):
@@ -313,14 +324,11 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		else:
 			form = ScheduleNewsletterForm()
 
-		requires_freeze = len(NewsletterFeedDataSource.data_sources(nl.type)) > 0
-
 		ctx = {
 			'title': _( '%s: Schedule for sending' ) % force_unicode( self.model._meta.verbose_name ).title(),
 			'adminform': form,
 			'original': nl,
 			'is_past': datetime.now() + timedelta(minutes=2) >= nl.release_date,
-			'requires_freeze': requires_freeze,
 		}
 
 		nl.render( {}, store=False )
@@ -445,6 +453,7 @@ class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, Transl
 	raw_id_fields = ( 'source', )
 	readonly_fields = ( 'id', )
 	inlines = []
+	form = NewsletterForm
 
 	def get_urls( self ):
 		"""
@@ -454,16 +463,10 @@ class NewsletterProxyAdmin( dpadmin.DjangoplicityModelAdmin, RenameAdmin, Transl
 		"""
 		urls = super( NewsletterProxyAdmin, self ).get_urls()
 		extra_urls = [
-			url( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), ),
-			url( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ) ),
+			url( r'^(?P<pk>[-a-z0-9]+)/html/$', self.admin_site.admin_view( NewsletterAdmin.html_newsletter_view ), name='html_newsletterproxy_view' ),
+			url( r'^(?P<pk>[-a-z0-9]+)/text/$', self.admin_site.admin_view( NewsletterAdmin.text_newsletter_view ), name='text_newsletterproxy_view' ),
 		]
 		return extra_urls + urls
-
-
-class NewsletterProxyInlineForm( ModelForm ):
-	class Meta:
-		model = NewsletterProxy
-		fields = '__all__'
 
 
 class NewsletterProxyInlineAdmin( admin.TabularInline ):
@@ -471,12 +474,9 @@ class NewsletterProxyInlineAdmin( admin.TabularInline ):
 	extra = 0
 	max_num = 0
 	can_delete = False
-	form = NewsletterProxyInlineForm
-	fields = ['id', 'lang', 'editorial', 'editorial_text', 'translation_ready', 'edit', 'view_html', 'view_text']
-	readonly_fields = ['lang', 'edit', 'view_html', 'view_text']
+	fields = ['id', 'lang', 'translation_ready', 'subject', 'edit', 'view_html', 'view_text']
+	readonly_fields = ['lang', 'subject', 'edit', 'view_html', 'view_text']
 	ordering = ['id']
-
-	formfield_overrides = {models.CharField: {'widget': widgets.TextInput(attrs={'size': '9'})}, }
 
 
 NewsletterAdmin.inlines += [NewsletterProxyInlineAdmin]

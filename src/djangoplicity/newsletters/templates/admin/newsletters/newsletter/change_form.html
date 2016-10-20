@@ -23,6 +23,12 @@
 
 
 {% block form_top %}
+{% if original.type.newsletterfeeddatasource_set.all %}
+<div style="padding: 15px; color: #31708f; background-color: #d9edf7; border: 1px solid #bce8f1; ">
+	This newsletter contains data fetched from remote sources: {{ original.type.newsletterfeeddatasource_set.all|join:', ' }}.<br>
+	To refresh this data use the "Refresh remote feeds" from the <a href="{% url 'admin_site:newsletters_newsletter_changelist' %}">action menu</a>.
+</div>
+{% endif %}
 {% if original.send %}
 <fieldset class="module" style="background-color: #0f0;">
 <div class="form-row">
