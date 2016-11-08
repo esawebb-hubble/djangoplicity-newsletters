@@ -1023,7 +1023,7 @@ class GroupMapping(models.Model):
 			return
 
 		val = unicode( val ).encode( "utf8" )  # Note merge vars are sent via POST request, and apparently MailChimp library is not properly encoding the data.
-		return {'id': self.group.group_id, 'groups': val}
+		return {'id': self.group.group_id, 'groups': [val]}
 
 	def __unicode__( self ):
 		return "%s -> %s" % ( self.group, self.field )
