@@ -37,6 +37,7 @@ from django.utils.encoding import smart_unicode
 
 from djangoplicity.actions.plugins import ActionPlugin  # pylint: disable=E0611
 
+from djangoplicity.utils.history import add_admin_history  # pylint: disable=E0611
 
 class MailmanAction(ActionPlugin):
 	"""
@@ -178,6 +179,10 @@ class MailmanSyncAction( MailmanAction ):
 				obj.contact_set.remove(c)
 				emails.remove(email)
 				self.get_logger().info(u'Removed %s from %s' % (c, obj))
+				add_admin_history(c,
+					'Mailman Sync (%s): Removed contact %d from group %s' %
+					(conf['list_name'], c.pk, c.name)
+				)
 
 				# Add contact to 'unsub' group if it exists
 				try:
@@ -188,6 +193,10 @@ class MailmanSyncAction( MailmanAction ):
 
 				c.groups.add(l)
 				self.get_logger().info(u'Added %s to %s' % (c, l))
+				add_admin_history(c,
+					'Mailman Sync (%s): Added contact %d to group %s' %
+					(conf['list_name'], c.pk, l.name)
+				)
 
 			mlist.update_subscribers( emails )
 			mlist.push( remove_existing=conf['remove_existing'] )
