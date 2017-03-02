@@ -102,7 +102,7 @@ class SubscriptionAdmin( admin.ModelAdmin ):
 class ListAdmin( admin.ModelAdmin ):
 	list_display = ['name', 'password', 'subscriptions_count', 'admin_url', 'last_sync']
 	search_fields = ['name', 'password']
-	actions = ['action_sync']
+#	actions = ['action_sync']
 	readonly_fields = ['last_sync']
 
 	def subscriptions_count( self, obj ):
@@ -115,11 +115,11 @@ class ListAdmin( admin.ModelAdmin ):
 	admin_url.short_description = "Admin URL"
 	admin_url.allow_tags = True
 
-	def action_sync( self, request, queryset ):
-		for _obj in queryset:
-			pass  # synchronize_mailman.delay( obj.name )
-		self.message_user( request, "Started synchronization of mailman lists %s." % ", ".join( [l.name for l in queryset] ) )
-	action_sync.short_description = "Synchronize lists"
+#	def action_sync( self, request, queryset ):
+#		for _obj in queryset:
+#			pass  # synchronize_mailman.delay( obj.name )
+#		self.message_user( request, "Started synchronization of mailman lists %s." % ", ".join( [l.name for l in queryset] ) )
+#	action_sync.short_description = "Synchronize lists"
 
 
 #class MailChimpSourceListInlineAdmin( admin.TabularInline ):
