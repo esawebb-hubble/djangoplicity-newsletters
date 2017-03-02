@@ -39,6 +39,7 @@ from djangoplicity.actions.plugins import ActionPlugin  # pylint: disable=E0611
 
 from djangoplicity.utils.history import add_admin_history  # pylint: disable=E0611
 
+
 class MailmanAction(ActionPlugin):
 	"""
 	An action plugin is a configureable celery task,
@@ -180,8 +181,8 @@ class MailmanSyncAction( MailmanAction ):
 				emails.remove(email)
 				self.get_logger().info(u'Removed %s from %s' % (c, obj))
 				add_admin_history(c,
-					'Mailman Sync (%s): Removed contact %d from group %s' %
-					(conf['list_name'], c.pk, c.name)
+					'Mailman Sync (%s): Removed from %s' %
+					(conf['list_name'], obj)
 				)
 
 				# Add contact to 'unsub' group if it exists
@@ -194,8 +195,8 @@ class MailmanSyncAction( MailmanAction ):
 				c.groups.add(l)
 				self.get_logger().info(u'Added %s to %s' % (c, l))
 				add_admin_history(c,
-					'Mailman Sync (%s): Added contact %d to group %s' %
-					(conf['list_name'], c.pk, l.name)
+					'Mailman Sync (%s): Added to group %s' %
+					(conf['list_name'], l)
 				)
 
 			mlist.update_subscribers( emails )
