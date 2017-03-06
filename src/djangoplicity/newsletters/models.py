@@ -774,7 +774,6 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		newsmini = ImageResourceManager(derived='original', type=types.NewsMiniJpegType)
 		newsfeature = ImageResourceManager(derived='original', type=types.NewsFeatureType)
 		medium = ImageResourceManager(derived='original', type=types.MediumJpegType)
-		frontpagethumbs = ImageResourceManager(derived='original', type=types.FrontpageThumbnailJpegType)
 		thumbs = ImageResourceManager(derived='original', type=types.ThumbnailJpegType)
 
 		class Meta:
