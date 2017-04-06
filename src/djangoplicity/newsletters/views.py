@@ -54,13 +54,18 @@ class NewsletterDetailView(DetailView):
 
 		try:
 			obj = Newsletter.objects.get(type=newsletter_type, pk=pk)
-
-			if settings.USE_I18N:
-				lang = translation.get_language()
-				if lang != settings.LANGUAGE_CODE:
-					obj = obj.translations.get(lang=lang)
 		except Newsletter.DoesNotExist:
 			raise Http404
+
+		if settings.USE_I18N:
+			lang = translation.get_language()
+			if lang != settings.LANGUAGE_CODE:
+				try:
+					obj = obj.translations.get(lang=lang)
+				except Newsletter.DoesNotExist:
+					# We don't have a translation, so we just pass and default
+					# to the original
+					pass
 
 		return obj
 
