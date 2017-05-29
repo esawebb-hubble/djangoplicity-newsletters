@@ -39,7 +39,7 @@ setup(
 	package_dir={ '': 'src' },
     install_requires=[
 		'setuptools',
-		'certifi == 2015.04.28',
+		'certifi',
 		'django-mailman-eso == 0.2',
 		'mailchimp == 2.0.9',
 	],
