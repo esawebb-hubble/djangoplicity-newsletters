@@ -32,7 +32,8 @@
 
 from django.conf.urls import url
 
-from djangoplicity.newsletters.views import NewsletterDetailView
+from djangoplicity.newsletters.views import NewsletterDetailView, \
+	NewsletterEmbedView
 from djangoplicity.archives.urls import urlpatterns_for_options
 from djangoplicity.newsletters.options import NewsletterOptions
 
@@ -40,6 +41,7 @@ from djangoplicity.newsletters.options import NewsletterOptions
 # break the email HTML layout).
 urlpatterns = [
 	url(r'^(?P<category_slug>[-\w]+)/html/(?P<pk>\d+)/$', NewsletterDetailView.as_view(), name='newsletters_detail_html'),
+	url(r'^(?P<category_slug>[-\w]+)/htmlembed/(?P<pk>\d+)/$', NewsletterEmbedView.as_view(), name='newsletters_embed_html'),
 ]
 
 urlpatterns += urlpatterns_for_options( NewsletterOptions )

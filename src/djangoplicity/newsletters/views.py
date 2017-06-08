@@ -31,7 +31,7 @@
 
 from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 if settings.USE_I18N:
 	from django.utils import translation
@@ -91,11 +91,16 @@ class NewsletterDetailView(DetailView):
 		'''
 		slug = self.kwargs.get('category_slug')
 		newsletter_type = get_object_or_404(NewsletterType, slug=slug, archive=True)
-		newsletter_data = self.object.render( {}, store=False )
 		context = super(NewsletterDetailView, self).get_context_data(**kwargs)
+
+		nl = self.object
+		if settings.USE_I18N and nl.is_translation():
+			# We only care about the translation in the embed view
+			nl = nl.source
+
 		context.update({
 			'newsletter_type': newsletter_type,
-			'newsletter_html': newsletter_data['html'],
+			'object': nl,
 		})
 		# If the archive is restricted to internal access only we return a 404
 		# if the client is outside the internal network
@@ -103,3 +108,21 @@ class NewsletterDetailView(DetailView):
 			if not (self.request and "REMOTE_ADDR" in self.request.META and self.request.META["REMOTE_ADDR"] in settings.INTERNAL_IPS):
 				raise Http404
 		return context
+
+
+class NewsletterEmbedView(NewsletterDetailView):
+	'''
+	The Newsletter HTML is stored including the full page, in ordre to
+	add custom header etc we display the newsletter content in an iframe,
+	hence we split the newsletter content and the wrapper in two views
+	'''
+
+	def render_to_response(self, context, **response_kwargs):
+		newsletter_data = self.object.render( {}, store=False )
+		return HttpResponse(newsletter_data['html'])
+
+	def get_context_data(self, **kwargs):
+		'''
+		No context needed
+		'''
+		return {}
