@@ -40,7 +40,7 @@ setup(
     install_requires=[
 		'setuptools',
 		'certifi',
-		'django-mailman-eso == 0.2',
+		'django-mailman == 0.4',
 		'mailchimp == 2.0.9',
 	],
 	include_package_data=True,
