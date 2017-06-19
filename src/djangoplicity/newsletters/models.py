@@ -342,7 +342,7 @@ class NewsletterType( models.Model ):
 	#
 	# Templates for subject, text, and html
 	#
-	subject_template = models.CharField( max_length=255, blank=True )
+	subject_template = models.CharField( max_length=400, blank=True )
 	text_template = models.TextField( blank=True )
 	html_template = models.TextField( blank=True, verbose_name="HTML template" )
 
