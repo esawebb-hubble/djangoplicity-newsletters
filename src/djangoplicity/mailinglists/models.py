@@ -195,10 +195,10 @@ class List( models.Model ):
 		mailman_members = self.mailman.get_members()
 
 		if mailman_members:
-			dummy_mailman_names, mailman_emails = zip( *mailman_members )
+			mailman_emails, _mailman_names = zip( *mailman_members )
 			mailman_emails = set( mailman_emails )
 		else:
-			dummy_mailman_names, mailman_emails = [], set( [] )
+			mailman_emails = set()
 
 		return mailman_emails
 
@@ -233,6 +233,7 @@ class List( models.Model ):
 
 		subscribe = django_emails - mailman_emails
 		unsubscribe = mailman_emails - django_emails
+
 
 		for e in subscribe:
 			self._subscribe( e )
