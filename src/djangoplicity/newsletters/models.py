@@ -761,6 +761,47 @@ class Newsletter( ArchiveModel, TranslationModel ):
 
 		return self.feed_data
 
+	def get_unpublished_content(self):
+		'''
+		Returns a list of all content which is not yet published or with a
+		release date after the NL release
+		'''
+		unpublished = []
+		for datasrc in NewsletterDataSource.data_sources(self.type):
+			# For each data source - get object(s) for this newsletter.
+			modelcls = datasrc.content_type.model_class()
+			data = None
+
+			if modelcls is not None:
+				content_objects = NewsletterContent.objects.filter(
+					newsletter=self, data_source=datasrc)
+				allpks = [obj.object_id for obj in content_objects]
+
+				try:
+					if datasrc.list:
+						data = modelcls.objects.filter(pk__in=allpks)
+					else:
+						if len(allpks) > 0:
+							data = modelcls.objects.get(pk=allpks[0])
+				except modelcls.DoesNotExist:
+					continue
+
+			# Data can be either a list or a unique element
+			# so we turn it in a list:
+			if not datasrc.list:
+				data = [data, ]
+
+			for d in data:
+				published = getattr(d, 'published', None)
+				if published is False:
+					unpublished.append(d)
+
+				embargo_date = getattr(d, 'embargo_date', None)
+				if embargo_date is not None and embargo_date > self.release_date:
+					unpublished.append(d)
+
+		return unpublished
+
 	def __unicode__( self ):
 		return self.subject
 

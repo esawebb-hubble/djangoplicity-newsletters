@@ -23,6 +23,19 @@
 
 
 {% block form_top %}
+{% with unpublished_content=original.get_unpublished_content %}
+{% if unpublished_content %}
+<div style="padding: 15px; color: #fff; background-color: #d9534f; border: 1px solid #b92c28; ">
+	This newsletter contains which is either unpublished, or with an embargo date *after* the newsletter release date:<br>
+	<ul>
+	{% for content in unpublished_content %}
+		<li>{{ content }}</li>
+	{% endfor %}
+	</ul>
+</div>
+<br>
+{% endif %}
+{% endwith %}
 {% if original.type.newsletterfeeddatasource_set.all %}
 <div style="padding: 15px; color: #31708f; background-color: #d9edf7; border: 1px solid #bce8f1; ">
 	This newsletter contains data fetched from remote sources: {{ original.type.newsletterfeeddatasource_set.all|join:', ' }}.<br>
