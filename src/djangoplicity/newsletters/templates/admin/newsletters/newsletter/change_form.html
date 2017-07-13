@@ -25,8 +25,8 @@
 {% block form_top %}
 {% with unpublished_content=original.get_unpublished_content %}
 {% if unpublished_content %}
-<div style="padding: 15px; color: #fff; background-color: #d9534f; border: 1px solid #b92c28; ">
-	This newsletter contains which is either unpublished, or with an embargo date *after* the newsletter release date:<br>
+<div style="padding: 15px; color: #a94442; background-color: #f2dede; border: 1px solid #ebccd1; ">
+	This newsletter has content which is either unpublished, or with an embargo date *after* the newsletter release date:<br>
 	<ul>
 	{% for content in unpublished_content %}
 		<li>{{ content }}</li>
@@ -43,20 +43,20 @@
 </div>
 {% endif %}
 {% if original.send %}
-<fieldset class="module" style="background-color: #0f0;">
+<fieldset class="module" style="background-color: #dff0d8; color: #3c763d; border: 1px solid #d6e9c6;">
 <div class="form-row">
 <p>Newsletter was sent on <strong>{{original.send}}</strong> ({{original.send|timesince}} ago).</p>
 </div>
 </fieldset>
 {% else %}{% if original.scheduled_status == 'ON' %}
-<fieldset class="module" style="background-color: #FFA500;">
+<fieldset class="module" style="background-color: #8a6d3b; color: #8a6d3b; border: 1px solid #faebcc;">
 <div class="form-row">
 <p>Newsletter is scheduled for sending {% if original.release_date|timeuntil != "0 minutes" %}in {{original.release_date|timeuntil}} {%endif%}on <strong>{{original.release_date}}</strong>.</p>
 </div>
 </fieldset>
 {% endif %}
 {% if original.scheduled_status == 'ONGOING' %}
-<fieldset class="module" style="background-color: #FFA500;">
+<fieldset class="module" style="background-color: #8a6d3b; color: #8a6d3b; border: 1px solid #faebcc;">
 <div class="form-row">
 <p>Newsletter is being uploaded and will be scheduled for sending, this will take a few minutes.</p>
 </div>
