@@ -49,14 +49,14 @@
 </div>
 </fieldset>
 {% else %}{% if original.scheduled_status == 'ON' %}
-<fieldset class="module" style="background-color: #8a6d3b; color: #8a6d3b; border: 1px solid #faebcc;">
+<fieldset class="module" style="background-color: #fcf8e3; color: #8a6d3b; border: 1px solid ##f5e79e;">
 <div class="form-row">
 <p>Newsletter is scheduled for sending {% if original.release_date|timeuntil != "0 minutes" %}in {{original.release_date|timeuntil}} {%endif%}on <strong>{{original.release_date}}</strong>.</p>
 </div>
 </fieldset>
 {% endif %}
 {% if original.scheduled_status == 'ONGOING' %}
-<fieldset class="module" style="background-color: #8a6d3b; color: #8a6d3b; border: 1px solid #faebcc;">
+<fieldset class="module" style="background-color: #fcf8e3; color: #8a6d3b; border: 1px solid ##f5e79e;">
 <div class="form-row">
 <p>Newsletter is being uploaded and will be scheduled for sending, this will take a few minutes.</p>
 </div>
