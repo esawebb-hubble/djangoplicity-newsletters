@@ -157,46 +157,46 @@ class Mailer( models.Model ):
 		"""
 		Send newsletter now via this mailer
 		"""
-		l = self._log_entry( newsletter )
+		log = self._log_entry( newsletter )
 
 		try:
 			plugin = self.get_plugin()
 			return plugin.send_now( newsletter )
 		except Exception, dummy_e:
-			l.succeess = False
-			l.error = traceback.format_exc()
+			log.success = False
+			log.error = traceback.format_exc()
 		finally:
-			l.save()
+			log.save()
 
 	def send_test( self, newsletter, emails=[] ):
 		"""
 		Send test newsletter now via this mailer to listed emails
 		"""
-		l = self._log_entry( newsletter )
-		l.is_test = True
+		log = self._log_entry( newsletter )
+		log.is_test = True
 
 		try:
 			plugin = self.get_plugin()
 			res = plugin.send_test( newsletter, emails )
-			l.save()
+			log.save()
 			return res
 		except:  # pylint: disable=W0702
-			l.success = False
-			l.error = traceback.format_exc()
-			l.save()
+			log.success = False
+			log.error = traceback.format_exc()
+			log.save()
 
 	def _log_entry( self, newsletter ):
 		"""
 		Create a log entry for sending a mail
 		"""
-		l = MailerLog(
+		log = MailerLog(
 				plugin=self.plugin,
 				name=self.name,
 				subject=newsletter.subject,
 				newsletter_pk=newsletter.pk,
 				parameters='; '.join([unicode( p ) for p in MailerParameter.objects.filter( mailer=self )]),
 			)
-		return l
+		return log
 
 	@classmethod
 	def register_plugin( cls, mailercls ):
@@ -253,6 +253,7 @@ class Mailer( models.Model ):
 
 	class Meta:
 		ordering = ['name']
+
 
 # Connect signal handlers
 post_save.connect( Mailer.post_save_handler, sender=Mailer )
@@ -453,15 +454,17 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			self.scheduled_status = 'ONGOING'
 			self.save()
 
-			try:
-				for m in self.type.mailers.all():
-					m.on_scheduled( self )
-			except Exception, e:
-				# Something wrong happen, set scheduled_status to 'OFF
-				# and re-raise the exception
-				self.scheduled_status = 'OFF'
-				self.save()
-				raise e
+			for m in self.type.mailers.all():
+				m.on_scheduled( self )
+#			try:
+#				for m in self.type.mailers.all():
+#					m.on_scheduled( self )
+#			except Exception, e:
+#				# Something wrong happen, set scheduled_status to 'OFF
+#				# and re-raise the exception
+#				self.scheduled_status = 'OFF'
+#				self.save()
+#				raise e
 
 			res = send_scheduled_newsletter.apply_async( args=[ self.pk ], eta=self.release_date )
 
@@ -1258,6 +1261,7 @@ class MailChimpCampaign( models.Model ):
 
 	class Meta:
 		unique_together = ['newsletter', 'list_id', 'lang']
+
 
 #
 # Register default mailer interfaces
