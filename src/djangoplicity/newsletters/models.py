@@ -441,7 +441,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
 	editorial = models.TextField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
-	def _schedule(self, user):
+	def _schedule(self, user_pk):
 		if self.scheduled_status in ('ON', 'ONGOING'):
 			raise Exception("Newsletter is scheduled for sending.")
 		elif self.send:
@@ -472,14 +472,14 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			self.save()
 
 			LogEntry.objects.log_action(
-				user_id=user.pk,
+				user_id=user_pk,
 				content_type_id=ContentType.objects.get_for_model(self).pk,
 				object_id=self.pk,
 				object_repr=unicode(self.pk),
 				action_flag=CHANGE,
 				change_message='Sending scheduled for %s % self.release_date')
 
-	def _unschedule(self, user):
+	def _unschedule(self, user_pk):
 		if self.send:
 			raise Exception("Newsletter has already been sent")
 		elif self.scheduled_status == 'OFF':
@@ -500,7 +500,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			self.save()
 
 			LogEntry.objects.log_action(
-				user_id=user.pk,
+				user_id=user_pk,
 				content_type_id=ContentType.objects.get_for_model(self).pk,
 				object_id=self.pk,
 				object_repr=unicode(self.pk),
@@ -550,19 +550,19 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			if res:
 				raise Exception(res)
 
-	def schedule(self, user):
+	def schedule(self, user_pk):
 		"""
 		Schedule a newsletter for sending.
 		"""
 		if not self.send and self.scheduled_status == 'OFF':
-			schedule_newsletter.delay(self.pk, user)
+			schedule_newsletter.delay(self.pk, user_pk)
 
-	def unschedule(self, user):
+	def unschedule(self, user_pk):
 		"""
 		Cancel current schedule for newsletter
 		"""
 		if self.scheduled_status == 'ON':
-			unschedule_newsletter.delay(self.pk, user)
+			unschedule_newsletter.delay(self.pk, user_pk)
 
 	def send_now( self ):
 		"""

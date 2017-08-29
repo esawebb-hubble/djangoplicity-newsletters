@@ -126,7 +126,7 @@ def send_newsletter_test(newsletter_pk, emails):
 
 
 @task(name="newsletters.schedule_newsletter", ignore_result=True)
-def schedule_newsletter(newsletter_pk, user):
+def schedule_newsletter(newsletter_pk, user_pk):
 	"""
 	Task to schedule a newsletter for delivery.
 	"""
@@ -138,7 +138,7 @@ def schedule_newsletter(newsletter_pk, user):
 		try:
 			nl = Newsletter.objects.get(pk=newsletter_pk)
 			logger.info("Scheduling newsletter %s" % newsletter_pk)
-			nl._schedule(user)
+			nl._schedule(user_pk)
 		finally:
 			release_lock(lock_id)
 	else:
@@ -147,7 +147,7 @@ def schedule_newsletter(newsletter_pk, user):
 
 
 @task(name="newsletters.unschedule_newsletter", ignore_result=True)
-def unschedule_newsletter(newsletter_pk, user):
+def unschedule_newsletter(newsletter_pk, user_pk):
 	"""
 	Task to unschedule a newsletter for delivery.
 	"""
@@ -159,7 +159,7 @@ def unschedule_newsletter(newsletter_pk, user):
 		try:
 			nl = Newsletter.objects.get(pk=newsletter_pk)
 			logger.info("Unscheduling newsletter %s" % newsletter_pk)
-			nl._unschedule(user)
+			nl._unschedule(user_pk)
 		finally:
 			release_lock(lock_id)
 	else:
