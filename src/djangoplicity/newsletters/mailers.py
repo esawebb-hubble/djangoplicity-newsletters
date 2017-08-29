@@ -337,6 +337,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			# for the given language
 			local = nl.get_local_version(lang)
 			if not local:
+				logger.info('** WARNING: no local NL %s for lang %s', nl.id, lang)
 				raise Exception('Can\'t find Local newsletter for Newsletter %d for language "%s"' % (nl.id, lang))
 
 			#  Add the mailer_context to the newsletter:
@@ -370,6 +371,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			}
 
 			result = self.ml.connection('campaigns.update', {'cid': campaign_id, 'name': 'options', 'value': values})
+			logger.info('** Ran campaigns.update with lang "%s", result: %s', lang, result)
 			if 'error' in result:
 				raise Exception("MailChimp could not update the campaign, error: %s'." % result['error'])
 
@@ -440,6 +442,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				}
 			}
 		)
+		logger.info('** Ran campaigns.create with lang "%s", result: %s', lang, result)
 
 		if 'error' in val:
 			raise Exception("MailChimp could not create the campaign, error %d: '%s'." % (val['code'], val['error']))
@@ -453,6 +456,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		from djangoplicity.newsletters.models import MailChimpCampaign
 
 		self._check_languages(newsletter)
+		logger.info('Ran campaigns.send')
 
 		# Get a list of languages for the newsletters, starting with an empty
 		# string for the original version
@@ -460,6 +464,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 
 		for language in languages:
+			logger.info('** Uploading NL with language %s', language)
 			# Only upload ready translations
 			if language:
 				local = newsletter.get_local_version(language)
@@ -472,6 +477,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter,
 									list_id=self.ml.list_id, lang=language )
 
+			logger.info('** Got MailChimpCampaign, created: %s', created)
 			if not created and info.campaign_id:
 				( info.campaign_id, touched ) = self._update_campaign( newsletter, info.campaign_id, language )
 				if touched:
