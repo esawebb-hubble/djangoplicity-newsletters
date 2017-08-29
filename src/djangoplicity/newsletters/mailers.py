@@ -70,8 +70,13 @@ The parameters are stored in MailerParameter, and are automatically created by t
 ----
 """
 
-from django.core.mail import EmailMultiAlternatives
+import logging
 from email import charset as Charset
+
+from django.core.mail import EmailMultiAlternatives
+
+
+logger = logging.getLogger(__name__)
 
 
 class MailerPlugin():
@@ -596,12 +601,15 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 		# Update the segments based on languages (if any)
 		for language, campaign in campaigns:
+			logger.info('Set segment for language %s', language)
 			self._set_segment(campaign, language, languages)
 
 		# We loop a second time to make sure all segments are updated
 		# correctly before trying to actually send the newsletter
 		for language, campaign in campaigns:
+			logger.info('Running campaigns.send')
 			r = self.ml.connection('campaigns.send', {'cid': campaign.campaign_id})
+			logger.info('campaigns.send returned: %s', r)
 			# Test for errors
 			try:
 				if 'error' in r:
