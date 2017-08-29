@@ -314,7 +314,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 			if form.is_valid():
 				schedule = form.cleaned_data['schedule']
 				if schedule:
-					nl.schedule()
+					nl.schedule(request.user)
 					self.message_user( request, _( "Newsletter schedule to be sent at %s." % nl.release_date ) )
 					return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
 
@@ -346,7 +346,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 			if form.is_valid():
 				cancel_schedule = form.cleaned_data['cancel_schedule']
 				if cancel_schedule:
-					nl.unschedule()
+					nl.unschedule(request.user)
 					self.message_user( request, _( "Cancelling schedule for newsletter." ) )
 					return HttpResponseRedirect( reverse( "%s:newsletters_newsletter_change" % self.admin_site.name, args=[nl.pk] ) )
 

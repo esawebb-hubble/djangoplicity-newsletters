@@ -52,6 +52,7 @@ import traceback
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.contrib.sites.models import Site
@@ -440,9 +441,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
 	editorial = models.TextField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
-	def _schedule( self ):
-		"""
-		"""
+	def _schedule(self, user):
 		if self.scheduled_status in ('ON', 'ONGOING'):
 			raise Exception("Newsletter is scheduled for sending.")
 		elif self.send:
@@ -472,9 +471,15 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			self.scheduled_status = 'ON'
 			self.save()
 
-	def _unschedule( self ):
-		"""
-		"""
+			LogEntry.objects.log_action(
+				user_id=user.pk,
+				content_type_id=ContentType.objects.get_for_model(self).pk,
+				object_id=self.pk,
+				object_repr=unicode(self.pk),
+				action_flag=CHANGE,
+				change_message='Sending scheduled for %s % self.release_date')
+
+	def _unschedule(self, user):
 		if self.send:
 			raise Exception("Newsletter has already been sent")
 		elif self.scheduled_status == 'OFF':
@@ -493,6 +498,14 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			self.scheduled_status = 'OFF'
 			self.scheduled_task_id = ""
 			self.save()
+
+			LogEntry.objects.log_action(
+				user_id=user.pk,
+				content_type_id=ContentType.objects.get_for_model(self).pk,
+				object_id=self.pk,
+				object_repr=unicode(self.pk),
+				action_flag=CHANGE,
+				change_message='Scheduling sending canceled.')
 
 	def _send_now( self ):
 		"""
@@ -537,19 +550,19 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			if res:
 				raise Exception(res)
 
-	def schedule( self ):
+	def schedule(self, user):
 		"""
 		Schedule a newsletter for sending.
 		"""
 		if not self.send and self.scheduled_status == 'OFF':
-			schedule_newsletter.delay( self.pk )
+			schedule_newsletter.delay(self.pk, user)
 
-	def unschedule( self ):
+	def unschedule(self, user):
 		"""
 		Cancel current schedule for newsletter
 		"""
 		if self.scheduled_status == 'ON':
-			unschedule_newsletter.delay( self.pk )
+			unschedule_newsletter.delay(self.pk, user)
 
 	def send_now( self ):
 		"""
