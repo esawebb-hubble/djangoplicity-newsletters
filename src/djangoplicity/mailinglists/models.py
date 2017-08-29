@@ -30,6 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE
 
 import hashlib
+import logging
 import uuid as uuidmod
 from datetime import datetime, timedelta
 from urllib import urlencode
@@ -51,6 +52,9 @@ from django.utils.encoding import smart_unicode
 from djangoplicity.actions.models import EventAction
 from djangoplicity.mailinglists.exceptions import MailChimpError
 from djangoplicity.mailinglists.mailman import MailmanList
+
+
+logger = logging.getLogger(__name__)
 
 # Work around fix - see http://stackoverflow.com/questions/1210458/how-can-i-generate-a-unique-id-in-python
 uuidmod._uuid_generate_time = None
@@ -216,7 +220,7 @@ class List( models.Model ):
 				sub.delete()
 
 		bad_emails = set( BadEmailAddress.objects.all().values_list( 'email', flat=True ) )
-		emails = set( emails.keys() )
+		emails = set( emails.keys() )  # pylint: disable=redefined-variable-type
 
 		# Subscribe all emails not in subscribers.
 		for email in emails - bad_emails:
@@ -233,7 +237,6 @@ class List( models.Model ):
 
 		subscribe = django_emails - mailman_emails
 		unsubscribe = mailman_emails - django_emails
-
 
 		for e in subscribe:
 			self._subscribe( e )
@@ -350,8 +353,7 @@ class MailChimpList( models.Model ):
 				res = getattr(section, function)(**kwargs)
 				return res
 			except SSLError:
-				print 'Caught SSLError for "%s", retrying' % function
-				continue
+				logger.warning('Caught SSLError for "%s", retrying', function)
 
 	def get_merge_vars( self ):
 		"""
