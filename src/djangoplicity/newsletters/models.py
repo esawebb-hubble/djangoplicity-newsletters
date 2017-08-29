@@ -471,13 +471,14 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			self.scheduled_status = 'ON'
 			self.save()
 
+			change_message = 'Sending scheduled for %s' % self.release_date
 			LogEntry.objects.log_action(
 				user_id=user_pk,
 				content_type_id=ContentType.objects.get_for_model(self).pk,
 				object_id=self.pk,
 				object_repr=unicode(self.pk),
 				action_flag=CHANGE,
-				change_message='Sending scheduled for %s % self.release_date')
+				change_message=change_message)
 
 	def _unschedule(self, user_pk):
 		if self.send:
