@@ -442,7 +442,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				}
 			}
 		)
-		logger.info('** Ran campaigns.create with lang "%s", result: %s', lang, result)
+		logger.info('** Ran campaigns.create with lang "%s", result: %s', lang, val)
 
 		if 'error' in val:
 			raise Exception("MailChimp could not create the campaign, error %d: '%s'." % (val['code'], val['error']))
@@ -613,7 +613,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 		# We loop a second time to make sure all segments are updated
 		# correctly before trying to actually send the newsletter
 		for language, campaign in campaigns:
-			logger.info('Running campaigns.send')
+			logger.info('Running campaigns.send with lang %s', language)
 			r = self.ml.connection('campaigns.send', {'cid': campaign.campaign_id})
 			logger.info('campaigns.send returned: %s', r)
 			# Test for errors
