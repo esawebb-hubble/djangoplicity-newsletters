@@ -37,11 +37,11 @@ setup(
 	version='0.1.0',
 	packages=find_packages('src'),
 	package_dir={ '': 'src' },
-    install_requires=[
+	install_requires=[
 		'setuptools',
 		'certifi',
 		'django-mailman == 0.4',
-		'mailchimp == 2.0.9',
+		'mailchimp3 == 2.0.15',
 	],
 	include_package_data=True,
 	zip_safe=False,

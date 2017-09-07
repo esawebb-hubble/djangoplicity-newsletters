@@ -28,31 +28,33 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
-#
+
+from django.http import HttpResponse
 
 from djangoplicity.mailinglists.models import MailChimpListToken, MailChimpList
-from djangoplicity.mailinglists.tasks import mailchimp_subscribe, mailchimp_unsubscribe, mailchimp_upemail, mailchimp_cleaned, mailchimp_profile, mailchimp_campaign
+from djangoplicity.mailinglists.tasks import mailchimp_subscribe, \
+	mailchimp_unsubscribe, mailchimp_upemail, mailchimp_cleaned, \
+	mailchimp_profile, mailchimp_campaign
 from djangoplicity.mailinglists.utils import DataQueryParser
-from django.http import HttpResponse
 
 import logging
 
-logger = logging.getLogger( 'djangoplicity' )
+logger = logging.getLogger(__name__)
 
 
-class WebHookError( Exception ):
+class WebHookError(Exception):
 	pass
 
 
-def _get_parameters( request ):
-	"""
+def _get_parameters(request):
+	'''
 	Extract parameters from webhook request
-	"""
-	return DataQueryParser.parse( request.POST )
+	'''
+	return DataQueryParser.parse(request.POST)
 
 
-def subscribe_event( request, list, fired_at, **kwargs ):
-	"""
+def subscribe_event(request, mlist, fired_at, **kwargs):
+	'''
 	"type": "subscribe",
 	"fired_at": "2009-03-26 21:35:57",
 	"data[id]": "8a25ff1d98",
@@ -65,28 +67,18 @@ def subscribe_event( request, list, fired_at, **kwargs ):
 	"data[merges][INTERESTS]": "Group1,Group2",
 	"data[ip_opt]": "10.20.10.30",
 	"data[ip_signup]": "10.20.10.30"
-
-	exists on default list:
-	- do nothing
-
-	exists on secondary mailman list but not default:
-	- remove email from exclude lists
-	- add to default mailman list.
-
-	does not exists on mailman list:
-	- subscribe to default mailman list
-	"""
+	'''
 	mailchimp_subscribe.delay(
-		list=list.pk,
+		list_pk=mlist.pk,
 		fired_at=fired_at,
-		params=_get_parameters( request ),
+		params=_get_parameters(request),
 		**kwargs
 	)
-	return HttpResponse( "" )
+	return HttpResponse('')
 
 
-def unsubscribe_event( request, list, fired_at, **kwargs ):
-	"""
+def unsubscribe_event(request, mlist, fired_at, **kwargs):
+	'''
 	"type": "unsubscribe",
 	"fired_at": "2009-03-26 21:40:57",
 	"data[id]": "8a25ff1d98",
@@ -100,27 +92,18 @@ def unsubscribe_event( request, list, fired_at, **kwargs ):
 	"data[ip_opt]": "10.20.10.30",
 	"data[campaign_id]": "cb398d21d2",
 	"data[reason]": "hard"
-
-	exists on default mailman list:
-	- remove from default list
-
-	exists on secondary mailman list:
-	- add to exclude
-
-	does not exists on mailman list:
-	- subscribe to default mailman list
-	"""
+	'''
 	mailchimp_unsubscribe.delay(
-		list=list.pk,
+		list_pk=mlist.pk,
 		fired_at=fired_at,
-		params=_get_parameters( request ),
+		params=_get_parameters(request),
 		**kwargs
 	)
-	return HttpResponse( "" )
+	return HttpResponse('')
 
 
-def profile_event( request, list, fired_at, **kwargs ):
-	"""
+def profile_event(request, mlist, fired_at, **kwargs):
+	'''
 	"type": "profile",
 	"fired_at": "2009-03-26 21:31:21",
 	"data[id]": "8a25ff1d98",
@@ -132,54 +115,55 @@ def profile_event( request, list, fired_at, **kwargs ):
 	"data[merges][LNAME]": "API",
 	"data[merges][INTERESTS]": "Group1,Group2",
 	"data[ip_opt]": "10.20.10.30"
-	"""
+	'''
 	mailchimp_profile.delay(
-		list=list.pk,
+		list_pk=mlist.pk,
 		fired_at=fired_at,
-		params=_get_parameters( request ),
+		params=_get_parameters(request),
 		**kwargs
 	)
-	return HttpResponse( "" )
+	return HttpResponse('')
 
 
-def upemail_event( request, list, fired_at, **kwargs ):
-	r"""
+def upemail_event(request, mlist, fired_at, **kwargs):
+	'''
 	"type": "upemail",
-	"fired_at": "2009-03-26\ 22:15:09",
+	"fired_at": "2009-03-26 22:15:09",
 	"data[list_id]": "a6b5da1054",
 	"data[new_id]": "51da8c3259",
 	"data[new_email]": "api+new@mailchimp.com",
 	"data[old_email]": "api+old@mailchimp.com"
-	"""
+	'''
 	mailchimp_upemail.delay(
-		list=list.pk,
+		list_pk=mlist.pk,
 		fired_at=fired_at,
-		params=_get_parameters( request ),
+		params=_get_parameters(request),
 		**kwargs
 	)
-	return HttpResponse( "" )
+	return HttpResponse('')
 
 
-def cleaned_event( request, list, fired_at, **kwargs ):
-	"""
+def cleaned_event(request, mlist, fired_at, **kwargs):
+	'''
 	"type": "cleaned",
 	"fired_at": "2009-03-26 22:01:00",
 	"data[list_id]": "a6b5da1054",
 	"data[campaign_id]": "4fjk2ma9xd",
 	"data[reason]": "hard",
 	"data[email]": "api+cleaned@mailchimp.com"
-	"""
+	'''
 	mailchimp_cleaned.delay(
-		list=list.pk,
+		list_pk=mlist.pk,
 		fired_at=fired_at,
-		params=_get_parameters( request ),
+		params=_get_parameters(request),
 		**kwargs
 	)
-	return HttpResponse( "" )
+	return HttpResponse('')
 
 
-def campaign_event( request, list, fired_at, **kwargs ):
-	"""
+def campaign_event(request, mlist, fired_at, **kwargs):
+	'''
+	Example:
 	"type": "campaign",
 	"fired_at": "2009-03-26 21:31:21",
 	"data[id]": "5aa2102003",
@@ -187,14 +171,14 @@ def campaign_event( request, list, fired_at, **kwargs ):
 	"data[status]": "sent",
 	"data[reason]": "",
 	"data[list_id]": "a6b5da105
-	"""
+	'''
 	mailchimp_campaign.delay(
-		list=list.pk,
+		list_pk=mlist.pk,
 		fired_at=fired_at,
-		params=_get_parameters( request ),
+		params=_get_parameters(request),
 		**kwargs
 	)
-	return HttpResponse( "" )
+	return HttpResponse('')
 
 
 EVENT_HANDLERS = {
@@ -207,8 +191,8 @@ EVENT_HANDLERS = {
 }
 
 
-def mailchimp_webhook( request, require_secure=False ):
-	"""
+def mailchimp_webhook(request, require_secure=False):
+	'''
 	MailChimp webhook view (see http://apidocs.mailchimp.com/webhooks/)
 
 	Validates the request to ensure it is from MailChimp, and delegates
@@ -223,69 +207,73 @@ def mailchimp_webhook( request, require_secure=False ):
 	A request to mailchimp_webook must be completed within 15 seconds, thus
 	event handlers should only gather the data they need, and send the rest
 	for background processing.
-	"""
+	'''
 	if not request.is_secure():
 		if require_secure:
-			logger.info( "[Webhook] Not SSL request" )
-			return HttpResponse( "" )
+			logger.error('[Webhook] Not SSL request')
+			return HttpResponse('')
 
 	# Get token
 	try:
 		token = request.GET['token']
-
-		# Check token
-		t = MailChimpListToken.get_token( token )
-
-		if t is None:
-			logger.info( "[Webhook] Token %s not found", token )
-			return HttpResponse( "" )
 	except KeyError:
-		logger.info( "[Webhook] No 'token' GET parameter" )
-		return HttpResponse( "" )
+		logger.error('[Webhook] No "token" GET parameter')
+		return HttpResponse('')
+
+	# Check token
+	t = MailChimpListToken.get_token(token)
+
+	if t is None:
+		logger.error('[Webhook] Token %s not found', token)
+		return HttpResponse('')
 
 	if 'HTTP_X_REAL_IP' in request.META:
 		key = 'HTTP_X_REAL_IP'
 	else:
 		key = 'REMOTE_ADDR'
 	ip = request.META[key]
-	user_agent = request.META.get( 'HTTP_USER_AGENT', '' )
 
+	# Check user agent
+	user_agent = request.META.get('HTTP_USER_AGENT', '')
 	if user_agent != 'MailChimp.com':
-		logger.info( "[Webhook] User-agent not MailChimp.com - was %s", user_agent )
-		return HttpResponse( "" )
+		logger.error('[Webhook] User-agent not MailChimp.com - was %s',
+			user_agent)
+		return HttpResponse('')
 
 	try:
 		# Check expected request type
-		if request.method != "POST":
-			raise WebHookError( "Not a POST request" )
+		if request.method != 'POST':
+			raise WebHookError('Not a POST request')
 
 		# Get parameters
-		type = request.POST['type']
+		event_type = request.POST['type']
 		fired_at = request.POST['fired_at']
 		list_id = request.POST['data[list_id]']
-	except KeyError:
-		raise WebHookError( "Parameters missing" )
+	except KeyError as e:
+		raise WebHookError('Missing webhook post parameter "%s"', e.args[0])
 
-	# Check webhook type
-	if type not in ['subscribe', 'unsubscribe', 'profile', 'upemail', 'cleaned', 'campaign']:
-		raise WebHookError( "Unknown webhook type %s" % type )
+	# Check webhook event_type
+	if event_type not in ('subscribe', 'unsubscribe', 'profile', 'upemail',
+		'cleaned', 'campaign'):
+		raise WebHookError('Unknown webhook type %s' % event_type)
 
 	# Check if list exists
 	try:
-		list = MailChimpList.objects.get( list_id=list_id )
+		mlist = MailChimpList.objects.get(list_id=list_id)
 	except MailChimpList.DoesNotExist:
-		raise WebHookError( "List %s does not exists" % list_id )
+		raise WebHookError('List %s does not exists' % list_id)
 
 	# Validate token for list
-	if not t.validate_token( list ):
-		raise WebHookError( "Token invalid" )
+	if not t.validate_token(mlist):
+		raise WebHookError('Token invalid')
 
 	# Get event handler
 	try:
-		view = EVENT_HANDLERS[type]
+		view = EVENT_HANDLERS[event_type]
 	except KeyError:
-		raise WebHookError( "Internal error - no event handler defined for %s." % type )
+		raise WebHookError('Internal error - no event handler defined for %s.'
+			% event_type)
 
 	# Pass to event handler for processing.
-	logger.info( " [Webhook] Request accepted" )
-	return view( request, list, fired_at, ip=ip, user_agent=user_agent, )
+	logger.info('[Webhook] Request accepted')
+	return view(request, mlist, fired_at, ip=ip, user_agent=user_agent)

@@ -41,30 +41,37 @@ from urllib import urlencode
 from djangoplicity.mailinglists.models import MailChimpList, MailChimpListToken
 
 
-__all__ = ['mailchimp_subscribe', 'mailchimp_unsubscribe', 'mailchimp_upemail', 'mailchimp_cleaned', 'mailchimp_profile', 'mailchimp_campaign', 'webhooks',
-			'clean_tokens', 'mailchimp_cleanup', 'synchronize_mailchimplist', 'mailchimplist_fetch_info' ]
+__all__ = [
+	'mailchimp_subscribe', 'mailchimp_unsubscribe', 'mailchimp_upemail',
+	'mailchimp_cleaned', 'mailchimp_profile', 'mailchimp_campaign',
+	'webhooks', 'clean_tokens', 'mailchimplist_fetch_info',
+]
 
 
 # ===========
 # Event tasks
 # ===========
 
-def _log_webhook_action( logger, ip, user_agent, action, list, message ):
-	"""
+def _log_webhook_action(logger, ip, user_agent, action, ml, message=''):
+	'''
 	Helper function for logging where a webhook request came from.
-	"""
-	logger.info( "Webhook %s action; list %s: %s; IP: %s User Agent: %s" % ( action, list, message, ip, user_agent ) )
+	'''
+	logger.info('Webhook %s action; list %s: %s; IP: %s User Agent: %s' %
+		(action, ml, message, ip, user_agent))
 
 
-def _object_identifier( obj ):
-	if isinstance( obj, models.Model ):
-		return ( smart_unicode( obj._meta ), smart_unicode( obj._get_pk_val(), strings_only=True ) )
+def _object_identifier(obj):
+	if isinstance(obj, models.Model):
+		return (
+			smart_unicode(obj._meta),
+			smart_unicode(obj._get_pk_val(), strings_only=True),
+		)
 	else:
-		return ( None, None )
+		return (None, None)
 
 
-def _get_list( list_pk ):
-	return MailChimpList.objects.get( pk=list_pk )
+def _get_list(list_pk):
+	return MailChimpList.objects.get(pk=list_pk)
 
 
 def keys2str( kwargs ):
@@ -77,318 +84,281 @@ def keys2str( kwargs ):
 	return newkwargs
 
 
-@task( name="mailinglists.mailchimp_subscribe", ignore_result=True )
-def mailchimp_subscribe( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
-	"""
+@task(name='mailinglists.mailchimp_subscribe', ignore_result=True)
+def mailchimp_subscribe(list_pk=None, fired_at=None, params=None, ip=None,
+	user_agent=None):
+	'''
 	User subscribed via MailChimp.
+	Remove from bad address if on the list and dispatch actions.
+	'''
+	if params is None:
+		params = {}
 
-	- Remove from bad address if on the list and dispatch actions.
-	"""
 	logger = mailchimp_subscribe.get_logger()
-	_log_webhook_action( logger, ip, user_agent, 'subscribe', list, "" )
-
-	# Only run on production
-	if settings.DEBUG:
-		return
+	_log_webhook_action(logger, ip, user_agent, 'subscribe', list_pk)
 
 	#
 	# Deregister bad email address if exists.
 	#
 	from djangoplicity.mailinglists.models import BadEmailAddress
-	email = params.get( 'email', '' )
+	email = params.get('email', '')
 
 	if email:
 		try:
-			BadEmailAddress.objects.get( email=email ).delete()
+			BadEmailAddress.objects.get(email=email).delete()
 		except BadEmailAddress.DoesNotExist:
 			pass
 
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
-	list = _get_list( list )
+	mlist = _get_list(list_pk)
 
 	if 'merges' in params:
-		obj = list.get_object_from_mergevars( params['merges'] )
-		kwargs = list.parse_merge_vars( params['merges'] )
+		obj = mlist.get_object_from_mergefields(params['merges'])
+		kwargs = mlist.parse_merge_fields(params['merges'])
 		if obj:
-			kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
+			kwargs['model_identifier'], kwargs['pk'] = _object_identifier(obj)
 
-		for a in MailChimpEventAction.get_actions( list, on_event='on_subscribed' ):
-			a.dispatch( **keys2str(kwargs) )
+		for a in MailChimpEventAction.get_actions(list_pk, on_event='on_subscribed'):
+			a.dispatch(**keys2str(kwargs))
 
 
-@task( name="mailinglists.mailchimp_unsubscribe", ignore_result=True )
-def mailchimp_unsubscribe( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
-	"""
+@task(name='mailinglists.mailchimp_unsubscribe', ignore_result=True)
+def mailchimp_unsubscribe(list_pk=None, fired_at=None, params=None, ip=None,
+	user_agent=None):
+	'''
 	Email was unsubscribed from list.
+	'''
+	if params is None:
+		params = {}
 
-	1) Dispatch actions.
-	"""
 	logger = mailchimp_unsubscribe.get_logger()
-	_log_webhook_action( logger, ip, user_agent, 'unsubscribe', list, "" )
-
-	# Only run on production
-	if settings.DEBUG:
-		return
+	_log_webhook_action(logger, ip, user_agent, 'unsubscribe', list_pk)
 
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
-	list = _get_list( list )
-	obj = list.get_object_from_mergevars( params['merges'] )
-	kwargs = list.parse_merge_vars( params['merges'] )
-	kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
+	mlist = _get_list(list_pk)
+	obj = mlist.get_object_from_mergefields(params['merges'])
+	kwargs = mlist.parse_merge_fields(params['merges'])
+	kwargs['model_identifier'], kwargs['pk'] = _object_identifier(obj)
 
-	for a in MailChimpEventAction.get_actions( list, on_event='on_unsubscribe' ):
-		a.dispatch( **keys2str(kwargs) )
+	for a in MailChimpEventAction.get_actions(list_pk, on_event='on_unsubscribe'):
+		a.dispatch(**keys2str(kwargs))
 
 
-@task( name="mailinglists.mailchimp_cleaned", ignore_result=True )
-def mailchimp_cleaned( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
-	"""
+@task(name='mailinglists.mailchimp_cleaned', ignore_result=True)
+def mailchimp_cleaned(list_pk=None, fired_at=None, params=None, ip=None,
+	user_agent=None):
+	'''
 	Email was removed from MailChimp list because it was invalid.
+	Register bad email address and dispatch actions
+	If list is linked, then get the object
+	'''
+	if params is None:
+		params = {}
 
-	- Register bad email address and dispatch actions. If list is linked, then
-		get the object.
-	"""
 	logger = mailchimp_cleaned.get_logger()
-	_log_webhook_action( logger, ip, user_agent, 'cleaned', list, "" )
+	_log_webhook_action(logger, ip, user_agent, 'cleaned', list_pk)
 
-	# Only run on production
-	if settings.DEBUG:
-		return
-
-	#
 	# Register bad email address
-	#
 	from djangoplicity.mailinglists.models import BadEmailAddress
 
-	email = params.get( 'email', '' )
+	email = params.get('email', '')
 
-	# Exclude subscriber from being put any list again, unless explicitly subscribing again.
+	# Prevent subscriber from being put any list again, unless explicitly
+	# subscribing again.
 	if email:
-		BadEmailAddress.objects.get_or_create( email=email )
+		BadEmailAddress.objects.get_or_create(email=email)
 
-	#
 	# Dispatch actions
-	#
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
-	list = _get_list( list )
-	kwargs = { 'email': email }
-	if list.content_type and list.primary_key_field:
-		# List is connected, so retrieve member info via email address so we can determine
-		# the object id
-		try:
-			obj = list.get_object_from_mergevars( list.get_member_info( email=email )['merges'] )
-		except Exception:
-			obj = None
-		kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
+	mlist = _get_list(list_pk)
+	kwargs = {'email': email}
 
-	for a in MailChimpEventAction.get_actions( list, on_event='on_cleaned' ):
-		a.dispatch( **keys2str(kwargs) )
+	if mlist.content_type and mlist.primary_key_field:
+		# List is connected, so retrieve member info via email address so we
+		# can determine the object id
+		obj = mlist.get_object_from_mergefields(
+			mlist.get_member_info(email=email)['merge_fields']
+		)
+		if not obj:
+			return
+
+		kwargs['model_identifier'], kwargs['pk'] = _object_identifier(obj)
+
+	for a in MailChimpEventAction.get_actions(list_pk, on_event='on_cleaned'):
+		a.dispatch(**keys2str(kwargs))
 
 
-@task( name="mailinglists.mailchimp_upemail", ignore_result=True )
-def mailchimp_upemail( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
-	"""
-	User updated his her email address.
-	"""
+@task(name='mailinglists.mailchimp_upemail', ignore_result=True)
+def mailchimp_upemail(list_pk=None, fired_at=None, params=None, ip=None,
+	user_agent=None):
+	'''
+	User updated their email address.
+	'''
+	if params is None:
+		params = {}
+
 	logger = mailchimp_upemail.get_logger()
-	_log_webhook_action( logger, ip, user_agent, 'upemail', list, "" )
-
-	# Only run on production
-	if settings.DEBUG:
-		return
+	_log_webhook_action(logger, ip, user_agent, 'upemail', list_pk)
 
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
-	list = _get_list( list )
-
-	for a in MailChimpEventAction.get_actions( list, on_event='on_upemail' ):
-		a.dispatch( **keys2str(params) )
+	for a in MailChimpEventAction.get_actions(list_pk, on_event='on_upemail'):
+		a.dispatch(**keys2str(params))
 
 
-@task( name="mailinglists.mailchimp_profile", ignore_result=True )
-def mailchimp_profile( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
-	"""
-	User updated his her email address. First unsubscribe the old email, then
-	subscribe the new.
+@task(name='mailinglists.mailchimp_profile', ignore_result=True)
+def mailchimp_profile(list_pk=None, fired_at=None, params=None, ip=None,
+	user_agent=None ):
+	'''
+	User updated his profile
+	'''
+	if params is None:
+		params = {}
 
-	# Perhaps change on other lists?
-	"""
 	logger = mailchimp_profile.get_logger()
-	_log_webhook_action( logger, ip, user_agent, 'profile', list, "" )
-
-	# Only run on production
-	if settings.DEBUG:
-		return
+	_log_webhook_action(logger, ip, user_agent, 'profile', list_pk)
 
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
-	list = _get_list( list )
-	obj = list.get_object_from_mergevars( params['merges'] )
-	kwargs = list.parse_merge_vars( params['merges'] )
-	kwargs['model_identifier'], kwargs['pk'] = _object_identifier( obj )
+	mlist = _get_list(list_pk)
+	obj = mlist.get_object_from_mergefields(params['merges'])
+	kwargs = mlist.parse_merge_fields(params['merges'])
+	kwargs['model_identifier'], kwargs['pk'] = _object_identifier(obj)
 
-	for a in MailChimpEventAction.get_actions( list, on_event='on_profile' ):
-		a.dispatch( **keys2str(kwargs) )
+	for a in MailChimpEventAction.get_actions(list_pk, on_event='on_profile'):
+		a.dispatch(**keys2str(kwargs))
 
 
-@task( name="mailinglists.mailchimp_campaign", ignore_result=True )
-def mailchimp_campaign( list=None, fired_at=None, params={}, ip=None, user_agent=None ):
-	"""
-	Cleanup mailchimp when a mailchimplist is deleted.
-	"""
+@task(name='mailinglists.mailchimp_campaign', ignore_result=True)
+def mailchimp_campaign(list_pk=None, fired_at=None, params=None, ip=None,
+	user_agent=None):
+	'''
+	Sent when a campaign is sent or cancelled
+	'''
+	if params is None:
+		params = {}
+
 	logger = mailchimp_campaign.get_logger()
-	_log_webhook_action( logger, ip, user_agent, 'campaign', list, "" )
-
-	# Only run on production
-	if settings.DEBUG:
-		return
+	_log_webhook_action(logger, ip, user_agent, 'campaign', list_pk)
 
 	from djangoplicity.mailinglists.models import MailChimpEventAction
 
-	for a in MailChimpEventAction.get_actions( list, on_event='on_campaign' ):
-		a.dispatch( **keys2str(params) )
-
-
-# =============
-# Misc tasks
-# =============
-
-@task( name="mailinglists.mailchimp_cleanup", ignore_result=True )
-def mailchimp_cleanup( api_key=None, list_id=None ):
-	"""
-	Cleanup mailchimp when a mailchimplist is deleted.
-	"""
-	from djangoplicity.mailinglists.exceptions import MailChimpError
-	from mailchimp import Mailchimp
-
-	logger = mailchimp_cleanup.get_logger()
-
-	# Only run on production
-	if settings.DEBUG:
-		return
-
-	try:
-		connection = Mailchimp( api_key )
-
-		# Get list of all hooks
-		res = connection.lists.webhooks( id=list_id )
-
-		if 'code' in res:
-			raise MailChimpError( response=res )
-
-		# Delete all hooks
-		for hook in res:
-			connection.lists.webhook_del( id=list_id, url=hook['url'] )
-	except MailChimpList.DoesNotExist:
-		logger.warn( "List with list id %s does not exists" % list_id )
+	for a in MailChimpEventAction.get_actions(list_pk, on_event='on_campaign'):
+		a.dispatch(**keys2str(params))
 
 
 # =============
 # Webhook tasks
 # =============
 
-@task( name="mailinglists.clean_tokens", ignore_result=True )
+@task(name='mailinglists.clean_tokens', ignore_result=True)
 def clean_tokens():
-	"""
+	'''
 	Remove invalid tokens from the database. A token is considered invalid
 	10 minutes after it expired.
-	"""
-	MailChimpListToken.objects.filter( expired__lte=datetime.now() - timedelta( minutes=10 ) ).delete()
+	'''
+	ten_minutes_ago = datetime.now() - timedelta(minutes=10)
+	MailChimpListToken.objects.filter(expired__lte=ten_minutes_ago).delete()
 
 
-@task( name="mailinglists.webhooks", ignore_result=True )
-def webhooks( list_id=None ):
-	"""
-	Celery task for installing webhooks for lists in MailChimp. If ``list_id`` is provided
-	webhooks for only the specific list will be installed. If ``list_id`` is none, webhooks for all
-	lists will be installed.
-	"""
-	from djangoplicity.mailinglists.exceptions import MailChimpError
+@task(name='mailinglists.webhooks', ignore_result=True)
+def webhooks(list_id=None):
+	'''
+	Celery task for installing webhooks for lists in MailChimp. If ``list_id``
+	is provided webhooks for only the specific list will be installed. If
+	``list_id`` is none, webhooks for all lists will be installed.
+	'''
+	# Only run on production
+	if settings.DEBUG:
+		return
 
 	logger = webhooks.get_logger()
 
-	baseurl = "https://%s%s" % ( Site.objects.get_current().domain, reverse( 'djangoplicity_mailinglists:mailchimp_webhook' ) )
-	errors = []
+	baseurl = 'https://{}{}'.format(
+		Site.objects.get_current().domain,
+		reverse('djangoplicity_mailinglists:mailchimp_webhook'),
+	)
 
 	# Check, one or many lists.
-	queryargs = { 'connected': True, 'synchronize': True }
+	queryargs = {
+		'connected': True,
+		'synchronize': True,
+	}
 	if list_id is not None:
 		queryargs['list_id'] = list_id
 
-	lists = MailChimpList.objects.filter( **queryargs )
+	lists = MailChimpList.objects.filter(**queryargs)
 
-	if len( lists ) == 0 and list_id:
-		raise Exception( "List with list id %s does not exists" % list_id )
+	if not lists and list_id:
+		raise Exception('List with list id %s does not exists' % list_id)
 
 	for l in lists:
-		logger.debug( "Adding/removing webhooks from list id %s" % l.list_id )
+		logger.debug('Adding/removing webhooks from list id %s' % l.list_id)
 
-		# Create new hook for list
-		try:
-			# Create access token
-			token = MailChimpListToken.create( l )
-			hookurl = "%s?%s" % ( baseurl, urlencode( token.hook_params() ) )
-			actions = { 'subscribe': True, 'unsubscribe': True, 'upemail': True, 'cleaned': True, 'profile': True, 'campaign': True }
+		# Create access token
+		token = MailChimpListToken.create(l)
+		hookurl = '{}?{}'.format(baseurl, urlencode(token.hook_params()))
 
-			# Install hook in MailChimp
-			res = l.connection('lists.webhook_add',
-				{
-					'id': l.list_id,
-					'url': hookurl,
-					'actions': actions,
-					'sources': { 'user': True, 'admin': True, 'api': False },
-				}
-			)
-			if 'error' in res:
-				e = MailChimpError( response=res )
-				errors.append( e )
-				logger.error( unicode( e ) )
+		# Specify which events will trigger the webhook
+		events = {
+			'subscribe': True,
+			'unsubscribe': True,
+			'profile': True,
+			'cleaned': True,
+			'upemail': True,
+			'campaign': True,
+		}
 
-			# Expire old tokens for list
-			MailChimpListToken.objects.exclude( pk=token.pk ).filter( list=l, expired__isnull=True ).update( expired=datetime.now() )
-		except Exception, e:
-			logger.error( unicode( e ) )
-			errors.append( e )
+		# Specifiy which sources of events will trigger the webhook
+		sources = {
+			'user': True,
+			'admin': True,
+			'api': False,
+		}
 
-		# Delete old hooks for list
-		try:
-			# Get list of all hooks
-			res = l.connection('lists.webhooks', {'id': l.list_id} )
-			if 'error' in res:
-				raise MailChimpError( response=res )
+		# Create new webhook for the list
+		logger.debug('Will run lists.webhooks.create for list %s' % l.list_id)
+		l.connection(
+			'lists.webhooks.create',
+			l.list_id, {
+				'url': hookurl,
+				'events': events,
+				'sources': sources,
+			}
+		)
 
-			# Delete all hooks except the one we just installed
-			for hook in res:
-				if hook['url'] != hookurl:
-					try:
-						l.connection('lists.webhook_del', {'id': l.list_id, 'url': hook['url']} )
-					except Exception, e:
-						logger.error( unicode( e ) )
-						errors.append( e )
-		except Exception, e:
-			logger.error( unicode( e ) )
-			errors.append( e )
+		# Expire existing tokens for the list
+		MailChimpListToken.objects.exclude(pk=token.pk).filter(
+			list=l, expired__isnull=True
+		).update(expired=datetime.now())
 
-	# Check for errors
-	if len( errors ) > 0:
-		messages = [unicode( e ) for e in errors]
-		raise Exception( "Following errors occurred: %s" % "; ".join( messages ) )
+		# Get list of all webhooks for the list
+		logger.debug('Will run lists.webhooks.all for list %s' % l.list_id)
+		response = l.connection('lists.webhooks.all', l.list_id)
 
-	return True
+		for webhook in response['webhooks']:
+			if not webhook['url'].startswith(baseurl):
+				# This webhook was not installed by this site as it has
+				# a different base URL, we ignore it
+				continue
+
+			if webhook['url'] == hookurl:
+				# This is the webhook we just created
+				continue
+
+			logger.debug('Will run lists.webhooks.delete for list %s with url %s'
+				% (l.list_id, webhook['url']))
+			l.connection('lists.webhooks.delete', l.list_id, webhook['id'])
 
 
-# =============================
-# MailChimp synchronize members
-# =============================
-
-@task( name="mailinglists.mailchimplist_fetch_info", ignore_result=True )
-def mailchimplist_fetch_info( list_id=None ):
-	"""
+@task(name='mailinglists.mailchimplist_fetch_info', ignore_result=True)
+def mailchimplist_fetch_info(list_id=None):
+	'''
 	Celery task to fetch info from MailChimp and store it locally.
-	"""
+	'''
 	logger = mailchimplist_fetch_info.get_logger()
 
 	# Only run on production
@@ -396,89 +366,14 @@ def mailchimplist_fetch_info( list_id=None ):
 		return
 
 	try:
-
 		if list_id:
-			lists = MailChimpList.objects.filter( list_id=list_id )
+			lists = MailChimpList.objects.filter(list_id=list_id)
 		else:
-			lists = MailChimpList.objects.filter( synchronize=True )
+			lists = MailChimpList.objects.filter(synchronize=True)
 
 		for chimplist in lists:
-			logger.info( "Fetching info for mailchimp list %s" % chimplist.list_id )
+			logger.info('Fetching info for mailchimp list %s' % chimplist.list_id)
 			chimplist.fetch_info()
 			chimplist.save()
 	except MailChimpList.DoesNotExist:
-		raise Exception( "MailChimpList %s does not exist." % list_id )
-
-
-@task( name="mailinglists.synchronize_mailchimplist", ignore_result=True )
-def synchronize_mailchimplist( list_id ):
-	"""
-	Celery task to synchronise a MailChimp list
-	"""
-	logger = synchronize_mailchimplist.get_logger()
-
-	# Only run on production
-	if settings.DEBUG:
-		return
-
-	try:
-		chimplist = MailChimpList.objects.get( list_id=list_id )
-		logger.debug( "Found list %s" % list_id )
-	except MailChimpList.DoesNotExist:
-		raise Exception( "MailChimpList %s does not exist." % list_id )
-
-	# Synchronisation enabled for list?
-	if not chimplist.synchronize:
-		return
-
-	( subscribe_emails, unsubscribe_emails ) = chimplist.outgoing_changes()
-
-	#
-	# Send subscriptions in batches of 1k
-	#
-	if len( subscribe_emails ) > 0:
-		BATCH_SIZE = 1000
-
-		results = []
-		batch = [{ 'email': {'email': email}, 'email_type': 'html', } for email in subscribe_emails]
-
-		while len( batch ) > 0:
-			batch_part = batch[:BATCH_SIZE]
-			res = chimplist.connection('lists.batch_subscribe',
-				{
-					'id': chimplist.list_id,
-					'batch': batch_part,
-					'double_optin': False,
-				}
-			)
-			# TODO check result
-			results.append( res )
-			batch = batch[BATCH_SIZE:]
-
-		combined_result = {
-			'add_count': 0,
-			'update_count': 0,
-			'error_count': 0,
-			'errors': [],
-		}
-
-		# Combine result of all batches
-		for r in results:
-			for k in combined_result.keys():
-				if k in r:
-					combined_result[k] += r[k]
-
-	#
-	# Send unsubscribe emails
-	#
-	if len( unsubscribe_emails ) > 0:
-		emails = [ {'email': email} for email in list( unsubscribe_emails )]
-		res = chimplist.connection('lists.batch_unsubscribe',
-			{
-				'id': chimplist.list_id,
-				'batch': emails,
-				'delete_member': True,
-				'send_goodbye': False,
-				'send_notify': False,
-			}
-		)
+		raise Exception('MailChimpList %s does not exist.' % list_id)

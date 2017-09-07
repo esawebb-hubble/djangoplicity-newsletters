@@ -28,9 +28,8 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
-#
 
-"""
+'''
 A Newsletter can be sent to many different distribution lists via Mailers. By default
 a NewsletterType must have at least one associated Mailer for a newsletter to be sent
 anywhere. A Mailer is defined by an admin who specifies which MailerPlugin to use,
@@ -46,9 +45,9 @@ Currently the following MailerPlugins implementations are available:
 A MailerPlugin must as a minimum support the following methods/properties:
 
 	* ``name'' - Human readable name for the MailerPlugin
-	* ``send_test( newsletter, emails )'' - Send a test version of the newsletters to the specified
+	* ``send_test(newsletter, emails)'' - Send a test version of the newsletters to the specified
 		list of email addresses
-	* ``send_now( newsletter )'' - Send the newsletter for real.
+	* ``send_now(newsletter)'' - Send the newsletter for real.
 
 Newsletters going to mailing lists must normally include instructions on how to unsubscribe.
 Since this differs from list to list, the newsletters sent to different lists cannot be
@@ -68,11 +67,13 @@ user may need to specify - e.g. the Mailman plugin needs the list's info URL to 
 The parameters are stored in MailerParameter, and are automatically created by the Mailer model.
 
 ----
-"""
+'''
 
 import logging
 from email import charset as Charset
+from requests.exceptions import HTTPError
 
+from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 
 
@@ -86,14 +87,14 @@ class MailerPlugin():
 	name = ''
 	parameters = []
 
-	def __init__( self, params ):
+	def __init__(self, params):
 		"""
 		Any parameters defined in ``MailerPlugin.parameters'' will be passed to the plugin via
 		the params. The values of these parameters are configurable via the admin interface.
 		"""
 		pass
 
-	def on_scheduled( self, newsletter ):
+	def on_scheduled(self, newsletter):
 		"""
 		Mailer plugins are notified when a newsletter is scheduled
 		for sending. This allows plugins to do any preparations
@@ -107,7 +108,7 @@ class MailerPlugin():
 		"""
 		pass
 
-	def on_unscheduled( self, newsletter ):
+	def on_unscheduled(self, newsletter):
 		"""
 		Mailer plugins are notified when a newsletter is unscheduled
 		for sending. This allows plugins to do any cleanup needed when
@@ -115,13 +116,13 @@ class MailerPlugin():
 		"""
 		pass
 
-	def send_now( self, newsletter ):
+	def send_now(self, newsletter):
 		"""
 		When invoked this method should send the newsletter immediately
 		"""
 		raise NotImplementedError
 
-	def send_test( self, newsletter, emails ):
+	def send_test(self, newsletter, emails):
 		"""
 		When invoked this method should send a test version of the newsletter
 		to the provided list of email addresses.
@@ -129,10 +130,10 @@ class MailerPlugin():
 		raise NotImplementedError
 
 	@classmethod
-	def get_class_path( cls ):
-		return "%s.%s" % ( cls.__module__, cls.__name__ )
+	def get_class_path(cls):
+		return "%s.%s" % (cls.__module__, cls.__name__)
 
-	def get_mailer_context( self ):
+	def get_mailer_context(self):
 		return {
 			'unsubscribe_link': '',
 			'preferences_link': '',
@@ -140,7 +141,7 @@ class MailerPlugin():
 		}
 
 
-class EmailMailerPlugin( MailerPlugin ):
+class EmailMailerPlugin(MailerPlugin):
 	"""
 	Mailer implementation that will send the newsletter to a predefined
 	list of email addresses (which could be e.g. a mailing list).
@@ -153,21 +154,22 @@ class EmailMailerPlugin( MailerPlugin ):
 	See MailmanMailerPlugin for an example.
 	"""
 	name = 'Standard mailer'
-	parameters = [ ( 'emails', 'Comma separated list of emails to send to.', 'str' ) ]
+	parameters = [('emails', 'Comma separated list of emails to send to.', 'str')]
 
-	def __init__( self, params ):
+	def __init__(self, params):
+		# pylint: disable=super-init-not-called
 		try:
 			self._to_emails = [x.strip() for x in params['emails'].split()]
 		except KeyError:
-			raise Exception( "Parameter 'emails' is missing" )
+			raise Exception("Parameter 'emails' is missing")
 
-	def _send( self, newsletter, emails, test=False ):
+	def _send(self, newsletter, emails, test=False):
 		"""
 		Send combined HTML and plain text email.
 		"""
-		data = newsletter.render( self.get_mailer_context(), store=False )
+		data = newsletter.render(self.get_mailer_context(), store=False)
 
-		from_email = '%s <%s>' % ( newsletter.from_name, newsletter.from_email )
+		from_email = '%s <%s>' % (newsletter.from_name, newsletter.from_email)
 
 		subject = data['subject']
 		if test:
@@ -179,17 +181,17 @@ class EmailMailerPlugin( MailerPlugin ):
 		# end up cut arbitrarily by the mail server.
 		# To fix this we force back quoted-printable
 		Charset.add_charset('utf-8', Charset.SHORTEST, Charset.QP, 'utf-8')
-		msg = EmailMultiAlternatives( subject, data['text'], from_email, emails )
-		msg.attach_alternative( data['html'], "text/html" )
+		msg = EmailMultiAlternatives(subject, data['text'], from_email, emails)
+		msg.attach_alternative(data['html'], "text/html")
 		msg.send()
 
-	def send_now( self, newsletter ):
-		self._send( newsletter, self._to_emails )
+	def send_now(self, newsletter):
+		self._send(newsletter, self._to_emails)
 
-	def send_test( self, newsletter, emails ):
-		self._send( newsletter, emails, test=True )
+	def send_test(self, newsletter, emails):
+		self._send(newsletter, emails, test=True)
 
-	def get_mailer_context( self ):
+	def get_mailer_context(self):
 		return {
 			'unsubscribe_link': '',
 			'preferences_link': '',
@@ -198,26 +200,27 @@ class EmailMailerPlugin( MailerPlugin ):
 		}
 
 
-class MailmanMailerPlugin( EmailMailerPlugin ):
+class MailmanMailerPlugin(EmailMailerPlugin):
 	"""
 	Mailer implementation that sends a newsletter to an email address (usually a Mailman list),
 	and includes a unsubscribe and preferences link specified by the admin user.
 	"""
 	name = 'Mailman mailer'
 	parameters = [
-		( 'emails', 'Comma separated list of mailman list emails to send to.', 'str' ),
-		( 'listinfo_url', 'URL to the listinfo mailman page', 'str' ),
+		('emails', 'Comma separated list of mailman list emails to send to.', 'str'),
+		('listinfo_url', 'URL to the listinfo mailman page', 'str'),
 	]
 
-	def __init__( self, params ):
+	def __init__(self, params):
+		# pylint: disable=super-init-not-called
 		try:
 			self._to_emails = [x.strip() for x in params['emails'].split()]
 		except KeyError:
-			raise Exception( "Parameter 'emails' is missing" )
+			raise Exception("Parameter 'emails' is missing")
 		try:
 			self.listinfo_url = params['listinfo_url'].strip()
 		except KeyError:
-			raise Exception( "Parameter 'listinfo_url' is missing" )
+			raise Exception("Parameter 'listinfo_url' is missing")
 
 	def get_mailer_context(self):
 		return {
@@ -228,8 +231,8 @@ class MailmanMailerPlugin( EmailMailerPlugin ):
 		}
 
 
-class MailChimpMailerPlugin( MailerPlugin ):
-	"""
+class MailChimpMailerPlugin(MailerPlugin):
+	'''
 	Mailer implementation that will send the newsletter via MailChimp.
 	It requires that the djangoplicity.mailinglists application has also been
 	installed and that the MailChimp list have been defined.
@@ -241,34 +244,35 @@ class MailChimpMailerPlugin( MailerPlugin ):
 
 	When a newsletter is scheduled for sending it will be uploaded immediately to MailChimp,
 	however just before sending it will be uploaded again.
-	"""
+	'''
 	name = 'MailChimp mailer'
 	parameters = [
-		( 'list_id', 'MailChimp list id - must be defined in djangoplicity.', 'str' ),
-		( 'enable_browser_link', "Enable 'view in browser' link", 'bool' ),
+		('list_id', 'MailChimp list id - must be defined in djangoplicity.', 'str'),
+		('enable_browser_link', "Enable 'view in browser' link", 'bool'),
 	]
 
-	def __init__( self, params ):
+	def __init__(self, params):
+		# pylint: disable=super-init-not-called
 		try:
 			list_id = params['list_id'].strip()
 		except KeyError:
-			raise Exception( "Parameter 'list_id' is missing" )
+			raise Exception("Parameter 'list_id' is missing")
 		try:
 			self.enable_browser_link = params['enable_browser_link']
 		except KeyError:
-			raise Exception( "Parameter 'enable_browser_link' is missing" )
+			raise Exception("Parameter 'enable_browser_link' is missing")
 
 		from djangoplicity.mailinglists.models import MailChimpList
-		self.ml = MailChimpList.objects.get( list_id=list_id )
+		self.ml = MailChimpList.objects.get(list_id=list_id)
 
-	def _chop( self, value, limit ):
-		"""
+	def _chop(self, value, limit):
+		'''
 		Chop off parts of a string if needed to ensure
 		its smaller than a maximum length.
-		"""
+		'''
 		#  Encode the string to utf otherwise Mailchimp might complain
 		#  about the length of special characters,
-		#  i.e.: Mailchimp counts '\xc3' as 4 characters instead of one
+		#  e.g..: Mailchimp counts '\xc3' as 4 characters instead of one
 		#  We can't just encode the string in utf and then cut it as
 		#  it might cut characters in the wrong place, so we do it char by char
 
@@ -279,13 +283,12 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			value = value[:-1]
 
 		value = value + '...'
-		return value.encode('utf-8')
+		return value
 
-	def _set_segment( self, campaign, language, languages ):
-		"""
-		Update the campaign segment to only send to members of the
-		given language
-		"""
+	def _get_segment_opts(self, language, languages):
+		'''
+		Return the segments_opts for the list if we have languages
+		'''
 		# If the newsletter doesn't use languages we don't set segments:
 		if len(languages) == 1 and languages[0] == '':
 			return
@@ -296,52 +299,61 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			language = str(Language.objects.get(lang=language))
 
 		# Get the interest group id from Mailchimp
-		(id, mc_languages) = self._get_languages()
-		if id == -1:
-			# No languages defined in Mailchimp we return to prevent
-			# an exception when testing the segment
+		(category_id, mc_languages) = self._get_languages()
+		if category_id == -1:
+			# No languages defined in Mailchimp
 			return
+
+		# Get the Interest Group ID for the select language
+		if language:
+			language = mc_languages[language]
 
 		# Build the segment's options
 		# if we have a language we only send to subscribers of this language
-		# else (i.e.: master list) we only send to subscribes of *none* of the languages
-		segment_opts = {
+		# else (i.e.: master list) we only send to subscribers of *none* of the languages
+		return {
 			'match': 'all',
 			'conditions': [{
-				'field': 'interests-%d' % id,
-				'op': 'all' if language else 'none',
-				'value': language if language else ','.join(mc_languages),
-			}]
+				'condition_type': 'Interests',
+				'field': 'interests-%s' % category_id,
+				'op': 'interestcontains' if language else 'interestnotcontains',
+				'value': [language] if language else mc_languages.values(),
+			}],
 		}
 
-		# Test the segment
-		r = self.ml.connection('campaigns.segment_test', {'list_id': self.ml.list_id, 'options': segment_opts})
-		if 'error' in r:
-			raise Exception('Testing segment "%s" failed: "%s"' % (str(segment_opts), r['error']))
-
-		r = self.ml.connection('campaigns.update', {'cid': campaign.campaign_id, 'name': 'segment_opts', 'value': segment_opts})
-		if 'error' in r:
-			raise Exception('Updating segment "%s" failed' % str(segment_opts))
-
-	def _update_campaign( self, nl, campaign_id, lang ):
-		"""
+	def _update_campaign(self, nl, campaign_id, language, languages):
+		'''
 		Update an existing campaign in MailChimp.
-		"""
+		Returns:
+		 - campaign_id
+		 - touched: whether the campaign_id has changed
+		'''
 
 		self._check_languages(nl)
 
-		campaigns = self.ml.connection('campaigns.list', {'filters': { 'list_id': self.ml.list_id, 'campaign_id': campaign_id }})
+		# Make sure that we actually have the campaign in Mailchimp,
+		# otherwise create it (for example if it was manually deleted)
+		logger.debug('Will run campaigns.get with ID "%s"', campaign_id)
+		try:
+			self.ml.connection(
+				'campaigns.get',
+				campaign_id,
+			)
+		except HTTPError:
+			logger.warning('Campaign %s not found in Mailchimp for NL "%s" '
+				'lang: %s creating a new one.', campaign_id, language, nl.pk)
+			return (self._create_campaign(nl, language, languages), True)
 
-		if lang:
+		if language:
 			# Fetch the local version of the newsletter
 			# for the given language
-			local = nl.get_local_version(lang)
+			local = nl.get_local_version(language)
 			if not local:
-				logger.info('** WARNING: no local NL %s for lang %s', nl.id, lang)
-				raise Exception('Can\'t find Local newsletter for Newsletter %d for language "%s"' % (nl.id, lang))
+				raise Exception('Can\'t find Local newsletter for Newsletter'
+					'%d for language "%s"' % (nl.id, language))
 
 			#  Add the mailer_context to the newsletter:
-			local.render( self.get_mailer_context() )
+			local.render(self.get_mailer_context())
 
 			# Set the variables accordingly:
 			subject = local.subject
@@ -351,7 +363,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			text = local.text
 		else:
 			#  Add the mailer_context to the newsletter:
-			nl.render( self.get_mailer_context() )
+			nl.render(self.get_mailer_context())
 
 			subject = nl.subject
 			from_email = nl.from_email
@@ -359,51 +371,68 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			html = nl.html
 			text = nl.text
 
-		# Total is the number of campaigns matching the query (should only ever
-		# be 1 or 0 as we filter on campaign_id)
-		if 'total' in campaigns and campaigns['total'] > 0:
-
-			values = {
-				'subject': self._chop(subject, 150),
-				'from_email': from_email,
-				'from_name': from_name,
+		data = {
+			'recipients': {
+				'list_id': self.ml.list_id,
+			},
+			'settings': {
+				'subject_line': self._chop(subject, 150),
 				'title': self._chop(subject, 100),
+				'from_name': from_name,
+				'reply_to': from_email,
 			}
+		}
 
-			result = self.ml.connection('campaigns.update', {'cid': campaign_id, 'name': 'options', 'value': values})
-			logger.info('** Ran campaigns.update with lang "%s", result: %s', lang, result)
-			if 'error' in result:
-				raise Exception("MailChimp could not update the campaign, error: %s'." % result['error'])
+		segment_opts = self._get_segment_opts(language, languages)
+		if segment_opts:
+			data['recipients']['segment_opts'] = segment_opts
 
-			values = {
-				'html': html,
-				'text': text,
-			}
+		# Update the campaign
+		logger.debug('Will run campaigns.update with lang "%s"', language)
+		try:
+			self.ml.connection(
+				'campaigns.update',
+				campaign_id,
+				data,
+			)
+		except HTTPError as e:
+			logger.error('campaigns.update: %s', e.response.text)
+			raise e
 
-			result = self.ml.connection('campaigns.update', {'cid': campaign_id, 'name': 'content', 'value': values})
-			if 'error' in result:
-				raise Exception("MailChimp could not update the campaign, error: %s'." % result['error'])
+		# Update the content
+		logger.debug('Will run campaigns.content.update with lang "%s"',
+			language)
+		try:
+			self.ml.connection(
+				'campaigns.content.update',
+				campaign_id, {
+					'plain_text': text,
+					'html': html,
+				}
+			)
+		except HTTPError as e:
+			logger.error('campaigns.content.update: %s', e.response.text)
+			raise e
 
-			return ( campaign_id, False )
-		else:
-			return ( self._create_campaign( nl, lang ), True )
+		return (campaign_id, False)
 
-	def _create_campaign( self, nl, lang ):
-		"""
+	def _create_campaign(self, nl, language, languages):
+		'''
 		Create a new campaign in MailChimp
-		"""
+		'''
 
 		self._check_languages(nl)
 
-		if lang:
+		if language:
 			# Fetch the local version of the newsletter
 			# for the given language
-			local = nl.get_local_version(lang)
+			local = nl.get_local_version(language)
 			if not local:
-				raise Exception('Can\'t find Local newsletter for Newsletter %d for language "%s"' % (nl.id, lang))
+				raise Exception('Can\'t find Local newsletter for Newsletter'
+					'%d for language "%s"' % (nl.id, language))
 
 			#  Add the mailer_context to the newsletter:
-			local.render( self.get_mailer_context() )
+			local.render(self.get_mailer_context())
 
 			# Set the variables accordingly:
 			subject = local.subject
@@ -413,7 +442,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			text = local.text
 		else:
 			#  Add the mailer_context to the newsletter:
-			nl.render( self.get_mailer_context() )
+			nl.render(self.get_mailer_context())
 
 			subject = nl.subject
 			from_email = nl.from_email
@@ -421,103 +450,181 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			html = nl.html
 			text = nl.text
 
-		val = self.ml.connection('campaigns.create',
-			{
-				'type': 'regular',
-				'options': {
-					'list_id': self.ml.list_id,
-					'subject': self._chop( subject, 150 ),
-					'from_email': from_email,
-					'from_name': from_name,
-					'tracking': { 'opens': True, 'html_clicks': True, 'text_clicks': False },
-					'title': self._chop( subject, 100 ),
-					'authenticate': True,
-					'auto_footer': False,
-					'inline_css': True,
-					'fb_comments': True,
-				},
-				'content': {
+		data = {
+			'type': 'regular',
+			'recipients': {
+				'list_id': self.ml.list_id,
+			},
+			'settings': {
+				'subject_line': self._chop(subject, 150),
+				'title': self._chop(subject, 100),
+				'from_name': from_name,
+				'reply_to': from_email,
+				'authenticate': True,
+				'auto_footer': False,
+				'inline_css': True,
+				'fb_comments': True,
+			},
+			'tracking': {
+				'opens': True,
+				'html_clicks': True,
+				'text_clicks': False,
+			},
+		}
+
+		segment_opts = self._get_segment_opts(language, languages)
+		if segment_opts:
+			data['recipients']['segment_opts'] = segment_opts
+
+		# Create the campaign
+		logger.debug('Will run campaigns.create for NL %s, %s', nl.pk,
+			language)
+		try:
+			response = self.ml.connection(
+				'campaigns.create',
+				data,
+			)
+		except HTTPError as e:
+			logger.error('campaigns.create: %s', e.response.text)
+			raise e
+
+		campaign_id = response['id']
+		logger.debug('Got campaign_id: %s', campaign_id)
+
+		logger.debug('Will run campaigns.content.create for NL %s, %s', nl.pk,
+			language)
+		try:
+			self.ml.connection(
+				'campaigns.content.update',
+				campaign_id,
+				{
+					'plain_text': text,
 					'html': html,
-					'text': text,
 				}
-			}
-		)
-		logger.info('** Ran campaigns.create with lang "%s", result: %s', lang, val)
+			)
+		except HTTPError as e:
+			logger.error('campaigns.content.update: %s', e.response.text)
+			raise e
 
-		if 'error' in val:
-			raise Exception("MailChimp could not create the campaign, error %d: '%s'." % (val['code'], val['error']))
-		return val['id']
+		return campaign_id
 
-	def _upload_newsletter( self, newsletter ):
-		"""
+	def _upload_newsletter(self, newsletter):
+		'''
 		Upload a newsletter (and localised version if any) into MailChimp, and
 		record the MailChimp campaign id.
-		"""
+		'''
 		from djangoplicity.newsletters.models import MailChimpCampaign
 
 		self._check_languages(newsletter)
-		logger.info('Ran campaigns.send')
 
 		# Get a list of languages for the newsletters, starting with an empty
 		# string for the original version
-		languages = ['', ]
+		languages = ['']
 		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 
 		for language in languages:
-			logger.info('** Uploading NL with language %s', language)
 			# Only upload ready translations
 			if language:
 				local = newsletter.get_local_version(language)
 				if not local:
-					raise Exception('Can\'t find Local newsletter for Newsletter %s for language "%s"' % (newsletter.id, language))
+					raise Exception('Can\'t find Local newsletter for '
+						'Newsletter %s for language "%s"' %
+						(newsletter.id, language))
 
 				if not local.translation_ready:
 					continue
 
-			( info, created ) = MailChimpCampaign.objects.get_or_create( newsletter=newsletter,
-									list_id=self.ml.list_id, lang=language )
+			(info, created) = MailChimpCampaign.objects.get_or_create(
+				newsletter=newsletter,
+				list_id=self.ml.list_id,
+				lang=language,
+			)
 
-			logger.info('** Got MailChimpCampaign, created: %s', created)
+			logger.debug('MailchChimpCampaign, created: %s', created)
 			if not created and info.campaign_id:
-				( info.campaign_id, touched ) = self._update_campaign( newsletter, info.campaign_id, language )
+				(info.campaign_id, touched) = self._update_campaign(
+					newsletter,
+					info.campaign_id,
+					language,
+					languages,
+				)
 				if touched:
 					info.save()
 			else:
-				info.campaign_id = self._create_campaign( newsletter, language )
+				info.campaign_id = self._create_campaign(
+					newsletter,
+					language,
+					languages,
+				)
 				info.save()
 
-			# Set the Newsletter segments:
-			self._set_segment(info, language, languages)
-
-	def _get_languages( self ):
-		"""
+	def _get_languages(self):
+		'''
 		Return the id of the 'Preferred language' group in Mailchimp as well as
 		the list of preferred languages from the list
-		"""
-		id = -1
-		mc_languages = []
-		groups = self.ml.connection('lists.interest_groupings', {'id': self.ml.list_id})
+		If possible the information is cached for 10 minutes to avoid
+		multiple requests when uploading to a list
+		'''
+		CACHE_KEY = 'NL_LANGUAGES_' + self.ml.list_id
 
-		#  'groups' will be a list on success, or a dict on error:
-		if isinstance(groups, dict) and 'error' in groups:
-			# MailChimp returns an error if no groups are defined,
-			# but we catch this later:
-			if groups['error'] == 'This list does not have interest groups enabled':
-				return (id, mc_languages)
-			else:
-				raise Exception(groups['error'])
-		for group in groups:
-			if group['name'].startswith('Preferred language'):
-				id = group['id']
-				for g in group['groups']:
-					mc_languages.append(g['name'])
+		data = cache.get(CACHE_KEY)
 
-		return (id, mc_languages)
+		if data:
+			return data
 
-	def _check_languages( self, newsletter ):
-		"""
+		# Not in cache, so we fetch from Mailchimp
+
+		category_id = -1
+
+		# Fetch first the ID of the inster category
+		logger.debug('Will run lists.interest_categories.all for NL "%s"',
+			self.ml.list_id)
+		try:
+			response = self.ml.connection(
+				'lists.interest_categories.all',
+				self.ml.list_id)
+		except HTTPError as e:
+			logger.error('lists.interest_categories.all: %s', e.response.text)
+			raise e
+
+		for category in response['categories']:
+			if category['title'].startswith('Preferred language'):
+				category_id = category['id']
+
+		if category_id == -1:
+			return (-1, [])
+
+		# Then fetch the list of interests in the category
+		logger.debug('Will run lists.interest_categories.interests.all for NL '
+			'"%s", category "%s"', self.ml.list_id, category_id)
+		try:
+			response = self.ml.connection(
+				'lists.interest_categories.interests.all',
+				self.ml.list_id,
+				category_id=category_id,
+				get_all=True,
+			)
+		except HTTPError as e:
+			logger.error('lists.interest_categories.interests.all: %s',
+				e.response.text)
+			raise e
+
+		mc_languages = dict([
+			(interest['name'], interest['id'])
+			for interest in response['interests']
+		])
+
+		data = (category_id, mc_languages)
+
+		# Save to cache
+		cache.set(CACHE_KEY, data, 600)
+
+		return data
+
+	def _check_languages(self, newsletter):
+		'''
 		Check that the newsletter languages (if any) match the Mailchimp list's
-		"""
+		'''
 
 		# Get a list of the newsletter's languages:
 		nl_languages = newsletter.type.languages.all()
@@ -528,7 +635,7 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			return
 
 		# Convert from code (e.g.: es-cl) to full name (e.g.: Spanish/Chile)
-		nl_languages = [ str(lang) for lang in nl_languages ]
+		nl_languages = [str(lang) for lang in nl_languages]
 
 		# Get a list of the Mailchimp list's languages:
 		mc_languages = self._get_languages()[1]
@@ -538,23 +645,23 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			if lang not in mc_languages:
 				raise Exception("Language '%s' missing in MailChimp 'Preferred language' group for list '%s'"
 						% (lang, self.ml.list_id))
-		for lang in mc_languages:
+		for lang in mc_languages.keys():
 			if lang not in nl_languages:
 				raise Exception("Language '%s' missing in list's '%s' languages"
 						% (lang, newsletter.type.name))
 
 	def _get_campaigns(self, newsletter):
-		"""
+		'''
 		Returns a list of (language, campaign) for each scheduled
 		version of the newsletter (i.e.: original and translated)
-		"""
+		'''
 		from djangoplicity.newsletters.models import MailChimpCampaign
 
 		campaigns = []
 
 		# Get a list of languages for the newsletters, starting with an empty
 		# string for the original version
-		languages = ['', ]
+		languages = ['']
 		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 
 		for language in languages:
@@ -562,7 +669,9 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			if language:
 				local = newsletter.get_local_version(language)
 				if not local:
-					raise Exception('Can\'t find Local newsletter for Newsletter %d for language "%s"' % (newsletter.id, language))
+					raise Exception('Can\'t find Local newsletter for '
+						'Newsletter %d for language "%s"' %
+						(newsletter.id, language))
 
 				if not local.translation_ready:
 					continue
@@ -572,7 +681,8 @@ class MailChimpMailerPlugin( MailerPlugin ):
 				campaign = MailChimpCampaign.objects.get(newsletter=newsletter,
 								list_id=self.ml.list_id, lang=language)
 			except MailChimpCampaign.DoesNotExist:
-				raise Exception('Could not find MailChimpCampaign for list "%d" with language "%s"' % (newsletter.id, language))
+				raise Exception('Could not find MailChimpCampaign for list "%d"'
+					'with language "%s"' % (newsletter.id, language))
 
 			campaigns.append((language, campaign))
 
@@ -586,58 +696,54 @@ class MailChimpMailerPlugin( MailerPlugin ):
 			'is_mailchimp_mailer': True,
 		}
 
-	def on_scheduled( self, newsletter ):
-		"""
+	def on_scheduled(self, newsletter):
+		'''
 		Notification that a newsletter was scheduled for sending.
-		"""
-		self._upload_newsletter( newsletter )
+		'''
+		self._upload_newsletter(newsletter)
 
-	def send_now( self, newsletter ):
-		"""
+	def send_now(self, newsletter):
+		'''
 		Send newsletter now.
-		"""
+		'''
 		self._check_languages(newsletter)
 
-		self._upload_newsletter( newsletter )
+		self._upload_newsletter(newsletter)
 
 		campaigns = self._get_campaigns(newsletter)
 
-		languages = ['', ]
+		languages = ['']
 		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 
-		# Update the segments based on languages (if any)
 		for language, campaign in campaigns:
-			logger.info('Set segment for language %s', language)
-			self._set_segment(campaign, language, languages)
-
-		# We loop a second time to make sure all segments are updated
-		# correctly before trying to actually send the newsletter
-		for language, campaign in campaigns:
-			logger.info('Running campaigns.send with lang %s', language)
-			r = self.ml.connection('campaigns.send', {'cid': campaign.campaign_id})
-			logger.info('campaigns.send returned: %s', r)
-			# Test for errors
+			# Send the Newsletter
+			logger.debug('Running campaigns.actions.send with lang %s', language)
 			try:
-				if 'error' in r:
-					return 'MailChimp could not send newsletter: "%s"' % r['error']
-			except TypeError:
-				if not r:
-					return 'MailChimp could not send newsletter.'
+				self.ml.connection(
+					'campaigns.actions.send',
+					campaign.campaign_id,
+				)
+			except HTTPError as e:
+				logger.error('campaigns.actions.send: %s', e.response.text)
+				raise e
 
-	def send_test( self, newsletter, emails ):
-		"""
+	def send_test(self, newsletter, emails):
+		'''
 		Send a test email for this newsletter
-		"""
-		self._upload_newsletter( newsletter )
+		'''
+		self._upload_newsletter(newsletter)
 
 		campaigns = self._get_campaigns(newsletter)
 
 		for _language, campaign in campaigns:
-			r = self.ml.connection('campaigns.send_test', {'cid': campaign.campaign_id, 'test_emails': emails})
-			# Test for errors
 			try:
-				if 'error' in r:
-					return 'MailChimp could not send test email: "%s"' % r['error']
-			except TypeError:
-				if not r:
-					return 'MailChimp could not send test email.'
+				self.ml.connection(
+					'campaigns.actions.test',
+					campaign.campaign_id, {
+						'test_emails': emails,
+						'send_type': 'html'
+					},
+				)
+			except HTTPError as e:
+				logger.error('campaigns.actions.test: %s', e.response.text)
+				raise e

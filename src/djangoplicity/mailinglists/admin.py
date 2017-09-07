@@ -86,6 +86,13 @@ class MergeVarMappingInlineAdmin( admin.TabularInline ):
 	model = MergeVarMapping
 	extra = 0
 
+	def formfield_for_dbfield(self, db_field, **kwargs):
+		formfield = super(MergeVarMappingInlineAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+		if db_field.name == 'merge_var':
+			# dirty trick so queryset is evaluated and cached in .choices
+			formfield.choices = formfield.choices
+		return formfield
+
 
 class SubscriberAdmin( admin.ModelAdmin ):
 	list_display = ['email', ]
@@ -129,7 +136,7 @@ class ListAdmin( admin.ModelAdmin ):
 class MailChimpListAdmin( admin.ModelAdmin ):
 	form = MailChimpListForm
 	list_display = ['list_id', 'admin_url', 'name', 'default_from_name', 'default_from_email', 'email_type_option', 'member_count', 'open_rate', 'click_rate', 'connected', 'last_sync', ]
-	list_filter = ['use_awesomebar', 'email_type_option', 'last_sync', 'connected', ]
+	list_filter = ['email_type_option', 'last_sync', 'connected', ]
 	search_fields = ['api_key', 'list_id', 'name', 'web_id', 'default_from_name', 'default_from_email', 'email_type_option', 'default_subject']
 	inlines = [MailChimpMergeVarInlineAdmin, MailChimpGroupInlineAdmin, MailChimpGroupingInlineAdmin, MergeVarMappingInlineAdmin, GroupMappingInlineAdmin]
 	fieldsets = (
@@ -147,7 +154,6 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 					'name',
 					'web_id',
 					'email_type_option',
-					'use_awesomebar',
 					'default_from_name',
 					'default_from_email',
 					'default_subject',
@@ -203,7 +209,6 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 		'name',
 		'web_id',
 		'email_type_option',
-		'use_awesomebar',
 		'default_from_name',
 		'default_from_email',
 		'default_subject',
