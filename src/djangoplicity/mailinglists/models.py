@@ -642,10 +642,10 @@ class MailChimpList(models.Model):
 				email_hash,
 			)
 			# If we get a response then subscriber does exists
-			return True  # TODO: Should we send an action back?
 		except HTTPError as e:
 			if e.response.status_code != 404:
 				raise e
+			return False  # TODO: Should we send an action back?
 
 		# Send update_member
 		logger.debug('Will run lists.members.update for email "%s"', email)
