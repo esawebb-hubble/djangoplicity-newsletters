@@ -158,16 +158,8 @@ class Mailer( models.Model ):
 		"""
 		Send newsletter now via this mailer
 		"""
-		log = self._log_entry( newsletter )
-
-		try:
-			plugin = self.get_plugin()
-			return plugin.send_now( newsletter )
-		except Exception, dummy_e:
-			log.success = False
-			log.error = traceback.format_exc()
-		finally:
-			log.save()
+		plugin = self.get_plugin()
+		return plugin.send_now( newsletter )
 
 	def send_test( self, newsletter, emails=[] ):
 		"""
@@ -522,24 +514,24 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		"""
 		Send newsletter
 		"""
-		if self.send is None:
-			self.send = datetime.now()
-			if self.type.archive:
-				self.published = True
-
-			if check_scheduled and self.scheduled_status != 'ON':
-				raise Exception( 'Won\'t send Newsletter: Scheduling status is "%s"' % self.scheduled_status)
-
-			for m in self.type.mailers.all():
-				logger.info('Starting sending with mailer "%s"', m)
-				res = m.send_now( self )
-				if res:
-					raise Exception(res)
-
-			self.frozen = True
-			self.save()
-		else:
+		if self.send:
 			raise Exception("Newsletter has already been sent.")
+
+		self.send = datetime.now()
+		if self.type.archive:
+			self.published = True
+
+		if check_scheduled and self.scheduled_status != 'ON':
+			raise Exception( 'Won\'t send Newsletter: Scheduling status is "%s"' % self.scheduled_status)
+
+		for m in self.type.mailers.all():
+			logger.info('Starting sending with mailer "%s"', m)
+			res = m.send_now( self )
+			if res:
+				raise Exception(res)
+
+		self.frozen = True
+		self.save()
 
 	def _send_test( self, emails ):
 		"""

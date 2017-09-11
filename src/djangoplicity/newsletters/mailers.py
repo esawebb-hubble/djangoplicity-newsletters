@@ -389,30 +389,22 @@ class MailChimpMailerPlugin(MailerPlugin):
 
 		# Update the campaign
 		logger.debug('Will run campaigns.update with lang "%s"', language)
-		try:
-			self.ml.connection(
-				'campaigns.update',
-				campaign_id,
-				data,
-			)
-		except HTTPError as e:
-			logger.error('campaigns.update: %s', e.response.text)
-			raise e
+		self.ml.connection(
+			'campaigns.update',
+			campaign_id,
+			data,
+		)
 
 		# Update the content
 		logger.debug('Will run campaigns.content.update with lang "%s"',
 			language)
-		try:
-			self.ml.connection(
-				'campaigns.content.update',
-				campaign_id, {
-					'plain_text': text,
-					'html': html,
-				}
-			)
-		except HTTPError as e:
-			logger.error('campaigns.content.update: %s', e.response.text)
-			raise e
+		self.ml.connection(
+			'campaigns.content.update',
+			campaign_id, {
+				'plain_text': text,
+				'html': html,
+			}
+		)
 
 		return (campaign_id, False)
 
@@ -479,32 +471,24 @@ class MailChimpMailerPlugin(MailerPlugin):
 		# Create the campaign
 		logger.debug('Will run campaigns.create for NL %s, %s', nl.pk,
 			language)
-		try:
-			response = self.ml.connection(
-				'campaigns.create',
-				data,
-			)
-		except HTTPError as e:
-			logger.error('campaigns.create: %s', e.response.text)
-			raise e
+		response = self.ml.connection(
+			'campaigns.create',
+			data,
+		)
 
 		campaign_id = response['id']
 		logger.debug('Got campaign_id: %s', campaign_id)
 
 		logger.debug('Will run campaigns.content.create for NL %s, %s', nl.pk,
 			language)
-		try:
-			self.ml.connection(
-				'campaigns.content.update',
-				campaign_id,
-				{
-					'plain_text': text,
-					'html': html,
-				}
-			)
-		except HTTPError as e:
-			logger.error('campaigns.content.update: %s', e.response.text)
-			raise e
+		self.ml.connection(
+			'campaigns.content.update',
+			campaign_id,
+			{
+				'plain_text': text,
+				'html': html,
+			}
+		)
 
 		return campaign_id
 
@@ -579,13 +563,9 @@ class MailChimpMailerPlugin(MailerPlugin):
 		# Fetch first the ID of the inster category
 		logger.debug('Will run lists.interest_categories.all for NL "%s"',
 			self.ml.list_id)
-		try:
-			response = self.ml.connection(
-				'lists.interest_categories.all',
-				self.ml.list_id)
-		except HTTPError as e:
-			logger.error('lists.interest_categories.all: %s', e.response.text)
-			raise e
+		response = self.ml.connection(
+			'lists.interest_categories.all',
+			self.ml.list_id)
 
 		for category in response['categories']:
 			if category['title'].startswith('Preferred language'):
@@ -597,17 +577,12 @@ class MailChimpMailerPlugin(MailerPlugin):
 		# Then fetch the list of interests in the category
 		logger.debug('Will run lists.interest_categories.interests.all for NL '
 			'"%s", category "%s"', self.ml.list_id, category_id)
-		try:
-			response = self.ml.connection(
-				'lists.interest_categories.interests.all',
-				self.ml.list_id,
-				category_id=category_id,
-				get_all=True,
-			)
-		except HTTPError as e:
-			logger.error('lists.interest_categories.interests.all: %s',
-				e.response.text)
-			raise e
+		response = self.ml.connection(
+			'lists.interest_categories.interests.all',
+			self.ml.list_id,
+			category_id=category_id,
+			get_all=True,
+		)
 
 		mc_languages = dict([
 			(interest['name'], interest['id'])
@@ -716,16 +691,40 @@ class MailChimpMailerPlugin(MailerPlugin):
 		languages.extend(newsletter.type.languages.values_list('lang', flat=True))
 
 		for language, campaign in campaigns:
+			send = True
+
+			# Make sure that the newsletter is ready:
+			logger.debug('Will run campaigns.send_checklist.get for %s',
+				campaign.campaign_id)
+			response = self.ml.connection('campaigns.send_checklist.get',
+				campaign.campaign_id)
+
+			for item in response['items']:
+				if item['type'] == 'error':
+					send = False
+					if item['details'] == 'Your advanced segment is empty.':
+						logger.info('No recipient for campaign %s, will delete',
+							campaign.campaign_id)
+
+						logger.debug('Will run campaigns.delete for %s',
+							campaign.campaign_id)
+						self.ml.connection('campaigns.delete',
+							campaign.campaign_id)
+
+						continue
+
+					logger.error('Checklist error for campaign %s: %s',
+						campaign.campaign_id, item['details'])
+
+			if not send:
+				continue
+
 			# Send the Newsletter
 			logger.debug('Running campaigns.actions.send with lang %s', language)
-			try:
-				self.ml.connection(
-					'campaigns.actions.send',
-					campaign.campaign_id,
-				)
-			except HTTPError as e:
-				logger.error('campaigns.actions.send: %s', e.response.text)
-				raise e
+			self.ml.connection(
+				'campaigns.actions.send',
+				campaign.campaign_id,
+			)
 
 	def send_test(self, newsletter, emails):
 		'''
@@ -735,15 +734,13 @@ class MailChimpMailerPlugin(MailerPlugin):
 
 		campaigns = self._get_campaigns(newsletter)
 
-		for _language, campaign in campaigns:
-			try:
-				self.ml.connection(
-					'campaigns.actions.test',
-					campaign.campaign_id, {
-						'test_emails': emails,
-						'send_type': 'html'
-					},
-				)
-			except HTTPError as e:
-				logger.error('campaigns.actions.test: %s', e.response.text)
-				raise e
+		for language, campaign in campaigns:
+			logger.debug('Will run campaigns.actions.test for %s',
+				language)
+			self.ml.connection(
+				'campaigns.actions.test',
+				campaign.campaign_id, {
+					'test_emails': emails,
+					'send_type': 'html'
+				},
+			)

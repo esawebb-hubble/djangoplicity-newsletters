@@ -28,12 +28,8 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
-#
-
-import time
 
 from django.apps import apps
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
 from django.utils.encoding import smart_unicode
@@ -88,45 +84,45 @@ class MailChimpAction(ActionPlugin):
 class MailChimpSubscribeAction(MailChimpAction):
 	action_name = 'MailChimp subscribe'
 	action_parameters = MailChimpAction.action_parameters + [
-		('double_optin', 'Flag to control whether a double opt-in confirmation message is sent, defaults to true. Abusing this may cause our MailChimp account to be suspended.', 'bool'),
-		('send_welcome', 'If double_optin is false and this is true, a welcome email will be sent if this subscribe succeeds. If double_optin is true, this has no effect. defaults to false.', 'bool'),
-
+		('double_optin', 'Flag to control whether a double opt-in confirmation '
+			'message is sent, defaults to true. Abusing this may cause our '
+			'MailChimp account to be suspended.', 'bool'),
+		('send_welcome', 'If double_optin is false and this is true, a welcome '
+			'email will be sent if this subscribe succeeds. If double_optin is '
+			'true, this has no effect. defaults to false.', 'bool'),
 	]
 
 	def run(self, conf, model_identifier=None, pk=None):
-		"""
+		'''
 		Subscribe to MailChimp list
-		"""
-		from mailchimp import ListAlreadySubscribedError, TooManyConnectionsError
+		'''
 		if model_identifier and pk:
 			obj = self._get_object(model_identifier, pk)
 			mlist = self._get_list(conf['list_id'])
 			merge_fields = mlist.create_merge_fields(obj)
 
 			if not obj.email:
-				self.get_logger().info("Can't subscribe contact %d to MailChimp list %s: no email address" % (obj.id, mlist.name))
+				self.get_logger().info('Can\'t subscribe contact %d to '
+					'MailChimp list %s: no email address' % (obj.id, mlist.name))
 				return
 
-			try:
-				mlist.subscribe(obj.email, merge_fields=merge_fields, double_optin=conf['double_optin'], send_welcome=conf['send_welcome'], async=False)
-				self.get_logger().info("Subscribed %s to MailChimp list %s" % (obj.email, mlist.name))
-			except TooManyConnectionsError:
-				time.sleep(10)
-				self.run(conf, model_identifier, pk)
-			except ListAlreadySubscribedError:
-				self.get_logger().info("%s is already a member of MailChimp list %s" % (obj.email, mlist.name))
-			except ValidationError, e:
-				if 'Enter a valid e-mail address.' in e.messages:
-					self.get_logger().info("Invalid email address %s trying to subscribe to MailChimp list %s" % (obj.email, mlist.name))
-				else:
-					raise e
-			except Exception, e:
-				if '%s is a known bad email address' % obj.email in e.message:
-					# Mailchimp knows that this address is invalid, so we update the contact accordingly
-					obj.email += '-INVALID'
-					obj.save()
-				else:
-					raise e
+			mlist.subscribe(
+				obj.email,
+				merge_fields=merge_fields,
+				double_optin=conf['double_optin'],
+				send_welcome=conf['send_welcome'],
+				async=False,
+			)
+			self.get_logger().info(
+				'Subscribed %s to MailChimp list %s' % (obj.email, mlist.name))
+
+			# except Exception, e:
+			# 	if '%s is a known bad email address' % obj.email in e.message:
+			# 		# Mailchimp knows that this address is invalid, so we update the contact accordingly
+			# 		obj.email += '-INVALID'
+			# 		obj.save()
+			# 	else:
+			# 		raise e
 
 
 class MailChimpUnsubscribeAction(MailChimpAction):
