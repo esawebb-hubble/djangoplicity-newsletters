@@ -891,9 +891,10 @@ class GroupMapping(models.Model):
 
 	def parse_interests(self, interests):
 		for interest in interests:
-			if int(interest['id']) != self.group.group_id:
+			if interest['id'] != self.group.group_id:
 				continue
 			return [(self.field, interest['groups'])]
+		return [None, None]
 
 	def create_interests(self, obj, changes=None):
 		'''
