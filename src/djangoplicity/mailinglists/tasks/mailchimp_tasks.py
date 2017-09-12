@@ -35,7 +35,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
-from django.db import models
+from django.db import models, transaction
 from django.utils.encoding import smart_unicode
 from urllib import urlencode
 from djangoplicity.mailinglists.models import MailChimpList, MailChimpListToken
@@ -319,16 +319,22 @@ def webhooks(list_id=None):
 			'api': False,
 		}
 
-		# Create new webhook for the list
-		logger.debug('Will run lists.webhooks.create for list %s' % l.list_id)
-		l.connection(
-			'lists.webhooks.create',
-			l.list_id, {
-				'url': hookurl,
-				'events': events,
-				'sources': sources,
-			}
-		)
+		def create_webhook():
+			# Create new webhook for the list
+			# pylint: disable=cell-var-from-loop
+			logger.debug('Will run lists.webhooks.create for list %s' % l.list_id)
+			l.connection(
+				'lists.webhooks.create',
+				l.list_id, {
+					'url': hookurl,
+					'events': events,
+					'sources': sources,
+				}
+			)
+
+		# We use transaction.on_commit to make sure Mailchimp won't try to
+		# validate the webhooks before they are commited to the DB
+		transaction.on_commit(create_webhook)
 
 		# Expire existing tokens for the list
 		MailChimpListToken.objects.exclude(pk=token.pk).filter(
