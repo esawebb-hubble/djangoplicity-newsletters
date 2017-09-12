@@ -363,6 +363,7 @@ class MailChimpList(models.Model):
 				return method(*args, **kwargs)
 			except HTTPError as e:
 				if e.response.status_code != 500:
+					logger.error('%s: %s', path, e.response.text)
 					raise e
 
 				logger.debug('Oops! Caught error 500 (%d), retrying: %s', i,
