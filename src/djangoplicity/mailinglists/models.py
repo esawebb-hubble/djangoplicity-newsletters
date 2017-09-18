@@ -895,7 +895,7 @@ class GroupMapping(models.Model):
 		for interest in interests:
 			if interest['unique_id'] != self.group.group_id:
 				continue
-			return [(self.field, interest['groups'])]
+			return (self.field, interest['groups'])
 		return [None, None]
 
 	def create_interests(self, obj, changes=None):
