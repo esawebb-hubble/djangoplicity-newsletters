@@ -296,7 +296,7 @@ def webhooks(list_id=None):
 		raise Exception('List with list id %s does not exists' % list_id)
 
 	for l in lists:
-		logger.debug('Adding/removing webhooks from list id %s' % l.list_id)
+		logger.info('Adding/removing webhooks from list id %s' % l.list_id)
 
 		# Create access token
 		token = MailChimpListToken.create(l)
@@ -322,7 +322,8 @@ def webhooks(list_id=None):
 		def create_webhook():
 			# Create new webhook for the list
 			# pylint: disable=cell-var-from-loop
-			logger.debug('Will run lists.webhooks.create for list %s' % l.list_id)
+			logger.info('Will run lists.webhooks.create for list %s with url %s'
+				% (l.list_id, hookurl))
 			l.connection(
 				'lists.webhooks.create',
 				l.list_id, {
@@ -342,7 +343,7 @@ def webhooks(list_id=None):
 		).update(expired=datetime.now())
 
 		# Get list of all webhooks for the list
-		logger.debug('Will run lists.webhooks.all for list %s' % l.list_id)
+		logger.info('Will run lists.webhooks.all for list %s' % l.list_id)
 		response = l.connection('lists.webhooks.all', l.list_id)
 
 		for webhook in response['webhooks']:
@@ -355,7 +356,7 @@ def webhooks(list_id=None):
 				# This is the webhook we just created
 				continue
 
-			logger.debug('Will run lists.webhooks.delete for list %s with url %s'
+			logger.info('Will run lists.webhooks.delete for list %s with url %s'
 				% (l.list_id, webhook['url']))
 			l.connection('lists.webhooks.delete', l.list_id, webhook['id'])
 
