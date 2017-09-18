@@ -387,14 +387,14 @@ class MailChimpList(models.Model):
 		mapping = {}
 
 		if self.primary_key_field and self.content_type:
-			for m in MergeVarMapping.objects.filter(list=self).select_related():
+			for m in MergeVarMapping.objects.filter(list=self):
 				mapping.update(dict(m.parse_merge_field(params)))
 
-			# TODO: make sure this works!
-
 			if 'GROUPINGS' in params:
-				for g in GroupMapping.objects.filter(list=self).select_related():
-					mapping.update(dict(g.parse_interests(params['GROUPINGS'])))
+				for g in GroupMapping.objects.filter(list=self):
+					key, value = g.parse_interests(params['GROUPINGS'])
+					if key:
+						mapping[key] = value
 
 		return mapping
 
@@ -893,7 +893,7 @@ class GroupMapping(models.Model):
 
 	def parse_interests(self, interests):
 		for interest in interests:
-			if interest['id'] != self.group.group_id:
+			if interest['unique_id'] != self.group.group_id:
 				continue
 			return [(self.field, interest['groups'])]
 		return [None, None]
@@ -1008,14 +1008,6 @@ class MergeVarMapping(models.Model):
 					val = getattr(obj, self.field)
 			except AttributeError:
 				pass
-
-		if val and field_type in ['text', 'dropdown', 'radio', 'phone', 'url',
-				'imageurl', 'zip']:
-			# TODO: verify it is till the case:
-			# Note merge fields are sent via POST request, and apparently
-			# MailChimp library is not properly encoding the data. pylint:
-			# disable=redefined-variable-type
-			val = unicode(val).encode("utf8")
 
 		return (self.merge_var.tag, val)
 
