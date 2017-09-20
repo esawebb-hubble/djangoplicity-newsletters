@@ -429,12 +429,12 @@ class MailChimpList(models.Model):
 				if val and tag != self.primary_key_field.tag:
 					merge_fields[tag] = val
 
-			interests = []
+			interests = {}
 			for g in GroupMapping.objects.filter(list=self).select_related(
 				'list', 'group'):
 				interest = g.create_interests(obj, changes=changes)
 				if interest:
-					interests.append(interest)
+					interests.update(interest)
 
 			if interests:
 				merge_fields['INTERESTS'] = interests
