@@ -185,12 +185,9 @@ class MailmanSyncAction( MailmanAction ):
 					(conf['list_name'], obj)
 				)
 
-				# Add contact to 'unsub' group if it exists
-				try:
-					cls = apps.get_model(*model_identifier.split( "." ))
-					l = cls.objects.get(name='unsub_%s' % obj.name)
-				except ObjectDoesNotExist:
-					continue
+				# Add contact to 'unsub' group (create group if it doesn't exist)
+				cls = apps.get_model(*model_identifier.split( "." ))
+				l, _created = cls.objects.get_or_create(name='unsub_%s' % obj.name)
 
 				c.groups.add(l)
 				self.get_logger().info(u'Added %s to %s' % (c, l))
