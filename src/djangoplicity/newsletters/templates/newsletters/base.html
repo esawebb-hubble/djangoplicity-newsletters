@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        
+
         <!-- Facebook sharing information tags -->
         <meta property="og:title" content="{% block facebook_title %}{% endblock %}">
-        
+
         <title>{% block html_title %}{% endblock %}</title>
-		
+
 	<style type="text/css">
 		{% block styles %}
 		#outlook a{
@@ -259,48 +259,48 @@
 		{% endblock %}
 </style>
 </head>
-<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0" style="-webkit-text-size-adjust: none;margin: 0;padding: 0;background-color: #FAFAFA;width: 100% !important;"> 
-	<center> 
-		<table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="backgroundTable" style="margin: 0;padding: 0;background-color: #FAFAFA;height: 100% !important;width: 100% !important;"> 
-		<tr> 
-			<td align="center" valign="top"> 
-				
-				<!-- // Begin Template Preheader \\ --> 
-			    <table border="0" cellpadding="10" cellspacing="0" width="{% include "newsletters/includes/width.html" %}" id="templatePreheader" style="background-color: #FAFAFA;"> 
-			    <tr> 
-			    	<td valign="top" class="preheaderContent"> 
+<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0" style="-webkit-text-size-adjust: none;margin: 0;padding: 0;background-color: #FAFAFA;width: 100% !important;">
+	<center>
+		<table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="backgroundTable" style="margin: 0;padding: 0;background-color: #FAFAFA;height: 100% !important;width: 100% !important;">
+		<tr>
+			<td align="center" valign="top">
+
+				<!-- // Begin Template Preheader \\ -->
+			    <table border="0" cellpadding="10" cellspacing="0" width="{% include "newsletters/includes/width.html" %}" id="templatePreheader" style="background-color: #FAFAFA;">
+			    <tr>
+			    	<td valign="top" class="preheaderContent">
 			        {% block preheader %}{% endblock %}
-			        </td> 
-				</tr> 
-			    </table> 
+			        </td>
+				</tr>
+			    </table>
 			    <!-- // End Template Preheader \\ -->
-				
-				<table border="0" cellpadding="0" cellspacing="0" width="{% include "newsletters/includes/width.html" %}" id="templateContainer" style="border: 1px solid #DDDDDD;background-color: #FFFFFF;"> 
-		        <tr> 
-		        	<td align="center" valign="top"> 
+
+				<table border="0" cellpadding="0" cellspacing="0" width="{% include "newsletters/includes/width.html" %}" id="templateContainer" style="border: 1px solid #DDDDDD;background-color: #FFFFFF;">
+		        <tr>
+		        	<td align="center" valign="top">
 		            {% block header %}{% endblock %}
-		            </td> 
-		        </tr> 
-		        <tr> 
-		        	<td align="center" valign="top"> 
+		            </td>
+		        </tr>
+		        <tr>
+		        	<td align="center" valign="top">
 		            {% block body %}
-		            
-					<!-- // Begin Template Body \\ --> 
-                	<table border="0" cellpadding="0" cellspacing="0" width="{% include "newsletters/includes/width.html" %}" id="templateBody"> 
-                    	<tr> 
-                        	<td valign="top" %}"> 
-                            	<table border="0" cellpadding="0" cellspacing="0" %}"> 
-                                	<tr> 
-                                    	<td valign="top"> 
-                            				<table border="0" cellpadding="0" cellspacing="0" %}"> 
-                                            	<tr> 
-                                                	<td valign="top" class="bodyContent" style="background-color: #FFFFFF;"> 
-                                            
-                                                        <!-- // Begin Module: Standard Content \\ --> 
-                                                        <table border="0" cellpadding="20" cellspacing="0" width="100%"> 
-                                                            <tr> 
-                                                                <td valign="top" style="background-image: url({{base_url}}{{STATIC_PREFIX}}newsletters/tile.png); background-repeat: repeat-x;"> 
-				                                                  <div style="color: #505050;font-family: Helvetica, Arial;font-size: 12px;line-height: 130%;text-align: left;"> 
+
+					<!-- // Begin Template Body \\ -->
+                	<table border="0" cellpadding="0" cellspacing="0" width="{% include "newsletters/includes/width.html" %}" id="templateBody">
+                    	<tr>
+                        	<td valign="top" %}">
+                            	<table border="0" cellpadding="0" cellspacing="0" %}">
+                                	<tr>
+                                    	<td valign="top">
+                            				<table border="0" cellpadding="0" cellspacing="0" %}">
+                                            	<tr>
+                                                	<td valign="top" class="bodyContent" style="background-color: #FFFFFF;">
+
+                                                        <!-- // Begin Module: Standard Content \\ -->
+                                                        <table border="0" cellpadding="20" cellspacing="0" width="100%">
+                                                            <tr>
+                                                                <td valign="top" style="background-image: url({{base_url}}{{STATIC_PREFIX}}newsletters/tile.png); background-repeat: repeat-x;">
+				                                                  <div style="color: #505050;font-family: Helvetica, Arial;font-size: 12px;line-height: 130%;text-align: left;">
 				                                                   {% with a_style="color: #285A97;font-size: 12px;font-family: Helvetica, Arial;" hr_style="height:1px;border:0;border-bottom:1px solid #DEDEDE;" h2_style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 15px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;" %}
 				                                                   {% block content %}
 				                                                   {% endblock %}
@@ -315,25 +315,25 @@
                                             </table>
                                 		</td>
                                     </tr>
-                                 
-                                </table>                                                
+
+                                </table>
                             </td>
 							{% block fullsidebar %}
-                            <!-- // Begin Sidebar \\ --> 
-                        	<td valign="top" width="192" id="templateSidebar" style="background-color: #FFFFFF;"> 
-                            	<table border="0" cellpadding="10" cellspacing="0" width="192" > 
-                                	<tr > 
-                                    	<td valign="top" class="sidebarContent" style="background-image: url({{base_url}}{{STATIC_PREFIX}}newsletters/tile.png); background-repeat: repeat-x; color: #505050; font-family: Helvetica, Arial; font-size: 12px; line-height: 130%; text-align: left;"> 
+                            <!-- // Begin Sidebar \\ -->
+                        	<td valign="top" width="192" id="templateSidebar" style="background-color: #FFFFFF;">
+                            	<table border="0" cellpadding="10" cellspacing="0" width="192" >
+                                	<tr >
+                                    	<td valign="top" class="sidebarContent" style="background-image: url({{base_url}}{{STATIC_PREFIX}}newsletters/tile.png); background-repeat: repeat-x; color: #505050; font-family: Helvetica, Arial; font-size: 12px; line-height: 130%; text-align: left;">
                                         	{% if enable_sharing %}{% if is_mailchimp_mailer %}
-                                            <!-- // Begin Module: Top Image with Content \\ --> 
-                                            <h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">Share this newsletter on:</h3> 
-                                             
+                                            <!-- // Begin Module: Top Image with Content \\ -->
+                                            <h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 100%;margin-top: 10px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;">Share this newsletter on:</h3>
+
                                              *|FACEBOOK:LIKE|* &nbsp; *|TWITTER:TWEET|* &nbsp; *|GOOGLE:BUZZ|*
-											<hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/> 
+											<hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/>
                                              *|MC:SHARE|*
 											{% else %}{%block sharebuttons %}{% endblock %}{% endif %}
 											{% endif %}
-                                             
+
                                             {% with a_style="color: #285A97;font-size: 12px;font-family: Helvetica, Arial;" hr_style="height:1px;border:0;border-bottom:1px solid #DEDEDE;" h2_style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 15px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;" %}
                                             {% block sidebar %}
                                             {% endblock %}
@@ -348,22 +348,22 @@
                         </tr>
                     </table>
                     <!-- // End Template Body \\ -->
-		            
+
 		            {% endblock %}
 		            </td>
 		        </tr>
 		        <tr>
 		        	<td align="center" valign="top">
 		            {% block footer %}{% endblock %}
-		            </td> 
-		        </tr> 
-		        </table> 
-		        
+		            </td>
+		        </tr>
+		        </table>
+
 		        <br />
-		
-		    </td> 
-		</tr> 
-		</table> 
-	</center> 
-</body> 
+
+		    </td>
+		</tr>
+		</table>
+	</center>
+</body>
 </html>

@@ -86,6 +86,13 @@ class MergeVarMappingInlineAdmin( admin.TabularInline ):
 	model = MergeVarMapping
 	extra = 0
 
+	def formfield_for_dbfield(self, db_field, **kwargs):
+		formfield = super(MergeVarMappingInlineAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+		if db_field.name == 'merge_var':
+			# dirty trick so queryset is evaluated and cached in .choices
+			formfield.choices = formfield.choices
+		return formfield
+
 
 class SubscriberAdmin( admin.ModelAdmin ):
 	list_display = ['email', ]
@@ -102,7 +109,7 @@ class SubscriptionAdmin( admin.ModelAdmin ):
 class ListAdmin( admin.ModelAdmin ):
 	list_display = ['name', 'password', 'subscriptions_count', 'admin_url', 'last_sync']
 	search_fields = ['name', 'password']
-	actions = ['action_sync']
+#	actions = ['action_sync']
 	readonly_fields = ['last_sync']
 
 	def subscriptions_count( self, obj ):
@@ -115,11 +122,11 @@ class ListAdmin( admin.ModelAdmin ):
 	admin_url.short_description = "Admin URL"
 	admin_url.allow_tags = True
 
-	def action_sync( self, request, queryset ):
-		for _obj in queryset:
-			pass  # synchronize_mailman.delay( obj.name )
-		self.message_user( request, "Started synchronization of mailman lists %s." % ", ".join( [l.name for l in queryset] ) )
-	action_sync.short_description = "Synchronize lists"
+#	def action_sync( self, request, queryset ):
+#		for _obj in queryset:
+#			pass  # synchronize_mailman.delay( obj.name )
+#		self.message_user( request, "Started synchronization of mailman lists %s." % ", ".join( [l.name for l in queryset] ) )
+#	action_sync.short_description = "Synchronize lists"
 
 
 #class MailChimpSourceListInlineAdmin( admin.TabularInline ):
@@ -129,7 +136,7 @@ class ListAdmin( admin.ModelAdmin ):
 class MailChimpListAdmin( admin.ModelAdmin ):
 	form = MailChimpListForm
 	list_display = ['list_id', 'admin_url', 'name', 'default_from_name', 'default_from_email', 'email_type_option', 'member_count', 'open_rate', 'click_rate', 'connected', 'last_sync', ]
-	list_filter = ['use_awesomebar', 'email_type_option', 'last_sync', 'connected', ]
+	list_filter = ['email_type_option', 'last_sync', 'connected', ]
 	search_fields = ['api_key', 'list_id', 'name', 'web_id', 'default_from_name', 'default_from_email', 'email_type_option', 'default_subject']
 	inlines = [MailChimpMergeVarInlineAdmin, MailChimpGroupInlineAdmin, MailChimpGroupingInlineAdmin, MergeVarMappingInlineAdmin, GroupMappingInlineAdmin]
 	fieldsets = (
@@ -147,7 +154,6 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 					'name',
 					'web_id',
 					'email_type_option',
-					'use_awesomebar',
 					'default_from_name',
 					'default_from_email',
 					'default_subject',
@@ -203,7 +209,6 @@ class MailChimpListAdmin( admin.ModelAdmin ):
 		'name',
 		'web_id',
 		'email_type_option',
-		'use_awesomebar',
 		'default_from_name',
 		'default_from_email',
 		'default_subject',

@@ -42,6 +42,7 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{% static 'admin' %}/{% en
 <fieldset class="module aligned">
 {% for f in adminform %}
 <div class="form-row">
+	{{ f.errors }}
 	{{f.label_tag}}
 	{{f}}
 </div>

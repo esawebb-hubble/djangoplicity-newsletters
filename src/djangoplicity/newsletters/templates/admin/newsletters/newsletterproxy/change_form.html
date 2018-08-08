@@ -1,15 +1,16 @@
 {% extends "admin/change_form.html" %}{% load i18n %}
+{% load i18n admin_urls admin_modify %}
 
 
 {% block object-tools %}
 {% if change %}{% if not is_popup %}
   <ul class="object-tools">
     {% block object-tools-items %}
-	<li><a href="../../newsletter/{{ original.source.id }}/html/" class="historylink">{% trans "Original HTML" %}</a></li>
-	<li><a href="../../newsletter/{{ original.source.id }}/text/" class="historylink">{% trans "Original text" %}</a></li>
-    <li><a href="../html/" class="historylink">{% trans "View HTML" %}</a></li>
-    <li><a href="../text/" class="historylink">{% trans "View text" %}</a></li>
-    <li><a href="history/" class="historylink">{% trans "History" %}</a></li>
+	<li><a href="{% url 'admin_site:html_newsletter_view' original.source.pk %}" class="historylink">{% trans "Original HTML" %}</a></li>
+	<li><a href="{% url 'admin_site:text_newsletter_view' original.source.pk %}" class="historylink">{% trans "Original text" %}</a></li>
+	<li><a href="{% url 'admin_site:html_newsletter_view' original.pk %}" class="historylink">{% trans "View HTML" %}</a></li>
+	<li><a href="{% url 'admin_site:text_newsletter_view' original.pk %}" class="historylink">{% trans "View text" %}</a></li>
+	<li><a href="{% url opts|admin_urlname:'history' original.pk|admin_urlquote %}" class="historylink">{% trans "History" %}</a></li>
     {% if has_absolute_url %}<li><a href="../../../r/{{ content_type_id }}/{{ object_id }}/" class="viewsitelink">{% trans "View on site" %}</a></li>{% endif%}
     {% endblock %}
   </ul>

@@ -46,15 +46,24 @@ The newsletter system consists of the following components:
 ----
 """
 # pylint: disable=E0611
+import logging
+import requests
+import traceback
 from datetime import datetime, timedelta
+
 from django.conf import settings
+from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import JSONField
 from django.contrib.sites.models import Site
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
-from django.utils.translation import ugettext as _
 from django.utils import translation
+from django.utils.html import format_html
+from django.utils.translation import ugettext as _
+
 from djangoplicity.archives.base import ArchiveModel
 from djangoplicity.archives.contrib import types
 from djangoplicity.archives.resources import ImageResourceManager
@@ -68,9 +77,6 @@ from djangoplicity.translation.fields import LanguageField
 from djangoplicity.translation.models import TranslationModel, \
 	translation_reverse
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
-import logging
-import traceback
-from django.utils import translation
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +115,7 @@ class Mailer( models.Model ):
 		Set choices for plugin field dynamically based on registered plugins.
 		"""
 		super( Mailer, self ).__init__( *args, **kwargs )
-		self._meta.get_field_by_name( 'plugin' )[0]._choices = Mailer.get_plugin_choices()  # lazy( Mailer.get_plugin_choices, list )
+		self._meta.get_field( 'plugin' )._choices = Mailer.get_plugin_choices()  # lazy( Mailer.get_plugin_choices, list )
 
 	def get_plugincls( self ):
 		"""
@@ -152,46 +158,38 @@ class Mailer( models.Model ):
 		"""
 		Send newsletter now via this mailer
 		"""
-		l = self._log_entry( newsletter )
-
-		try:
-			plugin = self.get_plugin()
-			return plugin.send_now( newsletter )
-		except Exception, dummy_e:
-			l.succeess = False
-			l.error = traceback.format_exc()
-		finally:
-			l.save()
+		plugin = self.get_plugin()
+		return plugin.send_now( newsletter )
 
 	def send_test( self, newsletter, emails=[] ):
 		"""
 		Send test newsletter now via this mailer to listed emails
 		"""
-		l = self._log_entry( newsletter )
-		l.is_test = True
+		log = self._log_entry( newsletter )
+		log.is_test = True
 
 		try:
 			plugin = self.get_plugin()
 			res = plugin.send_test( newsletter, emails )
-			l.save()
+			log.save()
 			return res
 		except:  # pylint: disable=W0702
-			l.success = False
-			l.error = traceback.format_exc()
-			l.save()
+			log.success = False
+			log.error = traceback.format_exc()
+			log.save()
 
 	def _log_entry( self, newsletter ):
 		"""
 		Create a log entry for sending a mail
 		"""
-		l = MailerLog(
+		log = MailerLog(
 				plugin=self.plugin,
 				name=self.name,
 				subject=newsletter.subject,
 				newsletter_pk=newsletter.pk,
 				parameters='; '.join([unicode( p ) for p in MailerParameter.objects.filter( mailer=self )]),
 			)
-		return l
+		return log
 
 	@classmethod
 	def register_plugin( cls, mailercls ):
@@ -248,6 +246,7 @@ class Mailer( models.Model ):
 
 	class Meta:
 		ordering = ['name']
+
 
 # Connect signal handlers
 post_save.connect( Mailer.post_save_handler, sender=Mailer )
@@ -337,7 +336,7 @@ class NewsletterType( models.Model ):
 	#
 	# Templates for subject, text, and html
 	#
-	subject_template = models.CharField( max_length=255, blank=True )
+	subject_template = models.CharField( max_length=400, blank=True )
 	text_template = models.TextField( blank=True )
 	html_template = models.TextField( blank=True, verbose_name="HTML template" )
 
@@ -426,14 +425,15 @@ class Newsletter( ArchiveModel, TranslationModel ):
 	text = models.TextField( blank=True )
 	html = models.TextField( verbose_name="HTML", blank=True )
 
+	# Feed Data "cache"
+	feed_data = JSONField(default=dict)
+
 	# Editorial if needed
 	editorial_subject = models.CharField( max_length=255, blank=True )
 	editorial = models.TextField( blank=True )
 	editorial_text = models.TextField( blank=True )
 
-	def _schedule( self ):
-		"""
-		"""
+	def _schedule(self, user_pk):
 		if self.scheduled_status in ('ON', 'ONGOING'):
 			raise Exception("Newsletter is scheduled for sending.")
 		elif self.send:
@@ -445,15 +445,17 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			self.scheduled_status = 'ONGOING'
 			self.save()
 
-			try:
-				for m in self.type.mailers.all():
-					m.on_scheduled( self )
-			except Exception, e:
-				# Something wrong happen, set scheduled_status to 'OFF
-				# and re-raise the exception
-				self.scheduled_status = 'OFF'
-				self.save()
-				raise e
+			for m in self.type.mailers.all():
+				m.on_scheduled( self )
+#			try:
+#				for m in self.type.mailers.all():
+#					m.on_scheduled( self )
+#			except Exception, e:
+#				# Something wrong happen, set scheduled_status to 'OFF
+#				# and re-raise the exception
+#				self.scheduled_status = 'OFF'
+#				self.save()
+#				raise e
 
 			res = send_scheduled_newsletter.apply_async( args=[ self.pk ], eta=self.release_date )
 
@@ -461,9 +463,16 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			self.scheduled_status = 'ON'
 			self.save()
 
-	def _unschedule( self ):
-		"""
-		"""
+			change_message = 'Sending scheduled for %s' % self.release_date
+			LogEntry.objects.log_action(
+				user_id=user_pk,
+				content_type_id=ContentType.objects.get_for_model(self).pk,
+				object_id=self.pk,
+				object_repr=unicode(self.pk),
+				action_flag=CHANGE,
+				change_message=change_message)
+
+	def _unschedule(self, user_pk):
 		if self.send:
 			raise Exception("Newsletter has already been sent")
 		elif self.scheduled_status == 'OFF':
@@ -483,6 +492,14 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			self.scheduled_task_id = ""
 			self.save()
 
+			LogEntry.objects.log_action(
+				user_id=user_pk,
+				content_type_id=ContentType.objects.get_for_model(self).pk,
+				object_id=self.pk,
+				object_repr=unicode(self.pk),
+				action_flag=CHANGE,
+				change_message='Scheduling sending canceled.')
+
 	def _send_now( self ):
 		"""
 		Function that does the actual work. Is called from
@@ -497,24 +514,24 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		"""
 		Send newsletter
 		"""
-		if self.send is None:
-			self.send = datetime.now()
-			if self.type.archive:
-				self.published = True
-
-			if check_scheduled and self.scheduled_status != 'ON':
-				raise Exception( 'Won\'t send Newsletter: Scheduling status is "%s"' % self.scheduled_status)
-
-			for m in self.type.mailers.all():
-				logger.info('Starting sending with mailer "%s"', m)
-				res = m.send_now( self )
-				if res:
-					raise Exception(res)
-
-			self.frozen = True
-			self.save()
-		else:
+		if self.send:
 			raise Exception("Newsletter has already been sent.")
+
+		self.send = datetime.now()
+		if self.type.archive:
+			self.published = True
+
+		if check_scheduled and self.scheduled_status != 'ON':
+			raise Exception( 'Won\'t send Newsletter: Scheduling status is "%s"' % self.scheduled_status)
+
+		for m in self.type.mailers.all():
+			logger.info('Starting sending with mailer "%s"', m)
+			res = m.send_now( self )
+			if res:
+				raise Exception(res)
+
+		self.frozen = True
+		self.save()
 
 	def _send_test( self, emails ):
 		"""
@@ -526,19 +543,19 @@ class Newsletter( ArchiveModel, TranslationModel ):
 			if res:
 				raise Exception(res)
 
-	def schedule( self ):
+	def schedule(self, user_pk):
 		"""
 		Schedule a newsletter for sending.
 		"""
 		if not self.send and self.scheduled_status == 'OFF':
-			schedule_newsletter.delay( self.pk )
+			schedule_newsletter.delay(self.pk, user_pk)
 
-	def unschedule( self ):
+	def unschedule(self, user_pk):
 		"""
 		Cancel current schedule for newsletter
 		"""
 		if self.scheduled_status == 'ON':
-			unschedule_newsletter.delay( self.pk )
+			unschedule_newsletter.delay(self.pk, user_pk)
 
 	def send_now( self ):
 		"""
@@ -584,10 +601,6 @@ class Newsletter( ArchiveModel, TranslationModel ):
 				'subject': self.subject,
 			}
 
-		t_html = Template( self.type.html_template )
-		t_text = Template( self.type.text_template )
-		t_subject = Template( self.type.subject_template ) if self.type.subject_template else None
-
 		# Flag to check if we have a custom editorial
 		custom_editorial = False
 		if self.is_translation():
@@ -600,15 +613,21 @@ class Newsletter( ArchiveModel, TranslationModel ):
 				# is no longer configured so we can just ignore it
 				pass
 
+		data = {}
+		data.update(NewsletterContent.data_context(self, lang=self.lang))
+
+		# Include the data from Feed Data Sources
+		data.update(self.get_feed_data())
+
 		defaults = {
-			'base_url': "http://%s" % Site.objects.get_current().domain,
+			'base_url': "https://%s" % Site.objects.get_current().domain,
 			'MEDIA_URL': settings.MEDIA_URL,
 			'STATIC_URL': settings.STATIC_URL,
 			'ARCHIVE_ROOT': getattr( settings, "ARCHIVE_ROOT", "" ),
 			'newsletter': self,
 			'newsletter_type': self.type,
 			'language': self.lang,
-			'data': NewsletterContent.data_context( self, lang=self.lang ),
+			'data': data,
 			'editorial_subject': self.editorial_subject,
 			'editorial': self.editorial,
 			'editorial_text': self.editorial_text,
@@ -628,6 +647,10 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		ctx = Context( defaults )
 
 		translation.activate(self.lang)
+
+		t_html = Template( self.type.html_template )
+		t_text = Template( self.type.text_template )
+		t_subject = Template( self.type.subject_template ) if self.type.subject_template else None
 
 		data = {
 			'html': t_html.render( ctx ),
@@ -684,32 +707,34 @@ class Newsletter( ArchiveModel, TranslationModel ):
 				# NewsletterLanguage doesn't exist any longer
 				pass
 
-		result = super( Newsletter, self ).save()
-		return result
+		return super( Newsletter, self ).save()
 
 	def view_html(self):
-		if self.id:
-			#  FIXME: replace by view_link() or similar
-			return '<a href="/public/djangoplicity/admin/newsletters/newsletterproxy/%s/html">View HTML</a>' % str(self.id)
+		if self.pk:
+			return format_html(
+				'<a href="{}">View HTML</a>',
+				reverse('admin_site:html_newsletterproxy_view', args=[self.pk])
+			)
 		else:
-			return "Not present"
-	view_html.allow_tags = True
+			return 'Not present'
 
 	def view_text(self):
-		if self.id:
-			#  FIXME: replace by view_link() or similar
-			return '<a href="/public/djangoplicity/admin/newsletters/newsletterproxy/%s/text">View text</a>' % str(self.id)
+		if self.pk:
+			return format_html(
+				'<a href="{}">View text</a>',
+				reverse('admin_site:text_newsletterproxy_view', args=[self.pk])
+			)
 		else:
-			return "Not present"
-	view_text.allow_tags = True
+			return 'Not present'
 
 	def edit(self):
-		if self.id:
-			#  FIXME: replace by view_link() or similar
-			return '<a href="/public/djangoplicity/admin/newsletters/newsletterproxy/%s">Edit</a>' % str(self.id)
+		if self.pk:
+			return format_html(
+				'<a href="{}">Edit</a>',
+				reverse('admin_site:newsletters_newsletterproxy_change', args=[self.pk])
+			)
 		else:
-			return "Not present"
-	edit.allow_tags = True
+			return 'Not present'
 
 	def get_absolute_url( self ):
 		return translation_reverse( 'newsletters_detail_html', args=[self.type.slug, self.id if self.is_source() else self.source.id ], lang=self.lang )
@@ -724,6 +749,68 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		except Newsletter.DoesNotExist:
 			return None
 
+	def get_feed_data(self, refresh=False):
+		'''
+		Returns the feed data if it has been fetched already otherwise
+		fetch it from the newsletter's type sources
+		If refresh is True the data is fetched again
+		'''
+		if self.frozen or (self.feed_data and not refresh):
+			return self.feed_data
+
+		feed_data = {}
+		for src in self.type.newsletterfeeddatasource_set.all():
+			feed_data[src.name] = src.data_context(lang=self.lang)
+
+		if self.is_source():
+			cls = Newsletter
+		else:
+			cls = NewsletterProxy
+		cls.objects.filter(pk=self.pk).update(feed_data=feed_data)
+
+		return self.feed_data
+
+	def get_unpublished_content(self):
+		'''
+		Returns a list of all content which is not yet published or with a
+		release date after the NL release
+		'''
+		unpublished = []
+		for datasrc in NewsletterDataSource.data_sources(self.type):
+			# For each data source - get object(s) for this newsletter.
+			modelcls = datasrc.content_type.model_class()
+			data = None
+
+			if modelcls is not None:
+				content_objects = NewsletterContent.objects.filter(
+					newsletter=self, data_source=datasrc)
+				allpks = [obj.object_id for obj in content_objects]
+
+				try:
+					if datasrc.list:
+						data = modelcls.objects.filter(pk__in=allpks)
+					else:
+						if len(allpks) > 0:
+							data = modelcls.objects.get(pk=allpks[0])
+				except modelcls.DoesNotExist:
+					continue
+
+			# Data can be either a list or a unique element
+			# so we turn it in a list:
+			if not datasrc.list:
+				data = [data, ]
+
+			for d in data:
+				published = getattr(d, 'published', None)
+				if published is False:
+					unpublished.append(d)
+
+				embargo_date = getattr(d, 'embargo_date', None)
+				if embargo_date is not None and embargo_date > self.release_date:
+					unpublished.append(d)
+
+		return unpublished
+
 	def __unicode__( self ):
 		return self.subject
 
@@ -737,7 +824,6 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		newsmini = ImageResourceManager(derived='original', type=types.NewsMiniJpegType)
 		newsfeature = ImageResourceManager(derived='original', type=types.NewsFeatureType)
 		medium = ImageResourceManager(derived='original', type=types.MediumJpegType)
-		frontpagethumbs = ImageResourceManager(derived='original', type=types.FrontpageThumbnailJpegType)
 		thumbs = ImageResourceManager(derived='original', type=types.ThumbnailJpegType)
 
 		class Meta:
@@ -751,7 +837,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
 
 	class Translation:
 		fields = ['subject', 'editorial', 'editorial_text', ]
-		excludes = ['html', 'text', 'from_name', 'from_email']
+		excludes = ['html', 'text', 'from_name', 'from_email', 'feed_data']
 
 # ========================================================================
 # Translation proxy model
@@ -1035,6 +1121,81 @@ class NewsletterDataSource( models.Model ):
 		ordering = ['type__name', 'title']
 
 
+class NewsletterFeedDataSource(models.Model):
+	'''
+	Feed data source for a newsletter. Use to select data from a given
+	JSON feed
+	'''
+	type = models.ForeignKey(NewsletterType)
+	list = models.BooleanField(default=True, help_text=_(
+		'Return a list of items or a single element'))
+	name = models.SlugField(help_text=_('Name used to access this data source in templates'))
+	title = models.CharField(max_length=255)
+	url = models.URLField(_('URL to the JSON feed'))
+	limit = models.CharField(max_length=255, blank=True)
+	fetch_translations = models.BooleanField(default=True, help_text=_(
+		'Fetch translated version of the feed if available'))
+
+	def __unicode__(self):
+		return self.title
+
+	def _limit_data(self, data):
+		limits = self.limit.split(':')[:2]
+		try:
+			start = int(limits[0])
+		except (ValueError, IndexError):
+			start = None
+
+		try:
+			end = int(limits[1])
+		except (ValueError, IndexError):
+			end = None
+
+		if end and end < len(data):
+			data = data[:end]
+
+		if start and start < len(data):
+			data = data[start:]
+
+		return data
+
+	@classmethod
+	def data_sources(cls, type):
+		return cls.objects.filter(type=type)
+
+	def data_context(self, lang):
+		'''
+		Returns a list of items from the feed
+		'''
+		url = '%s?lang=%s' % (self.url, lang)
+
+		try:
+			r = requests.get(url)
+		except (requests.ConnectionError, requests.Timeout):
+			return []
+
+		if r.status_code != requests.codes.ok:
+			logger.warning('Can\'t fetch feed: %s (%d)', self.url, r.status_code)
+			return []
+
+		try:
+			data = r.json()
+		except ValueError:
+			logger.warning('Invalid JSON for: %s', self.url)
+
+		if self.limit:
+			data = self._limit_data(data)
+
+		if not self.list:
+			data = data[0]
+
+		return data
+
+	class Meta:
+		unique_together = ('type', 'name')
+		ordering = ('type__name', 'title')
+
+
 # =================================
 # Auto generation component
 # =================================
@@ -1106,6 +1267,7 @@ class MailChimpCampaign( models.Model ):
 
 	class Meta:
 		unique_together = ['newsletter', 'list_id', 'lang']
+
 
 #
 # Register default mailer interfaces

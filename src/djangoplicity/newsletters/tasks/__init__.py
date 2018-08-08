@@ -34,6 +34,8 @@
 The celery tasks defined here are all wrapping features defined in the models.
 """
 
+from requests.exceptions import HTTPError
+
 from celery.task import task
 from celery.utils.log import get_task_logger
 from django.core.cache import cache
@@ -126,7 +128,7 @@ def send_newsletter_test(newsletter_pk, emails):
 
 
 @task(name="newsletters.schedule_newsletter", ignore_result=True)
-def schedule_newsletter(newsletter_pk):
+def schedule_newsletter(newsletter_pk, user_pk):
 	"""
 	Task to schedule a newsletter for delivery.
 	"""
@@ -138,7 +140,7 @@ def schedule_newsletter(newsletter_pk):
 		try:
 			nl = Newsletter.objects.get(pk=newsletter_pk)
 			logger.info("Scheduling newsletter %s" % newsletter_pk)
-			nl._schedule()
+			nl._schedule(user_pk)
 		finally:
 			release_lock(lock_id)
 	else:
@@ -147,7 +149,7 @@ def schedule_newsletter(newsletter_pk):
 
 
 @task(name="newsletters.unschedule_newsletter", ignore_result=True)
-def unschedule_newsletter(newsletter_pk):
+def unschedule_newsletter(newsletter_pk, user_pk):
 	"""
 	Task to unschedule a newsletter for delivery.
 	"""
@@ -159,7 +161,7 @@ def unschedule_newsletter(newsletter_pk):
 		try:
 			nl = Newsletter.objects.get(pk=newsletter_pk)
 			logger.info("Unscheduling newsletter %s" % newsletter_pk)
-			nl._unschedule()
+			nl._unschedule(user_pk)
 		finally:
 			release_lock(lock_id)
 	else:
@@ -169,11 +171,11 @@ def unschedule_newsletter(newsletter_pk):
 
 @task(name="newsletters.abuse_reports", ignore_result=True)
 def abuse_reports():
-	"""
+	'''
 	Generate a report for abuse reports for campaigns sent
 	over the last 4 weeks.
 	This task is meant to be run once a week
-	"""
+	'''
 	from datetime import datetime, timedelta
 	from django.core.mail import EmailMessage
 	from djangoplicity.mailinglists.models import MailChimpList
@@ -192,25 +194,42 @@ def abuse_reports():
 	n_complaints = 0
 
 	for ml in MailChimpList.objects.all():
-		#  Fetch the list of campaigns sent within the last 4 weeks
-		campaigns = ml.connection('campaigns.list', {
-			'filters': {
-				'list_id': ml.list_id,
-				'sendtime_start': start_date.strftime('%Y-%m-%d %H:%M:%S')
-			},
-			'limit': 1000,
-		})
-		if campaigns['total'] == 0:
+		logger.debug('Will run campaigns.all for list %s', ml.list_id)
+		try:
+			response = ml.connection(
+				'campaigns.all',
+				get_all=True,
+				list_id=ml.list_id,
+				since_send_time=start_date.isoformat(),
+				fields='campaigns.id,campaigns.settings.title'
+			)
+		except HTTPError as e:
+			logger.error('campaigns.all: %s', e.response.text)
+			raise e
+
+		if response['total_items'] == 0:
 			continue
 
 		content = ''
 
-		for campaign in campaigns['data']:
-			complaints = ml.connection('reports.abuse', {'cid': campaign['id'], 'opts': {'since': week_ago.strftime('%Y-%m-%d %H:%M:%S')}})
-			if complaints['total'] == 0:
+		for campaign in response['campaigns']:
+
+			logger.debug('Will run reports.abuse_reports.all for campaign %s',
+				campaign['id'])
+			try:
+				response = ml.connection(
+					'reports.abuse_reports.all',
+					campaign_id=campaign['id'],
+					since_send_time=week_ago.isoformat()
+				)
+			except HTTPError as e:
+				logger.error('reports.abuse_reports.all: %s', e.response.text)
+				raise e
+
+			if response['total_items'] == 0:
 				continue
-			else:
-				n_complaints += complaints['total']
+
+			n_complaints += response['total_items']
 
 			if not content:
 				name = 'MailChimp List: %s' % ml.name
@@ -218,19 +237,25 @@ def abuse_reports():
 				content += name + '\n'
 				content += '=' * len(name) + '\n'
 
-			title = 'Campaign: %s (%d complaints)' % (campaign['title'], complaints['total'])
+			title = 'Campaign: %s (%d complaints)' % (
+				campaign['settings']['title'],
+				response['total_items'])
 			content += '\n' + title + '\n'
 			content += '-' * len(title) + '\n'
-			for complaint in complaints['data']:
-				member = ml.connection('lists.member_info', {'id': ml.list_id, 'emails': [{'email': complaint['member']['email']}]})
-				if 'error' in member:
-					logger.critical('Error running listMemberInfo: "%s"' % member['error'])
-					continue
-				if member['success_count'] != 1:
-					logger.critical('Can\'t identify member "%s"' % complaint['member']['email'])
-					continue
 
-				content += '%s https://us2.admin.mailchimp.com/lists/members/view?id=%s' % (complaint['member']['email'], member['data'][0]['web_id']) + '\n'
+			for complaint in response['abuse_reports']:
+				try:
+					member = ml.connection(
+						'lists.members.get',
+						complaint['list_id'],
+						complaint['email_id'],
+					)
+				except HTTPError as e:
+					logger.error('lists.members.get: %s', e.response.text)
+					raise e
+
+				content += '%s Reason: %s' % (member['email_address'],
+					member['unsubscribe_reason']) + '\n'
 
 		body += content
 

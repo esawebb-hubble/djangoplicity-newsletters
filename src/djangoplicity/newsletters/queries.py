@@ -56,7 +56,7 @@ class NewsletterCategoryQuery(CategoryQuery):
 		#
 		if settings.USE_I18N:
 			lang = translation.get_language()
-			qs = Newsletter.objects.language(lang).filter(type=category)
+			qs = Newsletter.objects.fallback(lang).filter(type=category)
 		else:
 			qs = Newsletter.objects.filter(type=category)
 
