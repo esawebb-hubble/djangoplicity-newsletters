@@ -351,7 +351,7 @@ class MailChimpList(models.Model):
 				data,
 			)
 		'''
-		method = MailChimp('USER', self.api_key)
+		method = MailChimp(mc_api=self.api_key, mc_user='USER')
 
 		# Extract the final method from the path
 		for name in path.split('.'):
