@@ -42,8 +42,7 @@ from django.conf.urls import url
 from django.contrib import admin
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render_to_response
-from django.template import RequestContext
+from django.shortcuts import get_object_or_404, render
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
 
@@ -376,7 +375,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
 		}
 		defaults.update( context )
 
-		return render_to_response( template, defaults, context_instance=RequestContext( request ) )
+		return render(request, template, defaults)
 
 
 class NewsletterLanguageInlineAdmin(admin.TabularInline):
