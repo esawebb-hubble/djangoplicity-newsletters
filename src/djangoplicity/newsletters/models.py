@@ -62,6 +62,7 @@ from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
 from django.utils import translation
 from django.utils.html import format_html
+from django.utils.timezone import is_naive, make_aware
 from django.utils.translation import ugettext as _
 
 from djangoplicity.archives.base import ArchiveModel
@@ -87,14 +88,14 @@ def make_nl_id():
 	existing ID so far
 	'''
 	max_id = 0
-	for id in Newsletter.objects.values_list('id', flat=True):
+	for pk in Newsletter.objects.values_list('id', flat=True):
 		try:
-			id = int(id)
+			pk = int(pk)
 		except ValueError:
 			# We're only intersted in string integers, skip!
 			continue
-		if id > max_id:
-			max_id = id
+		if pk > max_id:
+			max_id = pk
 
 	return str(max_id + 1)
 
@@ -161,12 +162,15 @@ class Mailer( models.Model ):
 		plugin = self.get_plugin()
 		return plugin.send_now( newsletter )
 
-	def send_test( self, newsletter, emails=[] ):
+	def send_test( self, newsletter, emails=None ):
 		"""
 		Send test newsletter now via this mailer to listed emails
 		"""
 		log = self._log_entry( newsletter )
 		log.is_test = True
+
+		if emails is None:
+			emails = []
 
 		try:
 			plugin = self.get_plugin()
@@ -457,7 +461,10 @@ class Newsletter( ArchiveModel, TranslationModel ):
 #				self.save()
 #				raise e
 
-			res = send_scheduled_newsletter.apply_async( args=[ self.pk ], eta=self.release_date )
+			eta = self.release_date
+			if is_naive(eta):
+				eta = make_aware(eta)
+			res = send_scheduled_newsletter.apply_async( args=[ self.pk ], eta=eta )
 
 			self.scheduled_task_id = res.task_id
 			self.scheduled_status = 'ON'
@@ -579,11 +586,11 @@ class Newsletter( ArchiveModel, TranslationModel ):
 		send_newsletter_test.delay( self.pk, emails )
 
 	@classmethod
-	def latest_for_type( cls, type ):
+	def latest_for_type( cls, typ ):
 		"""
 		Get the latest published newsletter issue for a specific type.
 		"""
-		qs = cls.objects.filter( type=type, published=True ).order_by( '-release_date' )
+		qs = cls.objects.filter( type=typ, published=True ).order_by( '-release_date' )
 		if len( qs ) > 0:
 			return qs[0]
 		else:
@@ -996,10 +1003,13 @@ class DataSourceSelector( models.Model ):
 		"""
 		return { str( "%s__%s" % ( self.field, self.match ) ): self.get_value( ctx )  }
 
-	def get_value( self, ctx={} ):
+	def get_value( self, ctx=None ):
 		"""
 		Get value to search for. Context is passed in from the newsletter generator.
 		"""
+		if ctx is None:
+			ctx = {}
+
 		if self.type == 'str':
 			return self.value % ctx
 		elif self.type == 'int':
@@ -1090,8 +1100,8 @@ class NewsletterDataSource( models.Model ):
 			return qs
 
 	@classmethod
-	def data_sources( cls, type ):
-		return cls.objects.filter( type=type )
+	def data_sources( cls, typ ):
+		return cls.objects.filter( type=typ )
 
 	def get_queryset( self, ctx ):
 		"""
@@ -1160,8 +1170,8 @@ class NewsletterFeedDataSource(models.Model):
 		return data
 
 	@classmethod
-	def data_sources(cls, type):
-		return cls.objects.filter(type=type)
+	def data_sources(cls, typ):
+		return cls.objects.filter(type=typ)
 
 	def data_context(self, lang):
 		'''
