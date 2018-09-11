@@ -34,34 +34,34 @@ from djangoplicity.archives.contrib.browsers import ListBrowser
 from djangoplicity.archives.contrib.templater import DisplayTemplate
 from djangoplicity.newsletters.queries import NewsletterCategoryQuery
 from djangoplicity.archives.importer.import_actions import move_resources, \
-	process_image_derivatives
+    process_image_derivatives
 from djangoplicity.archives.options import ArchiveOptions
 
 
 class NewsletterOptions(ArchiveOptions):
-	urlname_prefix = 'newsletters'
+    urlname_prefix = 'newsletters'
 
-	search_fields = ('id', 'subject', 'editorial_text', 'text')
+    search_fields = ('id', 'subject', 'editorial_text', 'text')
 
-	class Queries( object ):
-		default = NewsletterCategoryQuery(browsers=('normal', 'viewall'), relation_field='type',
-					url_field='slug', title_field='name', use_category_title=True,
-					verbose_name='%s')
+    class Queries( object ):
+        default = NewsletterCategoryQuery(browsers=('normal', 'viewall'), relation_field='type',
+                    url_field='slug', title_field='name', use_category_title=True,
+                    verbose_name='%s')
 
-	class Browsers(object):
-		normal = ListBrowser(paginate_by=50, index_template='index_newsletters.html')
-		viewall = ListBrowser(paginate_by=100)
+    class Browsers(object):
+        normal = ListBrowser(paginate_by=50, index_template='index_newsletters.html')
+        viewall = ListBrowser(paginate_by=100)
 
-	class Import(object):
-		uploadable = True
-		metadata = 'original'
-		scan_directories = [
-			('original', ('.jpg', '.jpeg', '.tif', '.tiff')),
-		]
-		actions = [
-			move_resources,
-			process_image_derivatives(),
-		]
+    class Import(object):
+        uploadable = True
+        metadata = 'original'
+        scan_directories = [
+            ('original', ('.jpg', '.jpeg', '.tif', '.tiff')),
+        ]
+        actions = [
+            move_resources,
+            process_image_derivatives(),
+        ]
 
-	class Display():
-		esonews = DisplayTemplate( 'file', 'archives/newsletters/translations_list.html', name='Translations list' )
+    class Display():
+        esonews = DisplayTemplate( 'file', 'archives/newsletters/translations_list.html', name='Translations list' )

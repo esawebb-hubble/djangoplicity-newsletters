@@ -8,10 +8,10 @@ We also include mediaarchive.css as it's not otherwise included for
 some pages outside /public (e.g. for the science newsletter)
 {% endcomment %}
 <style type="text/css">
-	td.titlerow a {
-		color: black;
-	}
-	#sb-container {display:none} 
+    td.titlerow a {
+        color: black;
+    }
+    #sb-container {display:none} 
 </style>
 <link href="{{MEDIA_URL}}css/mediaarchive.css" rel="stylesheet" type="text/css" />
 
@@ -25,7 +25,7 @@ some pages outside /public (e.g. for the science newsletter)
 
 {% load i18n %}{% load djangoplicity_utils %}
 {% if not object_list %}
-	<div align="center">{% trans "No entries were found."%}</div>
+    <div align="center">{% trans "No entries were found."%}</div>
 {% else %}
 {% include "archives/search_results.html" %}
 <table class="archive_normal" width="100%">
@@ -35,7 +35,7 @@ some pages outside /public (e.g. for the science newsletter)
 {% block index_image_cell %}<td class="imagerow" width="25%"><a href="{{ item.get_absolute_url }}"><img src="{{ item.resource_thumbs.url }}" width="122" alt="{{ item.subject }}" /></a></td>{% endblock %}{% endfor %}
 </tr>
 <tr>{% for item in list %}
-	{% block index_title_cell %}<td class="titlerow"><a href="{{ item.get_absolute_url }}">{{ item.subject }}</a></td>{% endblock %}{% endfor %}
+    {% block index_title_cell %}<td class="titlerow"><a href="{{ item.get_absolute_url }}">{{ item.subject }}</a></td>{% endblock %}{% endfor %}
 </tr>
 {% endblock %}
 {% endfor %}

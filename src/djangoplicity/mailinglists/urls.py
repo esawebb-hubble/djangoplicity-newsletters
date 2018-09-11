@@ -37,7 +37,7 @@ from djangoplicity.mailinglists.views import mailchimp_webhook
 # that SSL is allowed to the URLs, since insecure requests will not be accepted by the views.
 #
 # If you are using SSLMiddleware, this can be done by:
-# 	(r'^newsletters/', include('djangoplicity.mailinglists.urls', {'SSLAllow' : True})),
+#   (r'^newsletters/', include('djangoplicity.mailinglists.urls', {'SSLAllow' : True})),
 
 urlpatterns = [
     url(r'^webhook/$', mailchimp_webhook, name='mailchimp_webhook'),

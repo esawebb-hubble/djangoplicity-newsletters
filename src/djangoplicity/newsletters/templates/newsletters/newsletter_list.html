@@ -9,7 +9,7 @@
 
 {% load i18n %}{% load djangoplicity_utils %}
 {% if not object_list %}
-	<div align="center">{% trans "No entries were found."%}</div>
+    <div align="center">{% trans "No entries were found."%}</div>
 {% else %}
 {% include "archives/search_results.html" %}
 <table class="archive_normal" width="100%">
