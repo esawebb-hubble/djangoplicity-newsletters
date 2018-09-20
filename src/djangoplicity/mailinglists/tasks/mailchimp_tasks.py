@@ -272,7 +272,7 @@ def webhooks(list_id=None):
     ``list_id`` is none, webhooks for all lists will be installed.
     '''
     # Only run on production
-    if settings.SITE_ENVIRONMENT != 'production':
+    if settings.SITE_ENVIRONMENT != 'prod':
         return
 
     logger = webhooks.get_logger()
@@ -369,7 +369,7 @@ def mailchimplist_fetch_info(list_id=None):
     logger = mailchimplist_fetch_info.get_logger()
 
     # Only run on production
-    if settings.SITE_ENVIRONMENT != 'production':
+    if settings.SITE_ENVIRONMENT != 'prod':
         return
 
     try:

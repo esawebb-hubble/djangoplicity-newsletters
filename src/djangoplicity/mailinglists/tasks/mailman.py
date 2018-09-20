@@ -41,7 +41,7 @@ def mailman_send_subscribe( subscription_pk ):
     when e.g. a person subscribes via e.g. mailchimp.
     """
     # Only run on production
-    if settings.SITE_ENVIRONMENT != 'production':
+    if settings.SITE_ENVIRONMENT != 'prod':
         return
 
     from djangoplicity.mailinglists.models import Subscription
@@ -61,7 +61,7 @@ def mailman_send_unsubscribe( subscription_pk ):
     when e.g. a person subscribes via e.g. mailchimp.
     """
     # Only run on production
-    if settings.SITE_ENVIRONMENT != 'production':
+    if settings.SITE_ENVIRONMENT != 'prod':
         return
 
     from djangoplicity.mailinglists.models import Subscription
