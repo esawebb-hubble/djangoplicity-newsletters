@@ -31,6 +31,8 @@
 
 
 from django.conf.urls import url
+from django.views.decorators.csrf import csrf_exempt
+
 from djangoplicity.mailinglists.views import mailchimp_webhook
 
 # URLs for MailChimp webhooks. Only install them if you really need them. Also, ensure
@@ -40,5 +42,5 @@ from djangoplicity.mailinglists.views import mailchimp_webhook
 #   (r'^newsletters/', include('djangoplicity.mailinglists.urls', {'SSLAllow' : True})),
 
 urlpatterns = [
-    url(r'^webhook/$', mailchimp_webhook, name='mailchimp_webhook'),
+    url(r'^webhook/$', csrf_exempt(mailchimp_webhook), name='mailchimp_webhook'),
 ]

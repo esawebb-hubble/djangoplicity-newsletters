@@ -3,13 +3,7 @@
 {% load staticfiles %}
 
 {% block extrahead %}{{ block.super }}
-<script type="text/javascript">
-window.__admin_media_prefix__ = "{% filter escapejs %}{% static 'admin' %}{% endfilter %}";
-</script>
-{% url 'admin:jsi18n' as jsi18nurl %}
-<script type="text/javascript" src="{{ jsi18nurl|default:"../../../../jsi18n/" }}"></script>
 {{ media }}
-<script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>
 {{ adminform.media }}
 {% endblock %}
 

@@ -239,13 +239,13 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
             form = GenerateNewsletterForm()
 
         return self._render_admin_view(
-                    request,
-                    "admin/newsletters/newsletter/generate_form.html",
-                    {
-                        'title': _( 'Generate %s' ) % force_unicode( self.model._meta.verbose_name ),
-                        'adminform': form,
-                    },
-                )
+            request,
+            "admin/newsletters/newsletter/generate_form.html",
+            {
+                'title': _( 'Generate %s' ) % force_unicode( self.model._meta.verbose_name ),
+                'adminform': form,
+            },
+        )
 
     def send_newsletter_test_view( self, request, pk=None ):
         """
@@ -369,9 +369,14 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
         """
         opts = self.model._meta
 
+        media = self.media
+        if 'adminform' in context:
+            media += context['adminform']
+
         defaults = {
-                    'app_label': opts.app_label,
-                    'opts': opts,
+            'app_label': opts.app_label,
+            'opts': opts,
+            'media': media,
         }
         defaults.update( context )
 
