@@ -365,7 +365,7 @@ class NewsletterType( models.Model ):
     languages = models.ManyToManyField( Language, blank=True, through='NewsletterLanguage' )
 
     def get_generator( self ):
-        return NewsletterGenerator( type=self )
+        return NewsletterGenerator( typ=self )
 
     def get_absolute_url( self ):
         lang = translation.get_language()
@@ -799,7 +799,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
                     else:
                         if len(allpks) > 0:
                             data = modelcls.objects.get(pk=allpks[0])
-                except modelcls.DoesNotExist:
+                except (modelcls.DoesNotExist, ValueError):
                     continue
 
             # Data can be either a list or a unique element
@@ -921,8 +921,8 @@ class NewsletterContent( models.Model ):
                     else:
                         if len( allpks ) > 0:
                             data = modelcls.objects.get( pk=allpks[0] )
-                except modelcls.DoesNotExist:
-                    data = None
+                except (ValueError, modelcls.DoesNotExist):
+                    data = []
 
             # Data can be either a list or a unique element
             # so we turn it in a list:
@@ -1213,8 +1213,8 @@ class NewsletterGenerator( object ):
     """
     Generator for newsletters
     """
-    def __init__( self, type ):
-        self.type = type
+    def __init__( self, typ ):
+        self.type = typ
 
     def make_next( self, release_date ):
         """
