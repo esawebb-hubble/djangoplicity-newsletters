@@ -1,13 +1,7 @@
 {% extends "admin/newsletters/newsletter/change_form.html" %}{% load i18n %}
 
 {% block extrahead %}{{ block.super }}
-<script type="text/javascript">
-window.__admin_media_prefix__ = "{% filter escapejs %}{{ STATIC_URL}}/admin/{% endfilter %}";
-</script>
-{% url 'admin:jsi18n' as jsi18nurl %}
-<script type="text/javascript" src="{{ jsi18nurl|default:"../../../../jsi18n/" }}"></script>
 {{ media }}
-<script type="text/javascript" src="{{ STATIC_URL}}/admin/js/core.js"></script>
 {{ adminform.media }}
 {% endblock %}
 
@@ -62,9 +56,9 @@ window.__admin_media_prefix__ = "{% filter escapejs %}{{ STATIC_URL}}/admin/{% e
 <fieldset class="module aligned">
 {% for f in adminform %}
 <div class="form-row">
-	{{f.label_tag}}
-	{{f}}
-	{{f.errors}}
+    {{f.label_tag}}
+    {{f}}
+    {{f.errors}}
 </div>
 {% endfor %}
 </fieldset>

@@ -33,19 +33,19 @@ from django_mailman.models import List as OriginalMailmanList
 
 
 class MailmanList( object ):
-	"""
-	Proxy object to a django_mailman list.
-	"""
-	def __init__( self, name=None, password=None, main_url=None ):
-		self._mailman = OriginalMailmanList( name=name, password=password, email='noreply+%s@eso.org' % name, main_url=main_url, encoding='utf-8' )
-		self.base_url = main_url
+    """
+    Proxy object to a django_mailman list.
+    """
+    def __init__( self, name=None, password=None, main_url=None ):
+        self._mailman = OriginalMailmanList( name=name, password=password, email='noreply+%s@eso.org' % name, main_url=main_url, encoding='utf-8' )
+        self.base_url = main_url
 
-	def __getattr__( self, name ):
-		return getattr( self._mailman, name )
+    def __getattr__( self, name ):
+        return getattr( self._mailman, name )
 
-	def get_members( self ):
-		return self._mailman.get_all_members()
+    def get_members( self ):
+        return self._mailman.get_all_members()
 
-	def get_admin_url( self ):
-		""" Get mailman admin URL """
-		return "%s/admin/%s/?adminpw=%s" % ( self.main_url, self.name, self.password )
+    def get_admin_url( self ):
+        """ Get mailman admin URL """
+        return "%s/admin/%s/?adminpw=%s" % ( self.main_url, self.name, self.password )

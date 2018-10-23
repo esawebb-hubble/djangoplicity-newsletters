@@ -7,16 +7,16 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-#	* Redistributions of source code must retain the above copyright
-#	  notice, this list of conditions and the following disclaimer.
+#   * Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
 #
-#	* Redistributions in binary form must reproduce the above copyright
-#	  notice, this list of conditions and the following disclaimer in the
-#	  documentation and/or other materials provided with the distribution.
+#   * Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
 #
-#	* Neither the name of the European Southern Observatory nor the names
-#	  of its contributors may be used to endorse or promote products derived
-#	  from this software without specific prior written permission.
+#   * Neither the name of the European Southern Observatory nor the names
+#     of its contributors may be used to endorse or promote products derived
+#     from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY ESO ``AS IS'' AND ANY EXPRESS OR IMPLIED
 # WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -45,77 +45,77 @@ from djangoplicity.newsletters.models import Newsletter
 
 
 class MultiEmailField( forms.CharField ):
-	"""
-	Field for entering multiple email addresses.
+    """
+    Field for entering multiple email addresses.
 
-	Initial code from https://docs.djangoproject.com/en/1.3/ref/forms/validation/#form-field-default-cleaning
-	"""
-	def to_python( self, value ):
-		"""
-		Normalize data to a list of strings.
-		"""
-		# Return an empty list if no input was given.
-		if not value:
-			return []
-		return [x.strip() for x in value.split( ',' )]
+    Initial code from https://docs.djangoproject.com/en/1.3/ref/forms/validation/#form-field-default-cleaning
+    """
+    def to_python( self, value ):
+        """
+        Normalize data to a list of strings.
+        """
+        # Return an empty list if no input was given.
+        if not value:
+            return []
+        return [x.strip() for x in value.split( ',' )]
 
-	def validate( self, value ):
-		"""
-		Check if value consists only of valid emails.
-		"""
-		super( MultiEmailField, self ).validate( value )
+    def validate( self, value ):
+        """
+        Check if value consists only of valid emails.
+        """
+        super( MultiEmailField, self ).validate( value )
 
-		for email in value:
-			validate_email( email )
+        for email in value:
+            validate_email( email )
 
 
 class GenerateNewsletterForm( forms.ModelForm ):
-	"""
-	Form for generating a newsletter.
-	"""
-	start_date = forms.SplitDateTimeField(widget=AdminSplitDateTime())
-	end_date = forms.SplitDateTimeField(widget=AdminSplitDateTime())
+    """
+    Form for generating a newsletter.
+    """
+    start_date = forms.SplitDateTimeField(widget=AdminSplitDateTime())
+    end_date = forms.SplitDateTimeField(widget=AdminSplitDateTime())
 
-	class Meta:
-		model = Newsletter
-		fields = [ 'type', 'start_date', 'end_date' ]
+    class Meta:
+        model = Newsletter
+        fields = [ 'type', 'start_date', 'end_date' ]
 
 
 class NewsletterForm( forms.ModelForm ):
-	editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '30'}))
+    editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '30'}))
 
 
 class NewsletterLanguageInlineForm( forms.ModelForm ):
-	default_editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '20'}))
+    default_editorial = forms.CharField(required=False, widget=AdminRichTextAreaWidget({'rows': '20'}))
 
 
 class TestEmailsForm( forms.Form ):
-	"""
-	Admin form for getting the emails to send the
-	test newsletter to.
-	"""
-	emails = MultiEmailField( max_length=255 )
+    """
+    Admin form for getting the emails to send the
+    test newsletter to.
+    """
+    emails = MultiEmailField( max_length=255 )
 
 
 class SendNewsletterForm( forms.Form ):
-	"""
-	Admin form for requesting confirmation to
-	send the newsletter.
-	"""
-	send_now = forms.BooleanField()
+    """
+    Admin form for requesting confirmation to
+    send the newsletter.
+    """
+    send_now = forms.BooleanField()
 
 
 class ScheduleNewsletterForm( forms.Form ):
-	"""
-	Admin form for requesting confirmation to
-	schedule newsletter for sending.
-	"""
-	schedule = forms.BooleanField( label="Schedule newsletter for sending" )
+    """
+    Admin form for requesting confirmation to
+    schedule newsletter for sending.
+    """
+    schedule = forms.BooleanField( label="Schedule newsletter for sending" )
 
 
 class UnscheduleNewsletterForm( forms.Form ):
-	"""
-	Admin form for requesting confirmation to
-	cancel an already scheduled newsletter.
-	"""
-	cancel_schedule = forms.BooleanField()
+    """
+    Admin form for requesting confirmation to
+    cancel an already scheduled newsletter.
+    """
+    cancel_schedule = forms.BooleanField()

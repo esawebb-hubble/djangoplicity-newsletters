@@ -36,42 +36,42 @@ from django.conf import settings
 
 @task( name="mailinglists.mailman_send_subscribe", ignore_result=True )
 def mailman_send_subscribe( subscription_pk ):
-	"""
-	Task to subscribe an email to a mailman list. Task is executed
-	when e.g. a person subscribes via e.g. mailchimp.
-	"""
-	# Only run on production
-	if settings.SITE_ENVIRONMENT != 'production':
-		return
+    """
+    Task to subscribe an email to a mailman list. Task is executed
+    when e.g. a person subscribes via e.g. mailchimp.
+    """
+    # Only run on production
+    if settings.SITE_ENVIRONMENT != 'prod':
+        return
 
-	from djangoplicity.mailinglists.models import Subscription
+    from djangoplicity.mailinglists.models import Subscription
 
-	logger = mailman_send_unsubscribe.get_logger()
+    logger = mailman_send_unsubscribe.get_logger()
 
-	sub = Subscription.objects.get( pk=subscription_pk )
-	sub.list.mailman._subscribe( sub.subscriber.email )
+    sub = Subscription.objects.get( pk=subscription_pk )
+    sub.list.mailman._subscribe( sub.subscriber.email )
 
-	logger.info( "Subscribed %s to mailman list %s" % ( sub.subscriber.email, sub.list.name ) )
+    logger.info( "Subscribed %s to mailman list %s" % ( sub.subscriber.email, sub.list.name ) )
 
 
 @task( name="mailinglists.mailman_send_unsubscribe", ignore_result=True )
 def mailman_send_unsubscribe( subscription_pk ):
-	"""
-	Task to subscribe an email to a mailman list. Task is executed
-	when e.g. a person subscribes via e.g. mailchimp.
-	"""
-	# Only run on production
-	if settings.SITE_ENVIRONMENT != 'production':
-		return
+    """
+    Task to subscribe an email to a mailman list. Task is executed
+    when e.g. a person subscribes via e.g. mailchimp.
+    """
+    # Only run on production
+    if settings.SITE_ENVIRONMENT != 'prod':
+        return
 
-	from djangoplicity.mailinglists.models import Subscription
+    from djangoplicity.mailinglists.models import Subscription
 
-	logger = mailman_send_unsubscribe.get_logger()
+    logger = mailman_send_unsubscribe.get_logger()
 
-	sub = Subscription.objects.get( pk=subscription_pk )
-	email = sub.subscriber.email
-	sub.delete()
+    sub = Subscription.objects.get( pk=subscription_pk )
+    email = sub.subscriber.email
+    sub.delete()
 
-	sub.list.mailman._unsubscribe( sub.subscriber.email )
+    sub.list.mailman._unsubscribe( sub.subscriber.email )
 
-	logger.info( "Unsubscribed %s from mailman list %s" % email )
+    logger.info( "Unsubscribed %s from mailman list %s" % email )
