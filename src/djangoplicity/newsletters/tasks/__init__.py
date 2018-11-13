@@ -38,6 +38,7 @@ from requests.exceptions import HTTPError
 
 from celery.task import task
 from celery.utils.log import get_task_logger
+from django.conf import settings
 from django.core.cache import cache
 
 
@@ -176,6 +177,10 @@ def abuse_reports():
     over the last 4 weeks.
     This task is meant to be run once a week
     '''
+    # Only run on production
+    if settings.SITE_ENVIRONMENT != 'prod':
+        return
+
     from datetime import datetime, timedelta
     from django.core.mail import EmailMessage
     from djangoplicity.mailinglists.models import MailChimpList
