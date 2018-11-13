@@ -41,7 +41,7 @@ setup(
         'setuptools',
         'certifi',
         'django-mailman == 0.4+eso1',
-        'mailchimp3 == 3.0.4',
+        'mailchimp3 == 3.0.6',
     ],
     include_package_data=True,
     zip_safe=False,

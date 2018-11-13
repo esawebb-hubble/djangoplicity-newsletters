@@ -37,6 +37,7 @@ from urllib import urlencode
 from requests.exceptions import HTTPError
 
 from mailchimp3 import MailChimp
+from mailchimp3.mailchimpclient import MailChimpError
 
 from django.apps import apps
 from django.conf import settings
@@ -520,31 +521,23 @@ class MailChimpList(models.Model):
             )
             # If we get a response then subscriber already exists
             return True
-        except HTTPError as e:
-            if e.response.status_code != 404:
+        except MailChimpError as e:
+            if e.args[0]['status'] != 404:
                 raise e
             # We got a 404 indicating that the address is not already a
             # member, all good
 
         logger.debug('Will run lists.members.create for email "%s"', email)
-        try:
-            self.connection(
-                'lists.members.create',
-                self.list_id, {
-                    'email_address': email,
-                    'email_type': email_type,
-                    'status': 'pending' if double_optin else 'subscribed',
-                    'merge_fields': merge_fields,
-                    'interests': interests,
-                },
-            )
-        except HTTPError as e:
-            title = e.response.json()['title']
-
-            if title == 'Member Exists':
-                # Email is already subscribed to the the list
-                return True
-            raise e
+        self.connection(
+            'lists.members.create',
+            self.list_id, {
+                'email_address': email,
+                'email_type': email_type,
+                'status': 'pending' if double_optin else 'subscribed',
+                'merge_fields': merge_fields,
+                'interests': interests,
+            },
+        )
 
         return True
 
@@ -566,8 +559,8 @@ class MailChimpList(models.Model):
                 email_hash,
             )
             # If we get a response then subscriber does exists
-        except HTTPError as e:
-            if e.response.status_code != 404:
+        except MailChimpError as e:
+            if e.args[0]['status'] != 404:
                 raise e
 
             # We got a 404, so the subscribers doesn't exist
@@ -644,8 +637,8 @@ class MailChimpList(models.Model):
                 email_hash,
             )
             # If we get a response then subscriber does exists
-        except HTTPError as e:
-            if e.response.status_code != 404:
+        except MailChimpError as e:
+            if e.args[0]['status'] != 404:
                 raise e
             return False  # TODO: Should we send an action back?
 
@@ -1044,17 +1037,17 @@ class MailChimpListToken(models.Model):
     get_absolute_url.short_description = 'Webhook URL'
 
     @classmethod
-    def create(cls, list):
+    def create(cls, l):
         '''
         Create a MailChimpListToken for a MailChimpList.
         '''
-        if not list.list_id:
+        if not l.list_id:
             raise Exception('List is empty, cannot create token')
 
         uuid = str(uuidmod.uuid4())
-        token = cls.token_value(list.list_id, uuid)
+        token = cls.token_value(l.list_id, uuid)
 
-        obj = cls(list=list, uuid=uuid, token=token)
+        obj = cls(list=l, uuid=uuid, token=token)
         obj.save()
 
         return obj
