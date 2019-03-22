@@ -119,7 +119,13 @@ class NewsletterEmbedView(NewsletterDetailView):
 
     def render_to_response(self, context, **response_kwargs):
         newsletter_data = self.object.render( {}, store=False )
-        return HttpResponse(newsletter_data['html'])
+
+        # We want the links in the Newsletter to open in the iframe's parent
+        # so we add a base to the head
+        content = newsletter_data['html']
+        content = content.replace('<head>', '<head><base target="_blank" />')
+
+        return HttpResponse(content)
 
     def get_context_data(self, **kwargs):
         '''
