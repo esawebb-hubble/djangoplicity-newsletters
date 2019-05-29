@@ -35,6 +35,8 @@
     </fieldset>
 {% elif is_past %}
     <p class="errornote">Release date {{original.release_date}} is in the past. Please change to a future date, or alternatively <a href="../send_now/">send now</a>.</p>
+{% elif original.subject == '' %}
+    <p class="errornote">The newsletter cannot be sent without a subject, please <a href="../">add a subject and try again</a>.</p>
 {% else %}
     <form action="." method="post" id="{{ opts.model_name }}_form">{% csrf_token %}{% block form_top %}{% endblock %}
     <div>
