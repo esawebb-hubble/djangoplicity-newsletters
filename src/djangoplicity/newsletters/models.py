@@ -81,6 +81,8 @@ from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
 
 logger = logging.getLogger(__name__)
 
+SUBJECT_MAX_LENGTH = 500
+
 
 def make_nl_id():
     '''
@@ -301,7 +303,7 @@ class MailerLog( models.Model ):
     plugin = models.CharField( max_length=255 )
     name = models.CharField( max_length=255 )
     parameters = models.TextField( blank=True )
-    subject = models.CharField( max_length=255, blank=False )
+    subject = models.CharField( max_length=SUBJECT_MAX_LENGTH, blank=False )
     newsletter_pk = models.IntegerField()
     error = models.TextField( blank=True )
 
@@ -425,7 +427,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
     from_email = models.EmailField( blank=True )
 
     # Content
-    subject = models.CharField( max_length=255, blank=True )
+    subject = models.CharField( max_length=SUBJECT_MAX_LENGTH, blank=True )
     text = models.TextField( blank=True )
     html = models.TextField( verbose_name="HTML", blank=True )
 
@@ -679,6 +681,11 @@ class Newsletter( ArchiveModel, TranslationModel ):
 
         if not self.created:  # pylint: disable=E0203
             self.created = datetime.today()
+
+        # Make sure that the subject is below the limit (which could happen
+        # if it's generated from a template)
+        if len(self.subject) > SUBJECT_MAX_LENGTH:
+            self.subject = self.subject[:SUBJECT_MAX_LENGTH - 3] + '...'
 
         if self.is_source() and not self.frozen:
             if self.from_name == '':
