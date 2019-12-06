@@ -47,10 +47,14 @@ class NewsletterOptions(ArchiveOptions):
         default = NewsletterCategoryQuery(browsers=('normal', 'viewall'), relation_field='type',
                     url_field='slug', title_field='name', use_category_title=True,
                     verbose_name='%s')
+        site_embed = NewsletterCategoryQuery(browsers=('html_embed',), relation_field='type',
+                    url_field='slug', title_field='name', use_category_title=True,
+                    verbose_name='%s')
 
     class Browsers(object):
         normal = ListBrowser(paginate_by=50, index_template='index_newsletters.html')
         viewall = ListBrowser(paginate_by=100)
+        html_embed = ListBrowser(verbose_name='HTML', paginate_by=100, index_template='index_newsletters_embed.html')
 
     class Import(object):
         uploadable = True
