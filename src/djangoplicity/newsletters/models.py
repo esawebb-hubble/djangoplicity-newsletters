@@ -539,6 +539,9 @@ class Newsletter( ArchiveModel, TranslationModel ):
             if res:
                 raise Exception(res)
 
+        # Save before frozen to render and save translations
+        self.save()
+        # Freeze it and save again
         self.frozen = True
         self.save()
 
