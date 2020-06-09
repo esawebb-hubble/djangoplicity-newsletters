@@ -632,7 +632,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
         data.update(self.get_feed_data())
 
         defaults = {
-            'base_url': "https://%s" % Site.objects.get_current().domain,
+            'base_url': "{}://{}".format(getattr(settings, "URLS_SCHEME", "https"), Site.objects.get_current().domain),
             'MEDIA_URL': settings.MEDIA_URL,
             'STATIC_URL': settings.STATIC_URL,
             'ARCHIVE_ROOT': getattr( settings, "ARCHIVE_ROOT", "" ),
