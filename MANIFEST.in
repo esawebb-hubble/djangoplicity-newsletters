@@ -30,5 +30,5 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 include *.txt
-recursive-include src/djangoplicity/newsletters/templates *
-recursive-include src/djangoplicity/newsletters/static * 
+recursive-include djangoplicity/newsletters/ *
+recursive-include djangoplicity/mailinglists/ *
