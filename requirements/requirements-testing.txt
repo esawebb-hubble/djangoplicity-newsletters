@@ -1,0 +1,6 @@
+# generate code coverage reports
+coverage
+
+# run the tests against multiple
+# versions of Django and Python
+tox

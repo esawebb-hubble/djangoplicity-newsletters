@@ -1,0 +1,18 @@
+bash:
+	docker exec -it djangoplicity-newsletters bash
+
+test:
+	docker exec -it djangoplicity-newsletters coverage run --source='.' manage.py test
+
+coverage-html:
+	docker exec -it djangoplicity-newsletters coverage html
+	open ./htmlcov/index.html
+
+test-python27:
+	docker exec -it djangoplicity-newsletters tox -e py27-django111
+
+migrate:
+	docker exec -it djangoplicity-newsletters python manage.py migrate
+
+makemigrations:
+	docker exec -it djangoplicity-newsletters python manage.py makemigrations

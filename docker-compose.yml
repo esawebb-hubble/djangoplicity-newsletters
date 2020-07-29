@@ -1,0 +1,84 @@
+version: '3.4'
+
+x-common: &common
+  build: .
+  volumes:
+    - media:/app/media
+    - import:/app/import
+    - ./djangoplicity:/app/djangoplicity
+    - ./test_project/:/app/test_project
+    - ./htmlcov:/app/htmlcov
+    - ./.coveragerc:/app/.coveragerc
+    - ./tests:/app/tests
+
+services:
+  db:
+    image: postgres:10.5
+    container_name: djangoplicity-newsletters-db
+    restart: always
+    environment:
+      POSTGRES_DB: djangoplicity-newsletters
+      POSTGRES_USER: djangoplicity-newsletters
+      POSTGRES_PASSWORD: djangoplicity-newsletters
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "50000:5432"
+
+  web:
+    <<: *common
+    container_name: djangoplicity-newsletters
+    command: ["./scripts/wait-for-it.sh", "db:5432", "-t", "10", "--", "./scripts/command-dev.sh"]
+    ports:
+      - "8002:8000"
+    environment:
+      BEAT: ${BEAT:-OFF}
+    depends_on:
+      - db
+
+  broker:
+    image: rabbitmq:3.8.3
+    container_name: djangoplicity-newsletters-broker
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  celery:
+    <<: *common
+    container_name: djangoplicity-newsletters-celery
+    # Celerybeat included, not recommended for production
+    command: ["celery", "-B", "--app=test_project", "--concurrency=8", "--hostname=worker1@%h", "--loglevel=INFO", "--queues=celery", "worker"]
+    depends_on:
+      - broker
+      - web
+
+  flower:
+    <<: *common
+    container_name: djangoplicity-newsletters-flower
+    # TODO: Change url prefix to /admin/tasks when having nginx proxy
+    command: ["celery", "--app=test_project", "--concurrency=8", "--db=/app/tmp/flowerdb", "--persistent", "--port=5555", "flower"]
+    depends_on:
+      - broker
+      - web
+    ports:
+      - "5557:5555"
+
+  beat:
+    build: .
+    container_name: djangoplicity-newsletters-beat
+    command:
+      [
+        "celery",
+        "--app=test_project",
+        "--loglevel=INFO",
+        "--pidfile=/app/tmp/beat.pid",
+        "--schedule=/app/celerybeat-schedule",
+        "beat",
+      ]
+    depends_on:
+      - broker
+      - web
+volumes:
+  pgdata:
+  import:
+  media:
