@@ -30,6 +30,9 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 from celery.task import task
 from datetime import datetime, timedelta
 from django.conf import settings
@@ -37,7 +40,7 @@ from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.db import models, transaction
 from django.utils.encoding import smart_unicode
-from urllib import urlencode
+from urllib.parse import urlencode
 from djangoplicity.mailinglists.models import MailChimpList, MailChimpListToken
 
 
@@ -79,7 +82,7 @@ def keys2str( kwargs ):
     Convert the keys of a dictionary into string keys.
     """
     newkwargs = {}
-    for k, v in kwargs.items():
+    for k, v in list(kwargs.items()):
         newkwargs[str( k )] = v
     return newkwargs
 

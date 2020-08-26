@@ -16,3 +16,9 @@ migrate:
 
 makemigrations:
 	docker exec -it djangoplicity-newsletters python manage.py makemigrations
+
+futurize-stage1:
+	docker exec -it djangoplicity-newsletters futurize --stage1 -w -n .
+
+futurize-stage2:
+	docker exec -it djangoplicity-newsletters futurize --stage2 --nofix=newstyle -w -n .

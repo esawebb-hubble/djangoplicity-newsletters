@@ -30,6 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE
 
 
+from builtins import object
 import re
 
 
@@ -56,7 +57,7 @@ class DataQueryParser(object):
             2) Follow trail into the dictionary and set the value dict['merges']['GROUPINGS'][0]['name'] = val
         '''
         queryvars = {}
-        for k, v in querydict.items():
+        for k, v in list(querydict.items()):
             trail = DataQueryParser._parse_key(k)
             if trail and len(trail) > 0:
                 DataQueryParser._set_value(queryvars, trail, v)

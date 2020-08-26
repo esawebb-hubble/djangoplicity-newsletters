@@ -69,6 +69,7 @@ The parameters are stored in MailerParameter, and are automatically created by t
 ----
 '''
 
+from builtins import str
 import logging
 from email import charset as Charset
 from requests.exceptions import HTTPError
@@ -317,7 +318,7 @@ class MailChimpMailerPlugin(MailerPlugin):
                 'condition_type': 'Interests',
                 'field': 'interests-%s' % category_id,
                 'op': 'interestcontains' if language else 'interestnotcontains',
-                'value': [language] if language else mc_languages.values(),
+                'value': [language] if language else list(mc_languages.values()),
             }],
         }
 
@@ -620,7 +621,7 @@ class MailChimpMailerPlugin(MailerPlugin):
             if lang not in mc_languages:
                 raise Exception("Language '%s' missing in MailChimp 'Preferred language' group for list '%s'"
                         % (lang, self.ml.list_id))
-        for lang in mc_languages.keys():
+        for lang in list(mc_languages.keys()):
             if lang not in nl_languages:
                 raise Exception("Language '%s' missing in list's '%s' languages"
                         % (lang, newsletter.type.name))

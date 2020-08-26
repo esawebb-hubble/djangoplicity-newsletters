@@ -29,11 +29,16 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import zip
+from builtins import range
 import hashlib
 import logging
 import uuid as uuidmod
 from datetime import datetime, timedelta
-from urllib import urlencode
+from urllib.parse import urlencode
 from requests.exceptions import HTTPError
 
 from mailchimp3 import MailChimp
@@ -167,7 +172,7 @@ class List(models.Model):
                 email = sub.subscriber.email
                 sub.delete()
                 self._unsubscribe(email)
-        except Subscription.DoesNotExist, e:
+        except Subscription.DoesNotExist as e:
             raise e
 
     def _subscribe(self, email):
@@ -197,7 +202,7 @@ class List(models.Model):
         mailman_members = self.mailman.get_members()
 
         if mailman_members:
-            mailman_emails, _mailman_names = zip(*mailman_members)
+            mailman_emails, _mailman_names = list(zip(*mailman_members))
             mailman_emails = set(mailman_emails)
         else:
             mailman_emails = set()
@@ -499,7 +504,7 @@ class MailChimpList(models.Model):
         allowed_fields = ['INTERESTS']
         allowed_fields.extend(self.get_merge_fields().values_list('tag', flat=True))
 
-        for k in merge_fields.keys():
+        for k in list(merge_fields.keys()):
             if k not in allowed_fields:
                 raise Exception('Invalid merge field %s - allowed variables '
                 'are %s' % (k, ', '.join(allowed_fields)))
@@ -611,7 +616,7 @@ class MailChimpList(models.Model):
         ) + ['EMAIL', 'NEW_EMAIL', 'OPTIN_IP', 'OPTIN_TIME', 'MC_LOCATION',
             'INTERESTS']
 
-        for k in merge_fields.keys():
+        for k in list(merge_fields.keys()):
             if k not in allowed_fields:
                 raise Exception('Invalid merge field %s - allowed variables '
                     'are %s' % (k, ', '.join(allowed_fields)))
@@ -935,7 +940,7 @@ class MergeVarMapping(models.Model):
         fields = [x.strip() for x in self.field.split(",")]
 
         if len(fields) == 6:
-            return zip(['addr1', 'addr2', 'city', 'state', 'zip', 'country'], fields)
+            return list(zip(['addr1', 'addr2', 'city', 'state', 'zip', 'country'], fields))
         else:
             raise Exception("Address type merge fields must specify 5 elements.")
 
@@ -956,7 +961,7 @@ class MergeVarMapping(models.Model):
 
                 for mc_f, dj_f in fields:
                     res[dj_f] = val[mc_f] if dj_f not in res else (res[dj_f] + "  " + val[mc_f] if val[mc_f] else res[dj_f])
-                return res.items()
+                return list(res.items())
             except KeyError:
                 return []
         else:

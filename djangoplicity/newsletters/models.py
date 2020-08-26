@@ -46,6 +46,8 @@ The newsletter system consists of the following components:
 ----
 """
 # pylint: disable=E0611
+from builtins import str
+from builtins import object
 import logging
 import requests
 import traceback
@@ -193,7 +195,7 @@ class Mailer( models.Model ):
                 name=self.name,
                 subject=newsletter.subject,
                 newsletter_pk=newsletter.pk,
-                parameters='; '.join([unicode( p ) for p in MailerParameter.objects.filter( mailer=self )]),
+                parameters='; '.join([str( p ) for p in MailerParameter.objects.filter( mailer=self )]),
             )
         return log
 
@@ -210,7 +212,7 @@ class Mailer( models.Model ):
         """
         Get list of mailer plug-in choices
         """
-        choices = [ ( p, pcls.name ) for p, pcls in cls._plugins.items() ]
+        choices = [ ( p, pcls.name ) for p, pcls in list(cls._plugins.items()) ]
         choices.sort( key=lambda x: x[1] )
         return list( choices )
 
@@ -244,7 +246,7 @@ class Mailer( models.Model ):
                     pass
 
             # Delete unknown parameters
-            for param in known_params.values():
+            for param in list(known_params.values()):
                 param.delete()
 
     def __unicode__( self ):
@@ -477,7 +479,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
                 user_id=user_pk,
                 content_type_id=ContentType.objects.get_for_model(self).pk,
                 object_id=self.pk,
-                object_repr=unicode(self.pk),
+                object_repr=str(self.pk),
                 action_flag=CHANGE,
                 change_message=change_message)
 
@@ -505,7 +507,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
                 user_id=user_pk,
                 content_type_id=ContentType.objects.get_for_model(self).pk,
                 object_id=self.pk,
-                object_repr=unicode(self.pk),
+                object_repr=str(self.pk),
                 action_flag=CHANGE,
                 change_message='Scheduling sending canceled.')
 

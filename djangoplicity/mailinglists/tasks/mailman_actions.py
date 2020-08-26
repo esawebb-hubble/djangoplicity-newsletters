@@ -61,7 +61,7 @@ class MailmanAction(ActionPlugin):
         if 'email' in kwargs:
             email = kwargs['email']
         else:
-            for v in kwargs.values():
+            for v in list(kwargs.values()):
                 if hasattr( v, 'email' ):
                     email = v.email
                     break
@@ -144,7 +144,7 @@ class MailmanSyncAction( MailmanAction ):
     def get_arguments( cls, conf, *args, **kwargs ):
         model_identifier = None
         pk = None
-        for v in kwargs.values():
+        for v in list(kwargs.values()):
             if isinstance( v, models.Model ) and hasattr( v, 'get_emails' ) and callable( v.get_emails ):
                 model_identifier = smart_unicode( v._meta )
                 pk = smart_unicode( v._get_pk_val(), strings_only=True )

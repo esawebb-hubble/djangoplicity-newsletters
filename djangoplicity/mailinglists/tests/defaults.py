@@ -30,6 +30,8 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
+from future import standard_library
+standard_library.install_aliases()
 from django.test import TestCase, RequestFactory
 
 
@@ -348,7 +350,7 @@ class WebHooksTest( TestCase ):
         self.factory = RequestFactory()
 
         from djangoplicity.mailinglists.models import MailChimpList, MailChimpListToken
-        from urllib import urlencode
+        from urllib.parse import urlencode
 
         list = MailChimpList( api_key="not_valid", list_id="not_valid", connected=True )
         list.save()
