@@ -45,8 +45,11 @@ jobs:
         run: python manage.py migrate
       - name: Run tests
         run: |
-          coverage run --source='.' manage.py test
+          env DJANGO_SETTINGS_MODULE="test_project.test_settings" coverage run --source='.' manage.py test
           coverage xml
+        env:
+          NEWSLETTERS_MAILCHIMP_API_KEY: ${{ secrets.NEWSLETTERS_MAILCHIMP_API_KEY }}
+          NEWSLETTERS_MAILCHIMP_LIST_ID: ${{ secrets.NEWSLETTERS_MAILCHIMP_LIST_ID }}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:

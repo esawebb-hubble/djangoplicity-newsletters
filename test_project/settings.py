@@ -33,6 +33,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+SHARED_DIR = "%s/shared" % BASE_DIR
+
+SITE_ENVIRONMENT = os.environ.get('ENVIRONMENT', 'dev')
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -45,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'djangoplicity.actions',
+    'djangoplicity.admincomments',
     'djangoplicity.archives.contrib.security',
     'djangoplicity.archives',
     'djangoplicity.metadata',
@@ -165,6 +170,9 @@ DJANGOPLICITY_ADMIN_JS = "djangoplicity/js/admin.js"
 SUBJECT_CATEGORY_CSS = "djangoplicity/css/widgets.css"
 
 NEWSLETTERS_ARCHIVE_ROOT = 'archives/newsletters/'
+
+NEWSLETTERS_MAILCHIMP_API_KEY = os.environ.get("NEWSLETTERS_MAILCHIMP_API_KEY")
+NEWSLETTERS_MAILCHIMP_LIST_ID = os.environ.get("NEWSLETTERS_MAILCHIMP_LIST_ID")
 
 TINYMCE_DEFAULT_CONFIG = {
     'height': 360,
