@@ -32,7 +32,7 @@
 from django.apps import apps
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_text
 
 from djangoplicity.actions.plugins import ActionPlugin  # pylint: disable=E0611
 
@@ -56,8 +56,8 @@ class MailChimpAction(ActionPlugin):
                     val._meta.get_field('email')
 
                     # Same method as used in django.core.serializer.python
-                    model_identifier = smart_unicode(val._meta)
-                    pk = smart_unicode(val._get_pk_val(), strings_only=True)
+                    model_identifier = smart_text(val._meta)
+                    pk = smart_text(val._get_pk_val(), strings_only=True)
                     break
                 except FieldDoesNotExist:
                     pass
@@ -111,7 +111,7 @@ class MailChimpSubscribeAction(MailChimpAction):
                 merge_fields=merge_fields,
                 double_optin=conf['double_optin'],
                 send_welcome=conf['send_welcome'],
-                async=False,
+                is_async=False,
             )
             self.get_logger().info(
                 'Subscribed %s to MailChimp list %s' % (obj.email, mlist.name))
@@ -145,7 +145,7 @@ class MailChimpUnsubscribeAction(MailChimpAction):
 
             if email:
                 list = self._get_list(conf['list_id'])
-                list.unsubscribe(email, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], async=False)
+                list.unsubscribe(email, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], is_async=False)
                 self.get_logger().info("Unsubscribed %s from MailChimp list %s" % (email, list.name))
 
 
@@ -163,8 +163,8 @@ class MailChimpUpdateAction(MailChimpAction):
         if 'instance' in kwargs and 'changes' in kwargs:
             instance = kwargs['instance']
             changes = kwargs['changes']
-            model_identifier = smart_unicode(instance._meta)
-            pk = smart_unicode(instance._get_pk_val(), strings_only=True)
+            model_identifier = smart_text(instance._meta)
+            pk = smart_text(instance._get_pk_val(), strings_only=True)
             return ([], {'model_identifier': model_identifier, 'pk': pk, 'changes': changes})
 
         return ([], {'model_identifier': None, 'pk': None, 'changes': {}})
@@ -198,22 +198,22 @@ class MailChimpUpdateAction(MailChimpAction):
                 if before == '':
                     # No email before, so wasn't subscribed.
                     merge_fields = list.create_merge_fields(obj)
-                    list.subscribe(after, merge_fields=merge_fields, double_optin=conf['double_optin'], send_welcome=conf['send_welcome'], async=False)
+                    list.subscribe(after, merge_fields=merge_fields, double_optin=conf['double_optin'], send_welcome=conf['send_welcome'], is_async=False)
                     self.get_logger().info("Subscribed email address '%s' to MailChimp list %s" % (after, list.name))
                 else:
                     if after.strip() == '':
                         # Unsubscribe email, since new email is empty
-                        list.unsubscribe(before, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], async=False)
+                        list.unsubscribe(before, delete_member=conf['delete_member'], send_goodbye=conf['send_goodbye'], is_async=False)
                         self.get_logger().info("Unsubscribed email address '%s' from MailChimp list %s" % (before, list.name))
                     else:
 
                         merge_fields = list.create_merge_fields(obj, changes=changes)
-                        list.update_profile(before, after, merge_fields=merge_fields, async=False)
+                        list.update_profile(before, after, merge_fields=merge_fields, is_async=False)
                         self.get_logger().info("Changed email address from '%s' to '%s' on MailChimp list %s" % (before, after, list.name))
             else:
                 # Email was not updated - other parts was changed
                 merge_fields = list.create_merge_fields(obj, changes=changes)
-                list.update_profile(obj.email, obj.email, merge_fields=merge_fields, async=False)
+                list.update_profile(obj.email, obj.email, merge_fields=merge_fields, is_async=False)
                 self.get_logger().info("Updated profile of subscriber with email address '%s' on MailChimp list %s" % (obj.email, list.name))
 
 

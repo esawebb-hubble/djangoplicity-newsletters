@@ -30,5 +30,5 @@
 # POSSIBILITY OF SUCH DAMAGE
 #
 
-from djangoplicity.mailinglists.tests.defaults import * 
-from djangoplicity.mailinglists.tests.mailchimpevents import *
+# from djangoplicity.mailinglists.tests.defaults import *
+# from djangoplicity.mailinglists.tests.mailchimpevents import *

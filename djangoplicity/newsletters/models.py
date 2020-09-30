@@ -48,6 +48,7 @@ The newsletter system consists of the following components:
 # pylint: disable=E0611
 from builtins import str
 from builtins import object
+from future.utils import python_2_unicode_compatible
 import logging
 import requests
 import traceback
@@ -104,6 +105,7 @@ def make_nl_id():
     return str(max_id + 1)
 
 
+@python_2_unicode_compatible
 class Mailer( models.Model ):
     """
     Model for defining mailers. A newsletter type can define several mailers to use
@@ -249,7 +251,7 @@ class Mailer( models.Model ):
             for param in list(known_params.values()):
                 param.delete()
 
-    def __unicode__( self ):
+    def __str__( self ):
         return "%s: %s" % ( self.get_plugincls().name, self.name )
 
     class Meta:
@@ -260,6 +262,7 @@ class Mailer( models.Model ):
 post_save.connect( Mailer.post_save_handler, sender=Mailer )
 
 
+@python_2_unicode_compatible
 class MailerParameter( models.Model ):
     """
     Parameter for a mailer (e.g. mailchimp list id, or list of email addresses).
@@ -288,7 +291,7 @@ class MailerParameter( models.Model ):
         elif self.type == 'date':
             return self.value
 
-    def __unicode__( self ):
+    def __str__( self ):
         return u"%s = %s (%s)" % ( self.name, self.value, self.type )
 
     class Meta:
@@ -313,13 +316,14 @@ class MailerLog( models.Model ):
         ordering = ['-timestamp']
 
 
+@python_2_unicode_compatible
 class Language( models.Model ):
     """
     Available languages for Local newsletters
     """
     lang = LanguageField(primary_key=True, verbose_name=_( 'Language' ), max_length=7)
 
-    def __unicode__( self ):
+    def __str__( self ):
         for lang, name in settings.LANGUAGES:
             if lang == self.lang:
                 return name
@@ -329,6 +333,7 @@ class Language( models.Model ):
         ordering = ['lang']
 
 
+@python_2_unicode_compatible
 class NewsletterType( models.Model ):
     """
     Definition of a newsletter type - e.g. ESO Outreach Community Newsletter
@@ -375,13 +380,14 @@ class NewsletterType( models.Model ):
         lang = translation.get_language()
         return translation_reverse( 'newsletters_defaultquery', args=[self.slug], lang=lang )
 
-    def __unicode__( self ):
+    def __str__( self ):
         return self.name
 
     class Meta:
         ordering = ['name']
 
 
+@python_2_unicode_compatible
 class NewsletterLanguage( models.Model ):
     """
     Available languages for Local newsletters
@@ -393,13 +399,14 @@ class NewsletterLanguage( models.Model ):
     default_editorial = models.TextField( blank=True )
     default_editorial_text = models.TextField( blank=True )
 
-    def __unicode__( self ):
+    def __str__( self ):
         return '%s - %s' % (self.newsletter_type, self.language.lang)
 
     class Meta:
         ordering = ['language']
 
 
+@python_2_unicode_compatible
 class Newsletter( ArchiveModel, TranslationModel ):
     """
     A definition of a newsletter.
@@ -830,7 +837,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
 
         return unpublished
 
-    def __unicode__( self ):
+    def __str__( self ):
         return self.subject
 
     class Meta:
@@ -997,6 +1004,7 @@ class NewsletterContent( models.Model ):
         return ctx
 
 
+@python_2_unicode_compatible
 class DataSourceSelector( models.Model ):
     """
     Data source selector is used for selecting objects when auto-generating
@@ -1042,13 +1050,14 @@ class DataSourceSelector( models.Model ):
 
         return models.Q( **d ) if self.filter == 'I' else ~models.Q( **d )
 
-    def __unicode__( self ):
+    def __str__( self ):
         return self.name
 
     class Meta:
         ordering = ['name']
 
 
+@python_2_unicode_compatible
 class DataSourceOrdering( models.Model ):
     """
     Data source ordering is used to order objects in a data source
@@ -1060,13 +1069,14 @@ class DataSourceOrdering( models.Model ):
     def get_order_by( self ):
         return [x.strip() for x in self.fields.split( ',' ) ]
 
-    def __unicode__( self ):
+    def __str__( self ):
         return self.name
 
     class Meta:
         ordering = ['name']
 
 
+@python_2_unicode_compatible
 class NewsletterDataSource( models.Model ):
     """
     Data source for a newsletter. A data source is a reference to a
@@ -1083,7 +1093,7 @@ class NewsletterDataSource( models.Model ):
     ordering = models.ForeignKey( DataSourceOrdering, null=True, blank=True )
     limit = models.CharField( max_length=255, blank=True )
 
-    def __unicode__( self ):
+    def __str__( self ):
         return "%s: %s" % ( self.type, self.title )
 
     def _limit_queryset( self, qs ):
@@ -1143,6 +1153,7 @@ class NewsletterDataSource( models.Model ):
         ordering = ['type__name', 'title']
 
 
+@python_2_unicode_compatible
 class NewsletterFeedDataSource(models.Model):
     '''
     Feed data source for a newsletter. Use to select data from a given
@@ -1158,7 +1169,7 @@ class NewsletterFeedDataSource(models.Model):
     fetch_translations = models.BooleanField(default=True, help_text=_(
         'Fetch translated version of the feed if available'))
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def _limit_data(self, data):

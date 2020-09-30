@@ -43,7 +43,7 @@ from django.contrib import admin
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _
 
 # pylint: disable=E0611
@@ -242,7 +242,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
             request,
             "admin/newsletters/newsletter/generate_form.html",
             {
-                'title': _( 'Generate %s' ) % force_unicode( self.model._meta.verbose_name ),
+                'title': _( 'Generate %s' ) % force_text( self.model._meta.verbose_name ),
                 'adminform': form,
             },
         )
@@ -264,7 +264,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
             form = TestEmailsForm()
 
         ctx = {
-            'title': _( '%s: Send test email' ) % force_unicode( self.model._meta.verbose_name ).title(),
+            'title': _( '%s: Send test email' ) % force_text( self.model._meta.verbose_name ).title(),
             'adminform': form,
             'original': nl,
         }
@@ -293,7 +293,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
             form = SendNewsletterForm()
 
         ctx = {
-            'title': _( '%s: Send now' ) % force_unicode( self.model._meta.verbose_name ).title(),
+            'title': _( '%s: Send now' ) % force_text( self.model._meta.verbose_name ).title(),
             'adminform': form,
             'original': nl,
         }
@@ -324,7 +324,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
             form = ScheduleNewsletterForm()
 
         ctx = {
-            'title': _( '%s: Schedule for sending' ) % force_unicode( self.model._meta.verbose_name ).title(),
+            'title': _( '%s: Schedule for sending' ) % force_text( self.model._meta.verbose_name ).title(),
             'adminform': form,
             'original': nl,
             'is_past': datetime.now() + timedelta(minutes=2) >= nl.release_date,
@@ -356,7 +356,7 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
             form = UnscheduleNewsletterForm()
 
         ctx = {
-            'title': _( '%s: Cancel schedule' ) % force_unicode( self.model._meta.verbose_name ).title(),
+            'title': _( '%s: Cancel schedule' ) % force_text( self.model._meta.verbose_name ).title(),
             'adminform': form,
             'original': nl,
         }
