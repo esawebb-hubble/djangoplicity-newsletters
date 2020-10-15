@@ -1,0 +1,23 @@
+{% load i18n %}
+{% load djangoplicity_text_utils %}
+Djangoplicity Newsletters Science Newsletter
+======================
+{% if editorial %}
+{% if editorial_subject %}
+*{{ editorial_subject }}*
+{% endif %}
+{{ editorial_text }}
+{% endif %}
+
+{% if data.scienceannouncements %}
+Science Announcements
+-------------------------
+{% for announcement in data.scienceannouncements %}
+*{{ announcement.title|safe }}{% if announcement.subtitle%} - {{ announcement.subtitle|safe }}{% endif %}*
+
+{{ announcement.release_date|date }}: {{ announcement.description|striptags|truncatewords:50|unescape|safe }} [read more on {{base_url}}{{ announcement.get_absolute_url }}]
+
+
+
+{% endfor %}{% endif %}
+{% with email="djangoplicity-newsletters@example.com" %}{% include "newsletters/includes/text/footer.txt" %}{% endwith %}

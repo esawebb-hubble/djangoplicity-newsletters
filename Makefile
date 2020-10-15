@@ -2,7 +2,7 @@ bash:
 	docker exec -it djangoplicity-newsletters bash
 
 test:
-	docker exec -it djangoplicity-newsletters coverage run --source='.' manage.py test
+	docker exec -it djangoplicity-newsletters env DJANGO_SETTINGS_MODULE="test_project.test_settings" coverage run --source='.' manage.py test
 
 coverage-html:
 	docker exec -it djangoplicity-newsletters coverage html

@@ -4,4 +4,18 @@ branch = 1
 omit = */migrations/*
 
 [report]
-omit = *tests*,*test_project*,*migrations*,.tox/*,setup.py,*settings.py,manage.py
+omit =
+  *tests*
+  *test_project*
+  *migrations*
+  .tox/*
+  setup.py
+  *settings.py
+  manage.py
+  djangoplicity/__init__.py
+  djangoplicity/mailinglists/views.py
+  djangoplicity/newsletters/mailers.py
+  djangoplicity/mailinglists/tasks/mailman.py
+  djangoplicity/mailinglists/tasks/mailman_actions.py
+  djangoplicity/mailinglists/tasks/mailchimp_tasks.py
+  djangoplicity/mailinglists/tasks/mailchimp_actions.py

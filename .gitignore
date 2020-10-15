@@ -8,3 +8,4 @@
 htmlcov/*
 !htmlcov/.keep
 .coverage
+.env

@@ -1,0 +1,60 @@
+{% extends "newsletters/base_newsletters.html" %}
+{% load release_links djangoplicity_datetime %}
+
+{% block html_title %}Djangoplicity Newsletters News{% endblock %}
+{% block facebook_title %}Djangoplicity Newsletters News{% endblock %}
+{% block text_only %}{% include "newsletters/includes/text_only_release.html" with org="Djangoplicity Newsletters" %}{% endblock %}
+
+{% block header_content %}
+    {% if data.release %}
+        {% with text_color="#ffffff" header_title="Djangoplicity Newsletters News" header_subtitle=data.release.release_date|date %}
+        {% with release_date=data.release.release_date link_url=base_url|add:data.release.get_absolute_url pretitle="Djangoplicity Newsletters "|add:data.release.release_type.name|add:" "|add:data.release.id embargo="" title=data.release.title subtitle=data.release.subtitle main_image=data.release.main_image %}
+        {% include "newsletters/includes/header.html" %}
+        {% endwith %}
+        {% endwith %}
+    {% else %}
+        {% with text_color="#ffffff" header_title="Djangoplicity Newsletters News" header_subtitle="" %}
+        {% include "newsletters/includes/header.html" %}
+        {% endwith %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% with embargo="" release=data.release signature_date=data.release.release_date signature="Djangoplicity Newsletters Information Centre" %}
+        {% include "newsletters/includes/press_release.html" %}
+    {% endwith %}
+
+    {% if editorial %}
+    <br /><hr style="{{hr_style}}"><br />
+    {% include "newsletters/includes/editorial.html" %}
+    {% endif %}
+
+    {% if data.announcements %}
+    <br /><hr style="{{hr_style}}"><br />
+    {% with objects=data.announcements org="Djangoplicity Newsletters" title="Announcements" feed_url="https://feeds.feedburner.com/newsletters_annoucements" urlpattern="announcements_defaultquery" %}
+        {% include "newsletters/includes/archiveobjects.html" %}
+    {% endwith %}
+    {% endif %}
+{% endblock %}
+
+{% block sidebar %}
+    {% if data.potws %}
+    {% if enable_sharing %}<br /><hr style="{{hr_style}}"><br />{% endif %}
+    {% with potws=data.potws feed_url="http://feeds.feedburner.com/example_potw/" %}
+        {% include "newsletters/includes/right_potws.html" %}
+    {% endwith %}
+    {% endif %}
+
+    {% if data.newonhubble %}
+    {% if data.potws %}<br /><hr style="{{hr_style}}"><br />{% endif %}
+    {% with newon=data.newonhubble newon_title="spacetelescope.org" %}
+        {% include "newsletters/includes/right_newon.html" %}
+    {% endwith %}
+    {% endif %}
+{% endblock %}
+
+{% block footer %}
+    {% with followus="yes" org="Djangoplicity Newsletters" potw_feed_url="http://feeds.feedburner.com/hubble_potw/" reason="you subscribed to Djangoplicity Newsletters News." footer_potws=data.footer_potws %}
+        {% include "newsletters/includes/footer.html" with width="660" %}
+    {% endwith %}
+{% endblock %}
