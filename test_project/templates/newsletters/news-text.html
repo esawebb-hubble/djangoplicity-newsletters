@@ -1,0 +1,13 @@
+{% load djangoplicity_text_utils release_links djangoplicity_datetime %}
+{% with announcements=data.announcements potws=data.potws newon=data.newonhubble org="Djangoplicity Newsletters" embargo="" reason="you subscribed to Djangoplicity Newsletters News" email="test@example.com" %}{% with signature_date=data.release.release_date signature1="Djangoplicity Newsletters Information Centre" %}{% include "newsletters/includes/text/press_release.txt" %}{% endwith %}
+{% if data.announcements or data.newonhubble or data.potws %}
+*************************************************************************
+
+We would also like to direct your attention to the following:
+{% if announcements %}
+{% include "newsletters/includes/text/announcements.txt" %}{% endif %}{% if potws %}
+{% include "newsletters/includes/text/potws.txt" %}{% endif %}{% if newon %}
+{% include "newsletters/includes/text/newon.txt" with title="spacetelescope.org" %}
+{% endif %}{% endif %}
+{% include "newsletters/includes/text/footer.txt" %}
+{% endwith %}

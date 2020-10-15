@@ -1,0 +1,378 @@
+[
+  {
+    "model": "newsletters.mailer",
+    "pk": 10000,
+    "fields": {
+      "plugin": "djangoplicity.newsletters.mailers.MailChimpMailerPlugin",
+      "name": "Djangoplicity Newsletters News List"
+    }
+  },
+  {
+    "model": "newsletters.language",
+    "pk": "en",
+    "fields": {}
+  },
+  {
+    "model": "newsletters.newslettertype",
+    "pk": 10000,
+    "fields": {
+      "name": "Djangoplicity Newsletters News",
+      "slug": "djangoplicity-newsletters-news",
+      "default_from_name": "Djangoplicity Newsletters",
+      "default_from_email": "djangoplicity-newsletters@example.com",
+      "subject_template": "Djangoplicity Newsletters {{data.release.release_type}} {{data.release.id}} - {{data.release.title|safe}}{% if data.release.subtitle %} \u2014 {{data.release.subtitle|safe}}{% endif %}",
+      "text_template": "{% extends \"newsletters/news-text.html\" %}",
+      "html_template": "{% extends \"newsletters/news.html\" %}",
+      "archive": true,
+      "local_archive": true,
+      "internal_archive": false,
+      "sharing": false,
+      "subscribe_text": "You will never see it because is just for testing",
+      "mailers": [
+        10000
+      ]
+    }
+  },
+  {
+    "model": "newsletters.newslettertype",
+    "pk": 10001,
+    "fields": {
+      "name": "Djangoplicity Newsletters Science with main image",
+      "slug": "djangoplicity-newsletters-science",
+      "default_from_name": "Djangoplicity Newsletters",
+      "default_from_email": "djangoplicity-newsletters@example.com",
+      "subject_template": "Djangoplicity Newsletters science subject",
+      "text_template": "{% extends \"newsletters/science-text.html\" %}",
+      "html_template": "{% extends \"newsletters/science.html\" %}",
+      "archive": true,
+      "local_archive": true,
+      "internal_archive": false,
+      "sharing": false,
+      "subscribe_text": "You will never see it because is just for testing",
+      "mailers": [
+        10000
+      ]
+    }
+  },
+  {
+    "model": "newsletters.newslettertype",
+    "pk": 10002,
+    "fields": {
+      "name": "Djangoplicity Newsletters Science without main image",
+      "slug": "djangoplicity-newsletters-science-simple",
+      "default_from_name": "Djangoplicity Newsletters",
+      "default_from_email": "djangoplicity-newsletters@example.com",
+      "subject_template": "Djangoplicity Newsletters science subject",
+      "text_template": "{% extends \"newsletters/science-text.html\" %}",
+      "html_template": "{% extends \"newsletters/science.html\" %}",
+      "archive": true,
+      "local_archive": true,
+      "internal_archive": false,
+      "sharing": false,
+      "subscribe_text": "You will never see it because is just for testing",
+      "mailers": [
+        10000
+      ]
+    }
+  },
+  {
+    "model": "newsletters.newslettertype",
+    "pk": 10003,
+    "fields": {
+      "name": "Djangoplicity Newsletters Science without main image nor announcement",
+      "slug": "djangoplicity-newsletters-science-dummy",
+      "default_from_name": "Djangoplicity Newsletters",
+      "default_from_email": "djangoplicity-newsletters@example.com",
+      "subject_template": "Djangoplicity Newsletters science subject",
+      "text_template": "{% extends \"newsletters/science-text.html\" %}",
+      "html_template": "{% extends \"newsletters/science.html\" %}",
+      "archive": true,
+      "local_archive": true,
+      "internal_archive": false,
+      "sharing": false,
+      "subscribe_text": "You will never see it because is just for testing",
+      "mailers": [
+        10000
+      ]
+    }
+  },
+  {
+    "model": "newsletters.datasourceselector",
+    "pk": 10000,
+    "fields": {
+      "name": "Release date after NL start date",
+      "filter": "I",
+      "field": "release_date",
+      "match": "gt",
+      "value": "%(start_date)s",
+      "type": "date"
+    }
+  },
+  {
+    "model": "newsletters.datasourceselector",
+    "pk": 10001,
+    "fields": {
+      "name": "Release date before NL end date",
+      "filter": "I",
+      "field": "release_date",
+      "match": "lte",
+      "value": "%(end_date)s",
+      "type": "date"
+    }
+  },
+  {
+    "model": "newsletters.datasourceordering",
+    "pk": 10000,
+    "fields": {
+      "name": "Release Date DESC",
+      "fields": "-release_date"
+    }
+  },
+  {
+    "model": "newsletters.datasourceordering",
+    "pk": 10001,
+    "fields": {
+      "name": "Order DESC",
+      "fields": "-order"
+    }
+  },
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10000,
+    "fields": {
+      "type": 10000,
+      "list": true,
+      "name": "announcements",
+      "title": "Announcements",
+      "content_type": [
+        "announcements",
+        "announcement"
+      ],
+      "ordering": 10000,
+      "limit": "",
+      "selectors": []
+    }
+  },
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10001,
+    "fields": {
+      "type": 10000,
+      "list": true,
+      "name": "footer_potws",
+      "title": "Pictures of the Week Footer",
+      "content_type": [
+        "media",
+        "pictureoftheweek"
+      ],
+      "ordering": 10000,
+      "limit": ":5",
+      "selectors": []
+    }
+  },
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10002,
+    "fields": {
+      "type": 10000,
+      "list": false,
+      "name": "release",
+      "title": "Press Release",
+      "content_type": [
+        "releases",
+        "release"
+      ],
+      "ordering": 10000,
+      "limit": "0:1",
+      "selectors": []
+    }
+  },
+
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10004,
+    "fields": {
+      "type": 10000,
+      "list": true,
+      "name": "potws",
+      "title": "Pictures of the Week",
+      "content_type": [
+        "media",
+        "pictureoftheweek"
+      ],
+      "ordering": 10000,
+      "limit": ":5",
+      "selectors": []
+    }
+  },
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10005,
+    "fields": {
+      "type": 10001,
+      "list": false,
+      "name": "main_image",
+      "title": "Main image",
+      "content_type": [
+        "media",
+        "image"
+      ],
+      "ordering": 10000,
+      "limit": "",
+      "selectors": []
+    }
+  },
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10006,
+    "fields": {
+      "type": 10001,
+      "list": false,
+      "name": "announcement",
+      "title": "Announcement",
+      "content_type": [
+        "announcements",
+        "announcement"
+      ],
+      "ordering": 10000,
+      "limit": "",
+      "selectors": []
+    }
+  },
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10007,
+    "fields": {
+      "type": 10002,
+      "list": false,
+      "name": "announcement",
+      "title": "Announcement",
+      "content_type": [
+        "announcements",
+        "announcement"
+      ],
+      "ordering": 10000,
+      "limit": "",
+      "selectors": []
+    }
+  },
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10008,
+    "fields": {
+      "type": 10001,
+      "list": true,
+      "name": "footer_potws",
+      "title": "Pictures of the Week Footer",
+      "content_type": [
+        "media",
+        "pictureoftheweek"
+      ],
+      "ordering": 10000,
+      "limit": ":5",
+      "selectors": []
+    }
+  },
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10009,
+    "fields": {
+      "type": 10001,
+      "list": true,
+      "name": "scienceannouncements",
+      "title": "Science Announcements",
+      "content_type": [
+        "science",
+        "scienceannouncement"
+      ],
+      "ordering": 10000,
+      "limit": ":5",
+      "selectors": []
+    }
+  },
+  {
+    "model": "newsletters.newsletterdatasource",
+    "pk": 10010,
+    "fields": {
+      "type": 10001,
+      "list": false,
+      "name": "release",
+      "title": "Science Announcements",
+      "content_type": [
+        "releases",
+        "release"
+      ],
+      "ordering": 10000,
+      "limit": "",
+      "selectors": []
+    }
+  },
+  {
+    "model": "newsletters.newsletter",
+    "pk": "10000",
+    "fields": {
+      "lang": "en",
+      "source": null,
+      "translation_ready": false,
+      "type": 10000,
+      "frozen": false,
+      "scheduled_status": "OFF",
+      "scheduled_task_id": "",
+      "send": "2020-01-01T00:00:00",
+      "start_date": "2000-01-01T00:00:00",
+      "end_date": "2020-12-31T23:59:59",
+      "from_name": "Djangoplicity Newsletters",
+      "from_email": "djangoplicity-newsletters@example.com",
+      "subject": "Djangoplicity Newsletters Science Release 10000 - Hubble Celebrates its 30th Anniversary with a Tapestry of Blazing Starbirth \u2014 Hubble Space Telescope\u2019s iconic images and scientific breakthroughs have redefined our view of the Universe. To commemorate three decades of scientific discoveries.",
+      "text": "For Your Information:\n\nDjangoplicity Newsletters Science Release 10000 - Hubble Celebrates its 30th Anniversary with a Tapestry of Blazing Starbirth \u2014 Hubble Space Telescope\u2019s iconic images and scientific breakthroughs have redefined our view of the Universe. To commemorate three decades of scientific discoveries.\n\nFor your convenience the first paragraph of the release is provided below:\n\nAstronomers using the international Gemini Observatory, on Hawaii\u2019s Maunakea, have imaged a very small object in orbit around the Earth, thought to be only a few meters across. According to Grigori Fedorets, the lead astronomer for the observations, the object could be a rare natural rocky object, or it could be something humans put into space decades ago \u2014 essentially space debris. \u201cEither way this is a very compelling object and needs more data to determine what it is,\u201d said Fedorets.\n\nThe release, images and videos are available on:\nhttp://www.spacetelescope.org/news/10000/\n \nSpace Scoop - the children's version of this release is available at: \nhttp://www.spacetelescope.org/news/10000/kids/\n \nKind regards,\nDjangoplicity Newsletters Information Centre\n27 February 2020\n\n\n*************************************************************************\n\nWe would also like to direct your attention to the following:\n\n\n========================\nDjangoplicity Newsletters Announcements\n========================\n\n*Two New Hubblecasts Released for Hubble\u2019s 30th Anniversary*\n\n25 March 2020: As COVID-19 continues to spread globally, NSF\u2019s OIR Lab is actively responding to the situation and taking measures to ensure the safety of its staff and the public. These measures are being taken out of precaution: no COVID-19 case has been confirmed at any of the OIR Lab-sites. \r Update ... [read more on http://test.djangoplicity-newsletters.com/announcements/10000/]\n\nSee latest Djangoplicity Newsletters announcements on http://test.djangoplicity-newsletters.com/announcements/\n\n\n---\nDjangoplicity Newsletters\n3055 Street Name, Moon, MW 78111\n\nTel: +49 00 0000 0000\nFax: +49 00 0000 0000\nEmail: djangoplicity-newsletters@example.com\n\n\n",
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n    <head>\n        <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n\n        <!-- Facebook sharing information tags -->\n        <meta property=\"og:title\" content=\"Djangoplicity Newsletters News\">\n\n        <title>Djangoplicity Newsletters News</title>\n\n    <style type=\"text/css\">\n        \n        #outlook a{\n            padding:0;\n        }\n        body{\n            width:100% !important;\n        }\n        .ReadMsgBody{\n            width:100%;\n        }\n        .ExternalClass{\n            width:100%;\n        }\n        body{\n            -webkit-text-size-adjust:none;\n        }\n        body{\n            margin:0;\n            padding:0;\n        }\n        img{\n            border:0;\n            height:auto;\n            line-height:100%;\n            outline:none;\n            text-decoration:none;\n        }\n        #backgroundTable{\n            height:100% !important;\n            margin:0;\n            padding:0;\n            width:100% !important;\n        }\n        body,#backgroundTable{\n            background-color:#FAFAFA;\n        }\n        #templateContainer{\n            border:1px solid #DDDDDD;\n        }\n        h1,.h1{\n        /* not used here */\n            color:#285A97;\n            display:block;\n            font-family:Helvetica, Arial;\n            font-size:16px;\n            font-weight:bold;\n            line-height:100%;\n            margin-top:0;\n            margin-right:0;\n            margin-bottom:10px;\n            margin-left:0;\n            text-align:left;\n        }\n        h2,.h2{\n            color:#285A97;\n            display:block;\n            font-family:Helvetica, Arial;\n            font-size:16px;\n            font-weight:bold;\n            line-height:100%;\n            margin-top:0;\n            margin-right:0;\n            margin-bottom:10px;\n            margin-left:0;\n            text-align:left;\n        }\n        h3,.h3{\n            color:#285A97;\n            display:block;\n            font-family:Helvetica, Arial;\n            font-size:16px;\n            font-weight:bold;\n            line-height:100%;\n            margin-top:0;\n            margin-right:0;\n            margin-bottom:10px;\n            margin-left:0;\n            text-align:left;\n        }\n        h4,.h4{\n            color:#285A97;\n            display:block;\n            font-family:Helvetica, Arial;\n            font-size:16px;\n            font-weight:bold;\n            line-height:100%;\n            margin-top:0;\n            margin-right:0;\n            margin-bottom:10px;\n            margin-left:0;\n            text-align:left;\n        }\n        #templatePreheader{\n            background-color:#FAFAFA;\n        }\n        .preheaderContent div{\n            color:#505050;\n            font-family:Helvetica, Arial;\n            font-size:10px;\n            line-height:100%;\n            text-align:left;\n        }\n        .preheaderContent div a:link,.preheaderContent div a:visited,.preheaderContent div a .yshortcuts {\n            color:#336699;\n            font-weight:normal;\n            text-decoration:underline;\n        }\n        #templateHeader{\n            background-color:#FFFFFF;\n            border-bottom:0;\n        }\n        .headerContent{\n            color:#202020;\n            font-family:Helvetica, Arial;\n            font-size:34px;\n            font-weight:bold;\n            line-height:100%;\n            padding:0;\n            text-align:center;\n            vertical-align:middle;\n        }\n        .headerContent a:link,.headerContent a:visited,.headerContent a .yshortcuts {\n            color:#336699;\n            font-weight:normal;\n            text-decoration:underline;\n        }\n        #headerImage{\n            height:auto;\n            max-width:600px;\n        }\n        #templateContainer,.bodyContent{\n            background-color:#FFFFFF;\n        }\n        .bodyContent div{\n            color:#505050;\n            font-family:Helvetica, Arial;\n            font-size:14px;\n            line-height:150%;\n            text-align:left;\n        }\n        .bodyContent div a:link,.bodyContent div a:visited,.bodyContent div a .yshortcuts {\n            color:#336699;\n            font-weight:normal;\n            text-decoration:underline;\n        }\n        .bodyContent img{\n            display:inline;\n            height:auto;\n        }\n        #templateSidebar{\n            background-color:#FFFFFF;\n        }\n        .sidebarContent div{\n            color:#505050;\n            font-family:Helvetica, Arial;\n            font-size:12px;\n            line-height:150%;\n            text-align:left;\n        }\n        .sidebarContent div a:link,.sidebarContent div a:visited,.sidebarContent div a .yshortcuts {\n            color:#336699;\n            font-weight:normal;\n            text-decoration:underline;\n        }\n        .sidebarContent img{\n            display:inline;\n            height:auto;\n        }\n        .leftColumnContent{\n            background-color:#FFFFFF;\n        }\n        .leftColumnContent div{\n            color:#505050;\n            font-family:Helvetica, Arial;\n            font-size:14px;\n            line-height:150%;\n            text-align:left;\n        }\n        .leftColumnContent div a:link,.leftColumnContent div a:visited,.leftColumnContent div a .yshortcuts {\n            color:#336699;\n            font-weight:normal;\n            text-decoration:underline;\n        }\n        .leftColumnContent img{\n            display:inline;\n            height:auto;\n        }\n        .rightColumnContent{\n            background-color:#FFFFFF;\n        }\n        .rightColumnContent div{\n            color:#505050;\n            font-family:Helvetica, Arial;\n            font-size:14px;\n            line-height:150%;\n            text-align:left;\n        }\n        .rightColumnContent div a:link,.rightColumnContent div a:visited,.rightColumnContent div a .yshortcuts {\n            color:#336699;\n            font-weight:normal;\n            text-decoration:underline;\n        }\n        .rightColumnContent img{\n            display:inline;\n            height:auto;\n        }\n        #templateFooter{\n            background-color:#FFFFFF;\n            border-top:0;\n        }\n        .footerContent div{\n            color: #707070;\n            font-family: Helvetica, Arial;\n            font-size: 12px;\n            line-height: 125%;\n            text-align: left;\n            padding:0px;\n        }\n        .paddingfooter {\n            padding-left: 10px;\n            padding-right: 10px;\n        }\n        .footerContent div a:link,.footerContent div a:visited,.footerContent div a .yshortcuts {\n            color:#336699;\n            font-weight:normal;\n            text-decoration:underline;\n        }\n        .footerContent img{\n            display:inline;\n        }\n        #social{\n            background-color:#FAFAFA;\n            border:0;\n        }\n        #social div{\n            text-align:center;\n        }\n        #utility{\n            background-color:#FFFFFF;\n            border:0;\n        }\n        #utility div{\n            text-align:center;\n        }\n        #monkeyRewards img{\n            max-width:190px;\n        }\n        \n</style>\n</head>\n<body leftmargin=\"0\" marginwidth=\"0\" topmargin=\"0\" marginheight=\"0\" offset=\"0\" style=\"-webkit-text-size-adjust: none;margin: 0;padding: 0;background-color: #FAFAFA;width: 100% !important;\">\n    <center>\n        <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" height=\"100%\" width=\"100%\" id=\"backgroundTable\" style=\"margin: 0;padding: 0;background-color: #FAFAFA;height: 100% !important;width: 100% !important;\">\n        <tr>\n            <td align=\"center\" valign=\"top\">\n\n                <!-- // Begin Template Preheader \\\\ -->\n                <table border=\"0\" cellpadding=\"10\" cellspacing=\"0\" width=\"700\" id=\"templatePreheader\" style=\"background-color: #FAFAFA;\">\n                <tr>\n                    <td valign=\"top\" class=\"preheaderContent\">\n                    \n<!-- // Begin Module: Standard Preheader \\ --> \n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"> \n    <tr> \n        <td valign=\"top\"> \n            <div style=\"color: #505050;font-family: Helvetica, Arial;font-size: 10px;line-height: 100%;text-align: left;\"> \n         \nDjangoplicity Newsletters  10000:  Hubble Celebrates its 30th Anniversary with a Tapestry of Blazing Starbirth &mdash; Hubble Space Telescope\u2019s iconic images and scientific breakthroughs have redefined our view of the Universe. To commemorate three decades of scientific discoveries.. Astronomers using the international Gemini Observatory, on Hawaii\u2019s Maunakea, have imaged a very small object in orbit around the Earth, thought to be only a few meters across. According to Grigori Fedorets, the lead astronomer for the observations, the object ...<br /><br />\n\n         </div> \n         </td> \n     </tr>\n    \n\n<tr>\n  <td colspan=\"2\" style=\"color: #505050;font-family: Helvetica, Arial;font-size: 10px;line-height: 100%; text-align:center;\">\n      \n      \n       <a href=\"http://test.djangoplicity-newsletters.com/newsletters/djangoplicity-newsletters-news/html/1/\">View in browser</a>\n    </td>\n</tr>\n\n\n</table> \n<!-- // End Module: Standard Preheader \\ --> \n\n                    </td>\n                </tr>\n                </table>\n                <!-- // End Template Preheader \\\\ -->\n\n                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"700\" id=\"templateContainer\" style=\"border: 1px solid #DDDDDD;background-color: #FFFFFF;\">\n                <tr>\n                    <td align=\"center\" valign=\"top\">\n                    \n    \n    \n    \n        \n        \n        <!-- // Begin Template Header \\\\ -->\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"700\" id=\"templateHeader\" style=\"background-color: #000000\">\n    <tr style=\"color:white;\"> \n    <td style=\"padding:15px;\" width=\"140\"> \n        <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\"> \n        <tr> \n        <td><a href=\"http://test.djangoplicity-newsletters.com\"><img src=\"http://test.djangoplicity-newsletters.com/static/newsletters_nl_logo.png\" width=\"140\" border=\"0\"/></a></td> \n        </tr> \n        </table> \n    </td> \n    <td style=\"text-align:right; padding:20px; font-family: Helvetica,Arial; font-size: 26px; color: #ffffff\" width=\"542\">Djangoplicity Newsletters News<div style=\"font-size:13px; color: #ffffff;\">27 February 2020</div></td> \n</tr>\n\n \n</table>\n<!-- // End Template Header \\\\ -->\n\n        \n        \n    \n\n    \n\n                    </td>\n                </tr>\n                <tr>\n                    <td align=\"center\" valign=\"top\">\n                    \n\n                    <!-- // Begin Template Body \\\\ -->\n                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"700\" id=\"templateBody\">\n                        <tr>\n                            <td valign=\"top\" %}\">\n                                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" %}\">\n                                    <tr>\n                                        <td valign=\"top\">\n                                            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" %}\">\n                                                <tr>\n                                                    <td valign=\"top\" class=\"bodyContent\" style=\"background-color: #FFFFFF;\">\n\n                                                        <!-- // Begin Module: Standard Content \\\\ -->\n                                                        <table border=\"0\" cellpadding=\"20\" cellspacing=\"0\" width=\"100%\">\n                                                            <tr>\n                                                                <td valign=\"top\" style=\"background-image: url(http://test.djangoplicity-newsletters.com/static/djp/newsletters/tile.png); background-repeat: repeat-x;\">\n                                                                  <div style=\"color: #505050;font-family: Helvetica, Arial;font-size: 12px;line-height: 130%;text-align: left;\">\n                                                                   \n                                                                   \n    \n        \n\n\n<p>Astronomers using the international Gemini Observatory, on Hawaii\u2019s Maunakea, have imaged a very small object in orbit around the Earth, thought to be only a few meters across. According to Grigori Fedorets, the lead astronomer for the observations, the object could be a rare natural rocky object, or it could be something humans put into space decades ago \u2014 essentially space debris. \u201cEither way this is a very compelling object and needs more data to determine what it is,\u201d said Fedorets.</p>\n\n<p>The release, images and videos are available on:<br/>\n<a href=\"http://test.djangoplicity-newsletters.com/news/10000/?lang\">http://test.djangoplicity-newsletters.com/news/10000/</a></p>\n\n\n\n<p>Space Scoop - the children's version of this release is available at: <a href=\"http://test.djangoplicity-newsletters.com/news/10000/kids/?lang\">http://test.djangoplicity-newsletters.com/news/10000/kids/</a></p>\n\n\n<p>\n\n\nKind regards,<br />\nDjangoplicity Newsletters Information Centre<br />\n27 February 2020\n\n</p>\n\n\n\n\n    \n\n    \n\n    \n    <br /><hr style=\"height:1px;border:0;border-bottom:1px solid #DEDEDE;\"><br />\n    \n        \n\n\n\n<h2 class=\"h2\" style=\"color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 15px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;\">\n<a href=\"http://feeds.feedburner.com/djangoplicity-newsletters_annoucements\"><img border=\"0\" src=\"http://test.djangoplicity-newsletters.com/static/djangoplicity/images/rssicon.png\"></a>&nbsp;\n<a style=\"color: #285A97;font-size: 15px;font-weight: bold; text-decoration:none;\" href=\"http://test.djangoplicity-newsletters.com/announcements/?lang\">Djangoplicity Newsletters Announcements</a>\n</h2>\n\n\n\n\n<br />\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-bottom: 10px;\">\n<tr>\n<td valign=\"top\" width=\"220\">\n\n<a href=\"http://test.djangoplicity-newsletters.com/announcements/10000/?lang\"><img width=\"220\" border=\"0\" src=\"http://test.djangoplicity-newsletters.com/static/archives/videos/videoframe/10000.jpg\"></img></a>\n\n</td>\n<td valign=\"top\" style=\"padding-left:20px;font-family: Helvetica, Arial;font-size: 12px;\" width=\"281\">\n<h3 class=\"h3\" style=\"color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 12px;font-weight: bold;line-height: 130%;margin-top: 0px;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;\">\n<a style=\"color: #285A97;font-size: 12px;font-weight: bold; text-decoration:none;\" href=\"http://test.djangoplicity-newsletters.com/announcements/10000/?lang\">Two New Hubblecasts Released for Hubble\u2019s 30th Anniversary</a>\n</h3>\n<div style=\"font-family: Helvetica, Arial;font-size: 12px;color:#505050;\">\n<p><strong>25 March 2020:</strong> As COVID-19 continues to spread globally, NSF\u2019s OIR Lab is actively responding to the situation and taking measures to ensure the safety of its staff and the public. These ...</p>\n</div>\n</td>\n</tr>\n\n\n<tr><td colspan=\"2\" align=\"right\"><a style=\"color: #285A97;font-size: 12px;font-family: Helvetica, Arial;\" href=\"http://test.djangoplicity-newsletters.com/announcements/10000/?lang\">Read more</a></td></tr>\n\n</table>\n\n\n\n\n    \n    \n\n                                                                   \n                                                                  </div>\n                                                                </td>\n                                                            </tr>\n                                                        </table>\n                                                        <!-- // End Module: Standard Content \\\\ -->\n                                                    </td>\n                                                </tr>\n                                            </table>\n                                        </td>\n                                    </tr>\n\n                                </table>\n                            </td>\n                            \n                            <!-- // Begin Sidebar \\\\ -->\n                            <td valign=\"top\" width=\"192\" id=\"templateSidebar\" style=\"background-color: #FFFFFF;\">\n                                <table border=\"0\" cellpadding=\"10\" cellspacing=\"0\" width=\"192\" >\n                                    <tr >\n                                        <td valign=\"top\" class=\"sidebarContent\" style=\"background-image: url(http://test.djangoplicity-newsletters.com/static/djp/newsletters/tile.png); background-repeat: repeat-x; color: #505050; font-family: Helvetica, Arial; font-size: 12px; line-height: 130%; text-align: left;\">\n                                            \n\n                                            \n                                            \n    \n\n    \n\n                                            \n                                            <!-- // End Module: Top Image with Content \\\\ -->\n                                        </td>\n                                    </tr>\n                                </table>\n                            </td>\n                            <!-- // End Sidebar \\\\ -->\n                            \n                        </tr>\n                    </table>\n                    <!-- // End Template Body \\\\ -->\n\n                    \n                    </td>\n                </tr>\n                <tr>\n                    <td align=\"center\" valign=\"top\">\n                    \n    \n        \n<!-- // Begin Template Footer \\\\ --> \n                                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"700\" id=\"templateFooter\" style=\"background-color: #FFFFFF;border-top: 0;\"> \n                                        <tr> \n                                            <td valign=\"top\" class=\"footerContent\"> \n                                                                        \n                                                <!-- // Begin Module: Standard Footer \\\\ --> \n                                                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"> \n                                                    <tr><td colspan=\"3\" style=\"background-color:#292929\" height=\"5\"></td></tr>\n                                                    <tr> \n                                                        <td width=\"20\" style=\"background-color:#292929\">&nbsp;</td>\n                                                        <td valign=\"top\" width=\"660\" style=\"background-color:#292929\"> \n                                                            <div style=\"color: #707070;font-family: Helvetica, Arial;font-size: 10px;line-height: 125%;text-align: center;background-color:#292929; padding-top:5px;padding-bottom:0px;padding-left:0px;padding-right:0px;\">\n                                                                \n                                                                \n                                                                <a href=\"http://test.djangoplicity-newsletters.com/images/10000/?lang\"><img style=\"border:0px;margin:2px;\" src=\"http://test.djangoplicity-newsletters.com\" alt=\"test image\"></img></a>&nbsp;\n                                                                \n                                                                \n                                                                <div style=\"font-size:15px;color:white; padding-top: 5px;\"><a href=\"http://feeds.feedburner.com/djangoplicity-newsletters_potw/\"><img border=\"0\" src=\"http://test.djangoplicity-newsletters.com/static/djangoplicity/images/rssicon.png\"></a>&nbsp;<a style=\"font-size:15px;color:white;text-decoration:none;\" href=\"http://test.djangoplicity-newsletters.com/images/potw/?lang\">Djangoplicity Newsletters Pictures of the Week</a>\n                                                                <hr size=\"1\" style=\"color: #bbbbbb; background-color: #bbbbbb; border: 0; height: 1px;\" /> \n                                                                </div>\n                                                                 \n                                                                <div style=\"text-align:left;padding-top:5px;color:white; background-color:#292929;\">\n                                                                 \n                                                                \n\n\n<p style=\"font-size: 11px; text-align:center;\">\n\n\n <a href=\"http://test.djangoplicity-newsletters.com/newsletters/djangoplicity-newsletters-news/html/1/\" style=\"color:white\">View in browser</a>\n</p>\n\n\n                                                                \n<p style=\"font-size: 11px; text-align:center;\">Follow us on:</p>\n<p style=\"font-size: 11px; text-align:center;\"><img src=\"http://test.djangoplicity-newsletters.com/static/socialicons.png\" style=\"border:0px;\" usemap=\"#sociallinks\"></img></p>\n<map id=\"sociallinks\" name=\"sociallinks\">\n    <area shape=\"rect\" alt=\"Facebook\" coords=\"0,0,28,28\" href=\"http://www.facebook.com/djangoplicity\" />\n    <area shape=\"rect\" alt=\"Twitter\" coords=\"36,0,64,28\" href=\"http://twitter.com/djangoplicity-newsletters_space\" />\n    <area shape=\"rect\" alt=\"YouTube\" coords=\"73,0,101,28\" href=\"http://www.youtube.com/user/djangoplicity-newsletters\" />\n    <area shape=\"rect\" alt=\"Vimeo\" coords=\"110,0,138,28\" href=\"http://www.vimeo.com/djangoplicity-newsletters\" />\n</map>\n\n                                                                <p style=\"font-size: 11px; text-align:center; margin-bottom: 0px;\">Djangoplicity Newslettersx, 3055 Street Name, Moon, MW 78111</p>\n                                                                </div>\n                                                            </div> \n                                                        </td>\n                                                        <td width=\"20\" style=\"background-color:#292929\">&nbsp;</td> \n                                                    </tr> \n                                                    <tr><td colspan=\"3\" style=\"background-color:#292929\" height=\"10\">&nbsp;</td></tr>\n                                                </table> \n                                                <!-- // End Module: Standard Footer \\\\ --> \n                                            \n                                            </td> \n                                        </tr> \n                                    </table> \n                                    <!-- // End Template Footer \\\\ --> \n\n    \n\n                    </td>\n                </tr>\n                </table>\n\n                <br />\n\n            </td>\n        </tr>\n        </table>\n    </center>\n</body>\n</html>\n",
+      "feed_data": {},
+      "editorial_subject": "Editorial Subject for test only",
+      "editorial": "test editorial",
+      "editorial_text": "We are just a test editorial",
+      "release_date": "2900-01-01T00:00:00",
+      "published": true,
+      "last_modified": "2020-08-21T06:30:16.856",
+      "created": "2020-08-21T06:30:15.570",
+      "release_task_id": null,
+      "embargo_task_id": null,
+      "checksums": null
+    }
+  },
+  {
+    "model": "newsletters.newslettercontent",
+    "pk": 25,
+    "fields": {
+      "newsletter": "10000",
+      "data_source": 10000,
+      "object_id": "10000"
+    }
+  },
+  {
+    "model": "newsletters.newslettercontent",
+    "pk": 26,
+    "fields": {
+      "newsletter": "10000",
+      "data_source": 10004,
+      "object_id": "10000"
+    }
+  },
+  {
+    "model": "newsletters.newslettercontent",
+    "pk": 27,
+    "fields": {
+      "newsletter": "10000",
+      "data_source": 10001,
+      "object_id": "10000"
+    }
+  },
+  {
+    "model": "newsletters.newslettercontent",
+    "pk": 28,
+    "fields": {
+      "newsletter": "10000",
+      "data_source": 10002,
+      "object_id": "10000"
+    }
+  }
+]

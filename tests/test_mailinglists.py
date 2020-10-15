@@ -44,7 +44,7 @@ class ListTest(TestCase):
 
     def test_unsubscribe_with_email(self):
         """Test unsubscribing from a list"""
-        self.list.subscribe(None, 'test@hubble.org')
+        self.list.subscribe(None, 'test@example.com')
 
         self.assertIn(self.subscriber, self.list.subscribers.all())
 
@@ -65,8 +65,8 @@ class ListTest(TestCase):
 
     def test_subscribe_bad_email_address_not_found(self):
         """Test subscribing an good email address"""
-        self.list.subscribe(None, 'test@hubble.org')
-        subscriber = Subscriber.objects.filter(email='test@hubble.org')
+        self.list.subscribe(None, 'test@example.com')
+        subscriber = Subscriber.objects.filter(email='test@example.com')
         self.assertTrue(subscriber.exists())
 
     def test_subscribe_with_no_input(self):
@@ -182,7 +182,7 @@ class MailChimpListTest(TestCase):
         self.assertTrue(self.list.subscribe('another@eso.org', None, 'text'))
 
     def test_susbcribe_bad_email_address(self):
-        email = 'admin@hubble.org'
+        email = 'admin@example.com'
         BadEmailAddress.objects.create(email=email)
         with self.assertRaises(Exception) as context:
             self.list.subscribe(email)
@@ -190,22 +190,22 @@ class MailChimpListTest(TestCase):
 
     def test_susbcribe_bad_email_type(self):
         with self.assertRaises(Exception) as context:
-            self.list.subscribe('admin@hubble.org', None, 'invalid_type')
+            self.list.subscribe('admin@example.com', None, 'invalid_type')
         self.assertTrue('Invalid email type invalid_type - options are html, text, or mobile.' in context.exception)
 
     def test_susbcribe_bad_merge_fields(self):
         with self.assertRaises(Exception) as context:
-            self.list.subscribe('admin@hubble.org', {'invalid': 'invalid'}, 'text')
+            self.list.subscribe('admin@example.com', {'invalid': 'invalid'}, 'text')
 
         self.assertTrue('Invalid merge field invalid - allowed variables are INTERESTS' in context.exception)
 
     def test_unsubscribe(self):
-        email = 'admin@hubble.org'
+        email = 'admin@example.com'
 
         self.list.unsubscribe(email)
         self.assertTrue(self.list.unsubscribe(email))
         # to test that the subscriber doesn't exist
-        self.assertTrue(self.list.unsubscribe('another@hubble.org'))
+        self.assertTrue(self.list.unsubscribe('another@example.com'))
 
 
 class MailChimpListTokenTest(TestCase):

@@ -39,7 +39,7 @@ SITE_ENVIRONMENT = os.environ.get('ENVIRONMENT', 'dev')
 
 # Application definition
 
-INSTALLED_APPS = [
+DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,18 +48,39 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    'djangoplicity.actions',
-    'djangoplicity.admincomments',
-    'djangoplicity.archives.contrib.security',
+]
+
+DJANGOPLICITY_APPS = [
+    'djangoplicity',
+    'djangoplicity.menus',
+    'djangoplicity.reports',
+    'djangoplicity.pages',
+    'djangoplicity.media',
     'djangoplicity.archives',
+    'djangoplicity.archives.contrib.security',
+    'djangoplicity.announcements',
+    'djangoplicity.science',
+    'djangoplicity.releases',
     'djangoplicity.metadata',
+    'djangoplicity.adminhistory',
+    'djangoplicity.utils',
+    'djangoplicity.celery',
     'djangoplicity.mailinglists',
     'djangoplicity.newsletters',
-    'djangoplicity.reports',
+    'djangoplicity.iframe',
+    'djangoplicity.admincomments',
+    'djangoplicity.simplearchives',
+    'djangoplicity.actions',
+    'djangoplicity.cutter',
+]
+
+THIRD_PARTY_APPS = [
     'test_project',
     'django_mailman',
     'tinymce'
 ]
+
+INSTALLED_APPS = DJANGO_APPS + DJANGOPLICITY_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -135,6 +156,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# For static media protection to be enabled, and archive must be present here
+# For file import to work, the archive must be present here.
+ARCHIVES = (
+    ('djangoplicity.media.models.Image', 'djangoplicity.media.options.ImageOptions'),
+    ('djangoplicity.media.models.Video', 'djangoplicity.media.options.VideoOptions'),
+    ('djangoplicity.media.models.VideoSubtitle', 'djangoplicity.media.options.VideoSubtitleOptions'),
+    ('djangoplicity.media.models.ImageComparison', 'djangoplicity.media.options.ImageComparisonOptions'),
+    ('djangoplicity.releases.models.Release', 'djangoplicity.releases.options.ReleaseOptions'),
+    ('djangoplicity.announcements.models.Announcement','djangoplicity.announcements.options.AnnouncementOptions'),
+)
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -169,7 +201,15 @@ DJANGOPLICITY_ADMIN_CSS = "djangoplicity/css/admin.css"
 DJANGOPLICITY_ADMIN_JS = "djangoplicity/js/admin.js"
 SUBJECT_CATEGORY_CSS = "djangoplicity/css/widgets.css"
 
+ARCHIVE_AUTO_RESOURCE_DELETION = False
+RELEASE_ARCHIVE_ROOT = 'archives/releases/'
+IMAGES_ARCHIVE_ROOT = 'archives/images/'
+IMAGECOMPARISON_ARCHIVE_ROOT = 'archives/imagecomparisons/'
+VIDEOS_ARCHIVE_ROOT = 'archives/videos/'
+ANNOUNCEMENTS_ARCHIVE_ROOT = 'archives/announcements/'
 NEWSLETTERS_ARCHIVE_ROOT = 'archives/newsletters/'
+SCIENCEANNOUNCEMENTS_ARCHIVE_ROOT = 'archives/science/'
+
 
 NEWSLETTERS_MAILCHIMP_API_KEY = os.environ.get("NEWSLETTERS_MAILCHIMP_API_KEY")
 NEWSLETTERS_MAILCHIMP_LIST_ID = os.environ.get("NEWSLETTERS_MAILCHIMP_LIST_ID")

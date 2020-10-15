@@ -1,0 +1,73 @@
+{% extends "newsletters/base_science.html" %}
+{% load release_links djangoplicity_datetime %}
+
+{% block html_title %}Djangoplicity Newsletters Science Newsletter{% endblock %}
+
+{% block header %}
+    {% with width="700" height="300" color="#9ca3a9" logo_width="140" logo_url=base_url|add:MEDIA_URL|add:"newsletters_nl_logo.png" %}
+        {% block header_content %}
+
+            {% if data.main_image %}
+                {% with text_color="#fff" header_title="Djangoplicity Newsletters Science Newsletter" header_subtitle=data.announcement.release_date|date release_date=data.announcement.release_date link_url=base_url|add:data.main_image.get_absolute_url embargo="" main_image=data.main_image titlesize="small" %}
+                    {% if editorial_subject %}
+                        {% with pretitle="Editorial" title=editorial_subject subtitle="" %}
+                            {% include "newsletters/includes/header.html" %}
+                        {% endwith %}
+                    {% else %}
+                        {% with pretitle="Djangoplicity Newsletters" title=data.announcement.title subtitle=data.announcement.subtitle %}
+                            {% include "newsletters/includes/header.html" %}
+                        {% endwith %}
+                    {% endif %}
+                {% endwith %}
+            {% elif data.announcement %}
+                {% with text_color="#fff" header_title="Djangoplicity Newsletters Science Newsletter" header_subtitle=data.announcement.release_date|date release_date=data.announcement.release_date link_url=base_url|add:data.announcement.get_absolute_url pretitle="Djangoplicity Newsletters "|add:data.announcement.id embargo="" title=data.announcement.title subtitle=data.announcement.subtitle main_image=data.announcement.main_visual titlesize="small" %}
+                    {% if editorial_subject %}
+                        {% with pretitle="Editorial" title=editorial_subject subtitle="" %}
+                            {% include "newsletters/includes/header.html" %}
+                        {% endwith %}
+                    {% else %}
+                        {% include "newsletters/includes/header.html" %}
+                    {% endif %}
+                {% endwith %}
+            {% else %}
+                {% with text_color="#fff" header_title="Djangoplicity Newsletters Science Newsletter" header_subtitle=release_date|date %}
+                    {% if editorial_subject %}
+                        {% with pretitle="Editorial" title=editorial_subject subtitle="" %}
+                            {% include "newsletters/includes/header.html" %}
+                        {% endwith %}
+                    {% else %}
+                        {% include "newsletters/includes/header.html" %}
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
+
+        {% endblock %}
+    {% endwith %}
+{% endblock %}
+
+{% block fullsidebar %}
+{% endblock %}
+
+{% block content %}
+    {% with embargo="" release=data.release signature_date=data.release.release_date signature="Djangoplicity Newsletters Information Centre" %}
+        {% include "newsletters/includes/press_release.html" %}
+    {% endwith %}
+
+    {% if editorial %}
+    {% include "newsletters/includes/editorial.html" %}
+    {% endif %}
+
+    {% if data.scienceannouncements %}
+    <br /><hr style="{{hr_style}}"><br />
+    {% with objects=data.scienceannouncements org="" title="Science Announcements" urlpattern="scienceannouncements_defaultquery" truncatelength=60 %}
+        {% include "newsletters/includes/archiveobjects.html" with width_right="100%" %}
+    {% endwith %}
+    {% endif %}
+
+{% endblock %}
+
+{% block footer %}
+{% with org="Djangoplicity Newsletters" potw_feed_url="http://feeds.feedburner.com/hubble_potw/" reason="you subscribed to the Djangoplicity Newsletters Science Newsletter" footer_potws=data.footer_potws footer_note='' unsubscribe_link='' preferences_link='' browser_link=base_url|add:"/newsletters/science/html/"|add:newsletter_id|add:"/" address="3055 Street Name, Moon, MW 78111" %}
+        {% include "newsletters/includes/science-footer.html" with width="693" %}
+    {% endwith %}
+{% endblock %}
