@@ -1010,12 +1010,12 @@ class DataSourceSelector( models.Model ):
     Data source selector is used for selecting objects when auto-generating
     newsletters.
     """
-    name = models.CharField( max_length=255 )
-    filter = models.CharField( max_length=1, default='I', choices=[( 'I', "Include" ), ( 'E', "Exclude" )] )
+    name = models.CharField(max_length=255)
+    filter = models.CharField(max_length=1, default='I', choices=[('I', "Include"), ('E', "Exclude")])
     field = models.SlugField()
     match = models.SlugField()
-    value = models.CharField( max_length=255 )
-    type = models.CharField( max_length=4, default='str', choices=[ ( 'str', 'Text' ), ( 'int', 'Integer' ), ( 'bool', 'Boolean' ), ( 'date', 'Date' ), ] )
+    value = models.CharField(max_length=255)
+    type = models.CharField(max_length=4, default='str', choices=[('str', 'Text'), ('int', 'Integer'), ('bool', 'Boolean'), ('date', 'Date'), ('list', 'List')])
 
     def get_query_dict( self, ctx ):
         """
@@ -1041,6 +1041,12 @@ class DataSourceSelector( models.Model ):
             return ( self.value % ctx ).lower() == 'true'
         elif self.type == 'date':
             return self.value % ctx
+        elif self.type == 'list':
+            value = self.value
+            to_replace = '([" \'])'
+            for char in to_replace:
+                value = value.replace(char, "")
+            return value.split(',')
 
     def get_q_object( self, ctx ):
         """
