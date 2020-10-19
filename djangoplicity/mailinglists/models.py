@@ -511,7 +511,7 @@ class MailChimpList(models.Model):
             interests = {}
 
         # Check if the email is already subscribed:
-        email_hash = hashlib.md5(email).hexdigest()
+        email_hash = hashlib.md5(str(email).encode("utf-8")).hexdigest()
         logger.debug('Will run lists.members.get for email "%s"', email)
         try:
             self.connection(
@@ -550,7 +550,7 @@ class MailChimpList(models.Model):
         validate_email(email)
 
         # Make sure that the email is actually already subscribed
-        email_hash = hashlib.md5(email).hexdigest()
+        email_hash = hashlib.md5(str(email).encode("utf-8")).hexdigest()
         logger.debug('Will run lists.members.get for email "%s"', email)
         try:
             self.connection(
@@ -628,7 +628,7 @@ class MailChimpList(models.Model):
             del merge_fields['NEW_EMAIL']
 
         # Make sure that the email is actually already subscribed
-        email_hash = hashlib.md5(email).hexdigest()
+        email_hash = hashlib.md5(str(email).encode("utf-8")).hexdigest()
         logger.debug('Will run lists.members.get for email "%s"', email)
         try:
             self.connection(
@@ -771,7 +771,7 @@ class MailChimpList(models.Model):
         if not email:
             return {}
 
-        email_hash = hashlib.md5(email).hexdigest()
+        email_hash = hashlib.md5(str(email).encode("utf-8")).hexdigest()
         logger.debug('Will run lists.members.get for email "%s"', email)
         try:
             response = self.connection('lists.members.get', self.list_id,
@@ -1058,9 +1058,9 @@ class MailChimpListToken(models.Model):
         Generate token value from list_id and uuid
         '''
         m = hashlib.sha224()
-        m.update(settings.SECRET_KEY)
-        m.update(list_id)
-        m.update(uuid)
+        m.update(str(settings.SECRET_KEY).encode("utf-8"))
+        m.update(str(list_id).encode("utf-8"))
+        m.update(str(uuid).encode("utf-8"))
         return str(m.hexdigest())
 
     @classmethod
