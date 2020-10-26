@@ -97,7 +97,9 @@ ROOT_URLCONF = 'test_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'djangoplicity/newsletters/templates/newsletters'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -264,3 +266,4 @@ CELERY_RESULT_EXPIRES = 3600
 # File to save revoked tasks across workers restart
 CELERY_WORKER_STATE_DB = os.path.join(TMP_DIR, 'celery_states')
 CELERY_BEAT_SCHEDULE_FILENAME = os.path.join(TMP_DIR, 'celerybeat_schedule')
+
