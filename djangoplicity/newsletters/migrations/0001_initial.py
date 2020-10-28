@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import django.db.models.deletion
 import djangoplicity.archives.base
 import djangoplicity.newsletters.models
 import djangoplicity.translation.fields
@@ -105,7 +106,7 @@ class Migration(migrations.Migration):
                 ('value', models.CharField(default=b'', max_length=255, blank=True)),
                 ('type', models.CharField(default=b'str', max_length=4, choices=[(b'str', b'Text'), (b'int', b'Integer'), (b'bool', b'Boolean'), (b'date', b'Date')])),
                 ('help_text', models.CharField(max_length=255, blank=True)),
-                ('mailer', models.ForeignKey(to='newsletters.Mailer')),
+                ('mailer', models.ForeignKey(to='newsletters.Mailer', on_delete=django.db.models.deletion.CASCADE)),
             ],
             options={
                 'ordering': ['mailer', 'name'],
@@ -136,7 +137,7 @@ class Migration(migrations.Migration):
                 ('published', models.BooleanField(default=False, db_index=True, verbose_name='Published')),
                 ('last_modified', models.DateTimeField(auto_now=True, verbose_name='Last modified')),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name='Created')),
-                ('source', djangoplicity.translation.fields.TranslationForeignKey(related_name='translations', verbose_name='Translation source', blank=True, to='newsletters.Newsletter', null=True, only_sources=False)),
+                ('source', djangoplicity.translation.fields.TranslationForeignKey(related_name='translations', verbose_name='Translation source', blank=True, to='newsletters.Newsletter', null=True, only_sources=False, on_delete=django.db.models.deletion.CASCADE)),
             ],
             options={
                 'ordering': ['-release_date'],
@@ -162,8 +163,8 @@ class Migration(migrations.Migration):
                 ('name', models.SlugField(help_text='Name used to access this data source in templates')),
                 ('title', models.CharField(max_length=255)),
                 ('limit', models.CharField(max_length=255, blank=True)),
-                ('content_type', models.ForeignKey(to='contenttypes.ContentType')),
-                ('ordering', models.ForeignKey(blank=True, to='newsletters.DataSourceOrdering', null=True)),
+                ('content_type', models.ForeignKey(to='contenttypes.ContentType', on_delete=django.db.models.deletion.CASCADE)),
+                ('ordering', models.ForeignKey(blank=True, to='newsletters.DataSourceOrdering', null=True, on_delete=django.db.models.deletion.CASCADE)),
                 ('selectors', models.ManyToManyField(to='newsletters.DataSourceSelector', blank=True)),
             ],
             options={
@@ -179,7 +180,7 @@ class Migration(migrations.Migration):
                 ('default_from_email', models.EmailField(max_length=75, null=True, blank=True)),
                 ('default_editorial', models.TextField(blank=True)),
                 ('default_editorial_text', models.TextField(blank=True)),
-                ('language', models.ForeignKey(to='newsletters.Language')),
+                ('language', models.ForeignKey(to='newsletters.Language', on_delete=django.db.models.deletion.CASCADE)),
             ],
             options={
                 'ordering': ['language'],
@@ -213,13 +214,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='newsletterlanguage',
             name='newsletter_type',
-            field=models.ForeignKey(to='newsletters.NewsletterType'),
+            field=models.ForeignKey(to='newsletters.NewsletterType', on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='newsletterdatasource',
             name='type',
-            field=models.ForeignKey(to='newsletters.NewsletterType'),
+            field=models.ForeignKey(to='newsletters.NewsletterType', on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -229,19 +230,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='newslettercontent',
             name='data_source',
-            field=models.ForeignKey(blank=True, to='newsletters.NewsletterDataSource', null=True),
+            field=models.ForeignKey(blank=True, to='newsletters.NewsletterDataSource', null=True, on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='newslettercontent',
             name='newsletter',
-            field=models.ForeignKey(to='newsletters.Newsletter'),
+            field=models.ForeignKey(to='newsletters.Newsletter', on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='newsletter',
             name='type',
-            field=models.ForeignKey(to='newsletters.NewsletterType'),
+            field=models.ForeignKey(to='newsletters.NewsletterType', on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -251,7 +252,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='mailchimpcampaign',
             name='newsletter',
-            field=models.ForeignKey(to='newsletters.Newsletter'),
+            field=models.ForeignKey(to='newsletters.Newsletter', on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

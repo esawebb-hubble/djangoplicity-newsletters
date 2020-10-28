@@ -269,7 +269,7 @@ class MailerParameter( models.Model ):
 
     The mail parameters are automatically created by
     """
-    mailer = models.ForeignKey( Mailer )
+    mailer = models.ForeignKey( Mailer, on_delete=models.CASCADE )
     name = models.SlugField( max_length=255, unique=False )
     value = models.CharField( max_length=255, blank=True, default='' )
     type = models.CharField( max_length=4, default='str', choices=[ ( 'str', 'Text' ), ( 'int', 'Integer' ), ( 'bool', 'Boolean' ), ( 'date', 'Date' ), ] )
@@ -392,8 +392,8 @@ class NewsletterLanguage( models.Model ):
     """
     Available languages for Local newsletters
     """
-    newsletter_type = models.ForeignKey(NewsletterType)
-    language = models.ForeignKey(Language)
+    newsletter_type = models.ForeignKey(NewsletterType, on_delete=models.CASCADE)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
     default_from_name = models.CharField( max_length=255, blank=True, null=True )
     default_from_email = models.EmailField( blank=True, null=True)
     default_editorial = models.TextField( blank=True )
@@ -421,7 +421,7 @@ class Newsletter( ArchiveModel, TranslationModel ):
     id = models.SlugField( primary_key=True )
 
     # Status
-    type = models.ForeignKey( NewsletterType )
+    type = models.ForeignKey( NewsletterType, on_delete=models.CASCADE )
     frozen = models.BooleanField( default=False )
     scheduled_status = models.CharField( max_length=10, default='OFF', choices=SCHEDULED_CHOICES )
     scheduled_task_id = models.CharField( max_length=64, blank=True )
@@ -904,8 +904,8 @@ class NewsletterContent( models.Model ):
     only content objects of allowed content types will be
     available in the templates.
     """
-    newsletter = models.ForeignKey( Newsletter )
-    data_source = models.ForeignKey( 'NewsletterDataSource', null=True, blank=True )
+    newsletter = models.ForeignKey( Newsletter, on_delete=models.CASCADE )
+    data_source = models.ForeignKey( 'NewsletterDataSource', null=True, blank=True, on_delete=models.CASCADE )
     object_id = models.SlugField()
 
     class Meta:
@@ -1090,13 +1090,13 @@ class NewsletterDataSource( models.Model ):
     can be used to generate a normal query set for selecting new
     objects
     """
-    type = models.ForeignKey( NewsletterType )
+    type = models.ForeignKey( NewsletterType, on_delete=models.CASCADE )
     list = models.BooleanField( default=True )
     name = models.SlugField( help_text=_( 'Name used to access this data source in templates' ) )
     title = models.CharField( max_length=255 )
-    content_type = models.ForeignKey( ContentType )
+    content_type = models.ForeignKey( ContentType, on_delete=models.CASCADE )
     selectors = models.ManyToManyField( DataSourceSelector, blank=True )
-    ordering = models.ForeignKey( DataSourceOrdering, null=True, blank=True )
+    ordering = models.ForeignKey( DataSourceOrdering, null=True, blank=True, on_delete=models.CASCADE )
     limit = models.CharField( max_length=255, blank=True )
 
     def __str__( self ):
@@ -1165,7 +1165,7 @@ class NewsletterFeedDataSource(models.Model):
     Feed data source for a newsletter. Use to select data from a given
     JSON feed
     '''
-    type = models.ForeignKey(NewsletterType)
+    type = models.ForeignKey(NewsletterType, on_delete=models.CASCADE)
     list = models.BooleanField(default=True, help_text=_(
         'Return a list of items or a single element'))
     name = models.SlugField(help_text=_('Name used to access this data source in templates'))
@@ -1299,7 +1299,7 @@ class MailChimpCampaign( models.Model ):
     """
     Model used to keep track of mailchimp campaign ids for each newsletter.
     """
-    newsletter = models.ForeignKey( Newsletter )
+    newsletter = models.ForeignKey( Newsletter, on_delete=models.CASCADE )
     list_id = models.CharField( max_length=50 )
     campaign_id = models.CharField( max_length=50 )
     lang = LanguageField( max_length=7, default='' )

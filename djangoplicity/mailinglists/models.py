@@ -264,7 +264,7 @@ class Subscription(models.Model):
     Relation between subscribers and lists.
     """
     subscriber = models.ForeignKey(Subscriber)
-    list = models.ForeignKey(List)
+    list = models.ForeignKey(List, on_delete=models.CASCADE)
 
     def __str__(self):
         return "%s subscribed to %s" % (self.subscriber, self.list)
@@ -320,9 +320,9 @@ class MailChimpList(models.Model):
     # Model link
     content_type = models.ForeignKey(ContentType, null=True, blank=True,
         help_text='Select the content type of objects that subscribers on '
-        'this list can be linked with.')
-    primary_key_field = models.ForeignKey('MailChimpMergeVar', models.SET_NULL,
-            blank=True, null=True)
+        'this list can be linked with.', on_delete=models.CASCADE)
+    primary_key_field = models.ForeignKey('MailChimpMergeVar',
+            blank=True, null=True, on_delete=models.SET_NULL)
 
     def mailchimp_dc(self):
         '''
@@ -835,7 +835,7 @@ class MailChimpMergeVar(models.Model):
     Store information about mailchimp mergefields for each list.
     Merge vars are now named Merge fields, but the class name was kept
     '''
-    list = models.ForeignKey(MailChimpList)
+    list = models.ForeignKey(MailChimpList, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     required = models.BooleanField(default=False)
     field_type = models.CharField(max_length=20, choices=MERGEFIELD_DATATYPES,
@@ -863,7 +863,7 @@ class MailChimpGroup(models.Model):
     '''
     Represent a Mailchimp Interest Category (formerly known as Group)
     '''
-    list = models.ForeignKey(MailChimpList)
+    list = models.ForeignKey(MailChimpList, on_delete=models.CASCADE)
     group_id = models.CharField(db_index=True, max_length=50)
     name = models.CharField(max_length=255)
 
@@ -876,7 +876,7 @@ class MailChimpGrouping(models.Model):
     '''
     Represent a Mailchimp Interest (formerly known as Grouping)
     '''
-    list = models.ForeignKey(MailChimpList)
+    list = models.ForeignKey(MailChimpList, on_delete=models.CASCADE)
     group_id = models.CharField(db_index=True, max_length=50)
     interest_id = models.CharField(db_index=True, max_length=50)
     name = models.CharField(max_length=255)
@@ -894,8 +894,8 @@ class GroupMapping(models.Model):
     '''
     Mapping between a Mailchimp Group and a field.
     '''
-    list = models.ForeignKey(MailChimpList)
-    group = models.ForeignKey(MailChimpGroup)
+    list = models.ForeignKey(MailChimpList, on_delete=models.CASCADE)
+    group = models.ForeignKey(MailChimpGroup, on_delete=models.CASCADE)
     field = models.CharField(max_length=255)
 
     def parse_interests(self, interests):
@@ -939,8 +939,8 @@ class MergeVarMapping(models.Model):
     Mapping between a Mailchimp Merge Field (formally Merge Var) and a django
     field
     '''
-    list = models.ForeignKey(MailChimpList)
-    merge_var = models.ForeignKey(MailChimpMergeVar)
+    list = models.ForeignKey(MailChimpList, on_delete=models.CASCADE)
+    merge_var = models.ForeignKey(MailChimpMergeVar, on_delete=models.CASCADE)
     field = models.CharField(max_length=255)
 
     class Meta:
@@ -1028,7 +1028,7 @@ class MailChimpListToken(models.Model):
     Tokens used in get parameters to secure webhook requests
     from MailChimp.
     '''
-    list = models.ForeignKey(MailChimpList)
+    list = models.ForeignKey(MailChimpList, on_delete=models.CASCADE)
     uuid = models.CharField(unique=True, max_length=36, verbose_name='UUID')
     token = models.CharField(unique=True, max_length=56)
     expired = models.DateTimeField(null=True, blank=True)
@@ -1128,6 +1128,6 @@ class MailChimpEventAction(EventAction):
         super(MailChimpEventAction, self).__init__(*args, **kwargs)
         self._meta.get_field('on_event')._choices = ACTION_EVENTS
 
-    model_object = models.ForeignKey(MailChimpList)
+    model_object = models.ForeignKey(MailChimpList, on_delete=models.CASCADE)
 
     _key = 'djangoplicity.mailinglists.action_cache'
