@@ -59,7 +59,6 @@ from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.contrib.sites.models import Site
-from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save
 from django.template import Context, Template, defaultfilters
@@ -81,6 +80,11 @@ from djangoplicity.translation.fields import LanguageField
 from djangoplicity.translation.models import TranslationModel, \
     translation_reverse
 from djangoplicity.utils.templatetags.djangoplicity_text_utils import unescape
+import django
+if django.VERSION >= (2, 0):
+    from django.urls import reverse
+else:
+    from django.core.urlresolvers import reverse
 
 logger = logging.getLogger(__name__)
 

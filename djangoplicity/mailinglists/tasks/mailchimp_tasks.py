@@ -37,11 +37,15 @@ from celery.task import task
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.sites.models import Site
-from django.core.urlresolvers import reverse
 from django.db import models, transaction
 from django.utils.encoding import smart_text
 from urllib.parse import urlencode
 from djangoplicity.mailinglists.models import MailChimpList, MailChimpListToken
+import django
+if django.VERSION >= (2, 0):
+    from django.urls import reverse
+else:
+    from django.core.urlresolvers import reverse
 
 
 __all__ = [

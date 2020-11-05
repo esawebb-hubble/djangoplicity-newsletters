@@ -40,11 +40,15 @@ Administration interface for Newsletters. The major extra views includes:
 from datetime import datetime, timedelta
 from django.conf.urls import url
 from django.contrib import admin
-from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _
+import django
+if django.VERSION >= (2, 0):
+    from django.urls import reverse
+else:
+    from django.core.urlresolvers import reverse
 
 # pylint: disable=E0611
 from djangoplicity.contrib import admin as dpadmin

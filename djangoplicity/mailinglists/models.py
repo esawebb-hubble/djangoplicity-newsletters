@@ -49,7 +49,6 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
-from django.core.urlresolvers import reverse
 from django.core.validators import validate_email
 from django.db import models
 from django.db.models.signals import post_save
@@ -57,6 +56,11 @@ from django.utils.encoding import smart_text
 
 from djangoplicity.actions.models import EventAction  # pylint: disable=no-name-in-module
 from djangoplicity.mailinglists.mailman import MailmanList
+import django
+if django.VERSION >= (2, 0):
+    from django.urls import reverse
+else:
+    from django.core.urlresolvers import reverse
 
 
 logger = logging.getLogger(__name__)
