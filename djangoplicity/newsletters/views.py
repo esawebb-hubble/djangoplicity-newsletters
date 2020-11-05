@@ -77,7 +77,7 @@ class NewsletterDetailView(DetailView):
         self.object = self.get_object()
 
         if not self.object.published and not (request.user.is_superuser or request.user.is_staff):
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 raise Http404
             else:
                 return redirect_to_login(self.request.path)
