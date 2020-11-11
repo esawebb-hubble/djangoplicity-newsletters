@@ -185,9 +185,9 @@ class MailerTestCase(TestCase):
         nl = self.createNewsletter(nlt)
         # print a.on_scheduled(nl)
 
-    def test__unicode__(self):
+    def test__str__(self):
         m = self.createNewMailer()
-        self.assertEquals(m.__unicode__(), 'MailChimp mailer: Simple Mailer')
+        self.assertEquals(str(m), 'MailChimp mailer: Simple Mailer')
     
     def test_log_entry(self):
         m = self.createNewMailer()
@@ -234,7 +234,7 @@ class MailerTestCase(TestCase):
         nlt.save()
         self.assertEquals(nlt.get_absolute_url(), '/newsletters/newsletterType-test/')
     
-    def test_get___unicode__(self):
+    def test_get___str__(self):
         l = self._valid_list()
         m = self.createNewMailer()
         p1 = self.createNewMailerParameterListId(m)
@@ -242,7 +242,7 @@ class MailerTestCase(TestCase):
         nlt = self.createNewsletterTypeOther()
         nlt.mailers.add(m)
         nlt.save()
-        self.assertEquals(nlt.__unicode__(), 'NewsletterType Test')
+        self.assertEquals(str(nlt), 'NewsletterType Test')
     
     def test_schedule(self):
         l = self._valid_list()
