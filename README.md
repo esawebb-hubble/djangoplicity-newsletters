@@ -54,16 +54,16 @@ git+https://@github.com/djangoplicity/djangoplicity.git@develop
 ```
 Celery is also required for some asynchronous tasks to work.
 
-Now include the package in your [INSTALLED_APPS](https://github.com/djangoplicity/djangoplicity-newsletters/blob/develop/test_project/settings.py#L83)
+Now include the package in your [INSTALLED_APPS](test_project/settings.py#L83)
 
-Djangoplicity requires some additional settings in order to work, so add this configuration to your [settings.py](https://github.com/djangoplicity/djangoplicity-newsletters/blob/develop/test_project/settings.py#L199)
+Djangoplicity requires some additional settings in order to work, so add this configuration to your [settings.py](test_project/settings.py#L199)
 file (you don't have to include those files in your assets)
 
-You also have to add [tinymce](https://github.com/djangoplicity/djangoplicity-newsletters/blob/develop/test_project/settings.py#L219) settings
+You also have to add [tinymce](test_project/settings.py#L219) settings
 
-Now, add the following imports to your [CELERY_IMPORTS](https://github.com/djangoplicity/djangoplicity-newsletters/blob/develop/test_project/settings.py#L249) variable. You can create it if you don't have one, just be sure that you have properly configured Celery for the project.
+Now, add the following imports to your [CELERY_IMPORTS](test_project/settings.py#L249) variable. You can create it if you don't have one, just be sure that you have properly configured Celery for the project.
 
-Next, you have to register the models in your [admin.py](https://github.com/djangoplicity/djangoplicity-newsletters/blob/develop/test_project/admin.py) file.
+Next, you have to register the models in your [admin.py](test_project/admin.py) file.
 
 ### Migrations
 
@@ -86,10 +86,10 @@ there the basic configuration to get a project working.
 In your terminal run the command:
 
 ```` 
-git clone https://gitlab.com/djangoplicity/djangoplicity-newsletters.git
+git clone https://github.com/djangoplicity/djangoplicity-newsletters.git
 ````
 
-## Mailchimp API Key Configuration
+### Mailchimp API Key Configuration
 
 In the folder test_project you have a file named .env.example, this file serve to declare the environment variables API Key and List ID of Mailchimp.
 Remove the extension .example of this file and configure your `NEWSLETTERS_MAILCHIMP_API_KEY` and `NEWSLETTERS_MAILCHIMP_LIST_ID` variables of Mailchimp.
@@ -107,7 +107,7 @@ docker-compose --env-file ./test_project/.env up
 
 When the process finishes, the server will be available at *`localhost:8002`*
 
-To stop containers press `CTRL + C` in Windows or `⌘ + C` in MacOS
+To stop containers press `CTRL + C` or run `docker-compose stop`.
 
 If the dependencies change, you should recreate the docker images and start the containers again with this command:
 
