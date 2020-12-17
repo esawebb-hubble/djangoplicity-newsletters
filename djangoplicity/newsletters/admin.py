@@ -374,7 +374,9 @@ class NewsletterAdmin( dpadmin.DjangoplicityModelAdmin, NewsletterDisplaysAdmin,
         opts = self.model._meta
 
         media = self.media
-        if 'adminform' in context:
+
+        import django
+        if 'adminform' in context and django.VERSION < (2, 0):
             media += context['adminform']
 
         defaults = {
