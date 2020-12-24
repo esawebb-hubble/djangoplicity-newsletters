@@ -11,7 +11,11 @@
     {% if obj.image %}
         <p style="margin-bottom: 20px;">
             <a href="{{base_url}}{{obj.image.get_absolute_url}}?lang">
-                <img border="0" src="{{base_url}}{{obj.image.resource_news.url}}" style="margin-bottom: 5px; width: 170px;"></img>
+                {% if obj.image.content_server_ready %}
+                    <img border="0" src="{{obj.image.resource_news.url}}" style="margin-bottom: 5px; width: 170px;"></img>
+                {% else %}
+                    <img border="0" src="{{base_url}}{{obj.image.resource_news.url}}" style="margin-bottom: 5px; width: 170px;"></img>
+                {% endif %}
             </a>
             <br><strong>{{obj.image.release_date|datetime:"DATE"}}</strong>
             <br /><a href="{{base_url}}{{obj.image.get_absolute_url}}?lang">{{ obj.image.title }}</a>
