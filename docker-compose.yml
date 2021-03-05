@@ -15,7 +15,6 @@ services:
   db:
     image: postgres:10.5
     container_name: djangoplicity-newsletters-db
-    restart: always
     environment:
       POSTGRES_DB: djangoplicity-newsletters
       POSTGRES_USER: djangoplicity-newsletters
