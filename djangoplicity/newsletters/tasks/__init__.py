@@ -186,9 +186,9 @@ def abuse_reports():
     from djangoplicity.mailinglists.models import MailChimpList
     from django.contrib.sites.models import Site
 
-    email_from = 'nobody@esahubble.org'
-    email_reply_to = 'nobody@esahubble.org'
-    email_to = ['oana@science-wave.com', 'lchristensen@aura-astronomy.org']
+    email_from = 'no-reply@eso.org'
+    email_reply_to = 'no-reply@eso.org'
+    email_to = ['osandu@partner.eso.org', 'lars@eso.org']
 
     #  Calculate the date 4 weeks ago
     start_date = datetime.today() - timedelta(weeks=4)
