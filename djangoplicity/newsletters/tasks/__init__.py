@@ -259,6 +259,10 @@ def abuse_reports():
                     logger.error('lists.members.get: %s', e.response.text)
                     raise e
 
+                #Skip all archived contacts
+                if member['status']== 'archived':
+                    continue
+                    
                 content += '%s Reason: %s' % (member['email_address'],
                     member['unsubscribe_reason']) + '\n'
 
