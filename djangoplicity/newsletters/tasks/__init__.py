@@ -186,9 +186,9 @@ def abuse_reports():
     from djangoplicity.mailinglists.models import MailChimpList
     from django.contrib.sites.models import Site
 
-    email_from = 'nobody@esahubble.org'
-    email_reply_to = 'nobody@esahubble.org'
-    email_to = ['oana@science-wave.com', 'lchristensen@aura-astronomy.org']
+    email_from = 'nobody@esawebb.org'
+    email_reply_to = 'nobody@esawebb.org'
+    email_to = ['web@esawebb.org']
 
     #  Calculate the date 4 weeks ago
     start_date = datetime.today() - timedelta(weeks=4)
@@ -258,9 +258,12 @@ def abuse_reports():
                 except HTTPError as e:
                     logger.error('lists.members.get: %s', e.response.text)
                     raise e
-
-                content += '%s Reason: %s' % (member['email_address'],
-                    member['unsubscribe_reason']) + '\n'
+                
+                #Skip all archived contacts
+                if member['status']== 'archived':
+                    content += '%s -- Contact archived' % (member['email_address']) + '\n'
+                else:
+                    content += '%s Reason: %s' % (member['email_address'], member['unsubscribe_reason']) + '\n'
 
         body += content
 
