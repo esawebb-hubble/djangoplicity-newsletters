@@ -261,10 +261,9 @@ def abuse_reports():
 
                 #Skip all archived contacts
                 if member['status']== 'archived':
-                    continue
-                    
-                content += '%s Reason: %s' % (member['email_address'],
-                    member['unsubscribe_reason']) + '\n'
+                    content += '%s -- Contact archived' % (member['email_address']) + '\n'
+                else:
+                    content += '%s Reason: %s' % (member['email_address'], member['unsubscribe_reason']) + '\n'
 
         body += content
 
