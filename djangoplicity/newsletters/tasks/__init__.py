@@ -188,7 +188,7 @@ def abuse_reports():
 
     email_from = 'nobody@esahubble.org'
     email_reply_to = 'nobody@esahubble.org'
-    email_to = ['oana@science-wave.com', 'lchristensen@aura-astronomy.org']
+    email_to = ['web@esahubble.org',]
 
     #  Calculate the date 4 weeks ago
     start_date = datetime.today() - timedelta(weeks=4)
