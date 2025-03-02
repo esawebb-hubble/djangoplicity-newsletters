@@ -307,31 +307,7 @@
                                                     </table>
                                                 </td>
                                                 {% block fullsidebar %}
-                                                    <!-- // Begin Sidebar \\ -->
-                                                    <td valign="top" width="192" id="templateSidebar" style="background-color: #FFFFFF;">
-                                                        <table border="0" cellpadding="10" cellspacing="0" width="192" >
-                                                            <tr >
-                                                                <td valign="top" class="sidebarContent" style="background-image: url({{base_url}}{{STATIC_PREFIX}}newsletters/tile.png); background-repeat: repeat-x; color: #505050; font-family: Helvetica, Arial; font-size: 12px; line-height: 130%; text-align: left;">
-{#                                                                    {% if enable_sharing %}{% if is_mailchimp_mailer %}#}
-{#                                                                    <!-- // Begin Module: Top Image with Content \\ -->#}
-{#                                                                    <h3 class="h3" style="color: #285A97;display: block;font-family: Helvetica, Arial,serif;font-size: 12px;font-weight: bold;line-height: 100%;margin: 10px 0;text-align: left;">Share this newsletter on:</h3>#}
-{#                                                                     *|FACEBOOK:LIKE|* &nbsp; *|TWITTER:TWEET|* &nbsp; *|GOOGLE:BUZZ|*#}
-{#                                                                    <hr style="height:1px;border:0;border-bottom:1px solid #DEDEDE;"/>#}
-{#                                                                     *|MC:SHARE|*#}
-{#                                                                    {% else %}{%block sharebuttons %}{% endblock %}{% endif %}#}
-{#                                                                    {% endif %}#}
-                                                                    {% with a_style="color: #285A97;font-size: 12px;font-family: Helvetica, Arial;" hr_style="height:1px;border:0;border-bottom:1px solid #DEDEDE;" h2_style="color: #285A97;display: block;font-family: Helvetica, Arial;font-size: 15px;font-weight: bold;line-height: 130%;margin-top: 0;margin-right: 0;margin-bottom: 10px;margin-left: 0;text-align: left;" %}
-                                                                        {% block sidebar %}
-                                                                        {% endblock %}
-                                                                    {% endwith %}
-                                                                    <!-- // End Module: Top Image with Content \\ -->
-                                                                </td>
-                                                            </tr>
-                                                        </table>
-                                                    </td>
-                                                    <!-- // End Sidebar \\ -->
                                                 {% endblock fullsidebar%}
-
                                             </tr>
                                         </table>
                                         <!-- // End Template Body \\ -->
@@ -345,9 +321,9 @@
                                 </td>
                             </tr>
                         </table>
-        
+
                         <br />
-        
+
                     </td>
                 </tr>
             </table>
